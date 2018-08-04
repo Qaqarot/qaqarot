@@ -2,7 +2,12 @@ import numpy as np
 import gate
 
 DEFAULT_GATE_SET = {
+    "i": gate.IGate,
     "z": gate.ZGate,
+    "x": gate.XGate,
+    "h": gate.HGate,
+    "cz": gate.CZGate,
+    "_dbg": gate._DebugDisplay,
 }
 DEFAULT_DTYPE = np.complex64
 
@@ -24,9 +29,13 @@ class Circuit:
         n_qubits = self.n_qubits
         qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
         qubits[0] = 1.0
+        helper = {
+                "n_qubits": n_qubits,
+                "indices": np.arange(2**n_qubits, dtype=np.uint32)
+        }
         for op in self.ops:
             gate = op.gate(*op.args, **op.kwargs)
-            qubits = gate.apply(n_qubits, qubits, *op.target)
+            qubits = gate.apply(helper, qubits, *op.target)
         return qubits
 
 class _GateWrapper:
@@ -41,7 +50,9 @@ class _GateWrapper:
         self.kwargs = kwargs
         return self
 
-    def __getitem__(self, *args):
+    def __getitem__(self, args):
+        if not isinstance(args, tuple):
+            args = (args,)
         self.target = args
         self.circuit.n_qubits = max(max(args) + 1, self.circuit.n_qubits)
         self.circuit.ops.append(self)
