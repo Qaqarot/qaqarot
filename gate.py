@@ -51,6 +51,18 @@ class CZGate:
         qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
         return qubits
 
+class CXGate:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, control, target):
+        h = HGate()
+        cz = CZGate()
+        qubits = h.apply(helper, qubits, target)
+        qubits = cz.apply(helper, qubits, control, target)
+        qubits = h.apply(helper, qubits, target)
+        return qubits
+
 class _DebugDisplay:
     def __init__(self, *args, **kwargs):
         self.ctor_args = (args, kwargs)

@@ -7,9 +7,11 @@ DEFAULT_GATE_SET = {
     "x": gate.XGate,
     "h": gate.HGate,
     "cz": gate.CZGate,
+    "cx": gate.CXGate,
+    "cnot": gate.CXGate,
     "_dbg": gate._DebugDisplay,
 }
-DEFAULT_DTYPE = np.complex64
+DEFAULT_DTYPE = np.complex128
 
 class Circuit:
     def __init__(self, gate_set=None, ops=None, n_qubits=0):
