@@ -9,6 +9,11 @@ DEFAULT_GATE_SET = {
     "cz": gate.CZGate,
     "cx": gate.CXGate,
     "cnot": gate.CXGate,
+    "rz": gate.RZGate,
+    "phase": gate.RZGate,
+    "u1": gate.RZGate,
+    "measure": gate.Measurement,
+    "m": gate.Measurement,
     "_dbg": gate._DebugDisplay,
 }
 DEFAULT_DTYPE = np.complex128
@@ -18,6 +23,7 @@ class Circuit:
         self.gate_set = gate_set or DEFAULT_GATE_SET.copy()
         self.ops = ops or []
         self.n_qubits = n_qubits
+        self.run_history = []
 
     def __getattr__(self, name):
         if name in self.gate_set:
@@ -33,12 +39,20 @@ class Circuit:
         qubits[0] = 1.0
         helper = {
                 "n_qubits": n_qubits,
-                "indices": np.arange(2**n_qubits, dtype=np.uint32)
+                "indices": np.arange(2**n_qubits, dtype=np.uint32),
+                "cregs": [0] * n_qubits,
         }
         for op in self.ops:
             gate = op.gate(*op.args, **op.kwargs)
             qubits = gate.apply(helper, qubits, *op.target)
+        self.run_history.append(tuple(helper["cregs"]))
         return qubits
+
+    def last_result(self):
+        try:
+            return self.run_history[-1]
+        except IndexError:
+            raise ValueError("The Circuit has never been to run.")
 
 class _GateWrapper:
     def __init__(self, circuit, gate):

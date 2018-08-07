@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import math
 
 class IGate:
     def __init__(self):
@@ -61,6 +63,34 @@ class CXGate:
         qubits = h.apply(helper, qubits, target)
         qubits = cz.apply(helper, qubits, control, target)
         qubits = h.apply(helper, qubits, target)
+        return qubits
+
+class RZGate:
+    def __init__(self, theta):
+        self.theta = theta
+
+    def apply(self, helper, qubits, target):
+        i = helper["indices"]
+        theta = self.theta
+        qubits[(i & (1 << target)) != 0] *= complex(math.cos(theta), math.sin(theta))
+        return qubits
+
+class Measurement:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, target):
+        i = helper["indices"]
+        p_zero = (qubits[(i & (1 << target)) == 0].T.conjugate() @ qubits[(i & (1 << target)) == 0]).real
+        rand = random.random()
+        if rand < p_zero:
+            qubits[(i & (1 << target)) != 0] = 0.0
+            qubits /= p_zero
+            helper["cregs"][target] = 0
+        else:
+            qubits[(i & (1 << target)) == 0] = 0.0
+            qubits /= (1.0 - p_zero)
+            helper["cregs"][target] = 1
         return qubits
 
 class _DebugDisplay:
