@@ -53,10 +53,11 @@ class CZGate:
     def __init__(self):
         pass
 
-    def apply(self, helper, qubits, control, target):
+    def apply(self, helper, qubits, args):
         n_qubits = helper["n_qubits"]
-        i = helper["indices"]
-        qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
+        for control, target in qubit_pairs(args, n_qubits):
+            i = helper["indices"]
+            qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
         return qubits
 
 class CXGate:
