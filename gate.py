@@ -104,3 +104,31 @@ class _DebugDisplay:
         print("qubits:", qubits)
         indices = np.arange(0, 2**n_qubits, dtype=int)
         return qubits
+
+def slicing_singlevalue(arg, length):
+    if isinstance(arg, slice):
+        start, stop, step = arg.indices(length)
+        i = start
+        if step > 0:
+            while i < stop:
+                yield i
+                i += step
+        else:
+            while i > stop:
+                yield i
+                i += step
+    else:
+        try:
+            i = arg.__index__()
+        except AttributeError:
+            raise TypeError("indices must be integers or slices, not " + arg.__class__.__name__)
+        if i < 0:
+            i += length
+        yield i
+
+def slicing(args, length):
+    if isinstance(args, tuple):
+        for arg in args:
+            yield from slicing_singlevalue(arg, length)
+    else:
+        yield from slicing_singlevalue(args, length)
