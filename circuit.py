@@ -57,6 +57,7 @@ class Circuit:
 class _GateWrapper:
     def __init__(self, circuit, gate):
         self.circuit = circuit
+        self.target = None
         self.gate = gate
         self.args = ()
         self.kwargs = {}
@@ -70,6 +71,6 @@ class _GateWrapper:
         if not isinstance(args, tuple):
             args = (args,)
         self.target = args
-        self.circuit.n_qubits = max(max(args) + 1, self.circuit.n_qubits)
+        self.circuit.n_qubits = max(gate.get_maximum_index(args), self.circuit.n_qubits)
         self.circuit.ops.append(self)
         return self.circuit
