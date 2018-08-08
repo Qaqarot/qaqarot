@@ -31,7 +31,7 @@ class Circuit:
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
     def copy(self):
-        return Circuit(self.gate_set, self.ops, n_qubits)
+        return Circuit(self.gate_set, self.ops, self.n_qubits)
 
     def run(self):
         n_qubits = self.n_qubits
@@ -44,7 +44,7 @@ class Circuit:
         }
         for op in self.ops:
             gate = op.gate(*op.args, **op.kwargs)
-            qubits = gate.apply(helper, qubits, *op.target)
+            qubits = gate.apply(helper, qubits, op.target)
         self.run_history.append(tuple(helper["cregs"]))
         return qubits
 
@@ -68,9 +68,7 @@ class _GateWrapper:
         return self
 
     def __getitem__(self, args):
-        if not isinstance(args, tuple):
-            args = (args,)
         self.target = args
-        self.circuit.n_qubits = max(gate.get_maximum_index(args), self.circuit.n_qubits)
+        self.circuit.n_qubits = max(gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         self.circuit.ops.append(self)
         return self.circuit
