@@ -14,7 +14,7 @@ DEFAULT_GATE_SET = {
     "u1": gate.RZGate,
     "measure": gate.Measurement,
     "m": gate.Measurement,
-    "_dbg": gate._DebugDisplay,
+    "dbg": gate.DebugDisplay,
 }
 DEFAULT_DTYPE = np.complex128
 
@@ -38,9 +38,9 @@ class Circuit:
         qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
         qubits[0] = 1.0
         helper = {
-                "n_qubits": n_qubits,
-                "indices": np.arange(2**n_qubits, dtype=np.uint32),
-                "cregs": [0] * n_qubits,
+            "n_qubits": n_qubits,
+            "indices": np.arange(2**n_qubits, dtype=np.uint32),
+            "cregs": [0] * n_qubits,
         }
         for op in self.ops:
             gate = op.gate(*op.args, **op.kwargs)

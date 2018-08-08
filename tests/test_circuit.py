@@ -21,10 +21,16 @@ def test_hgate2():
 def test_hgate3():
     assert is_vec_same(Circuit().h[:2].run(), Circuit().h[0].h[1].run())
 
-def test_cx():
+def test_cx1():
     assert is_vec_same(
             Circuit().h[0].h[1].cx[1,0].h[0].h[1].run(),
             Circuit().cx[0,1].run()
+    )
+
+def test_cx2():
+    assert is_vec_same(
+            Circuit().x[2].cx[:4:2,1:4:2].run(),
+            Circuit().x[2:4].run()
     )
 
 def test_rz1():
@@ -59,7 +65,7 @@ def test_measurement_multiqubit1():
     assert cnt.most_common(1) == [((0,0), 10000)]
 
 def test_measurement_multiqubit2():
-    c = Circuit().x[0].m[1].m[0]
+    c = Circuit().x[0].m[1::-1]
     for _ in range(10000):
         c.run()
     cnt = Counter(c.run_history)

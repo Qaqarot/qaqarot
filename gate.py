@@ -63,13 +63,14 @@ class CXGate:
     def __init__(self):
         pass
 
-    def apply(self, helper, qubits, control, target):
+    def apply(self, helper, qubits, args):
         n_qubits = helper["n_qubits"]
-        h = HGate()
-        cz = CZGate()
-        qubits = h.apply(helper, qubits, target)
-        qubits = cz.apply(helper, qubits, control, target)
-        qubits = h.apply(helper, qubits, target)
+        for control, target in qubit_pairs(args, n_qubits):
+            h = HGate()
+            cz = CZGate()
+            qubits = h.apply(helper, qubits, target)
+            qubits = cz.apply(helper, qubits, control, target)
+            qubits = h.apply(helper, qubits, target)
         return qubits
 
 class RZGate:
@@ -104,7 +105,7 @@ class Measurement:
                 helper["cregs"][target] = 1
         return qubits
 
-class _DebugDisplay:
+class DebugDisplay:
     def __init__(self, *args, **kwargs):
         self.ctor_args = (args, kwargs)
 
@@ -145,6 +146,20 @@ def slicing(args, length):
             yield from slicing_singlevalue(arg, length)
     else:
         yield from slicing_singlevalue(args, length)
+
+def qubit_pairs(args, length):
+    if not isinstance(args, tuple):
+        raise ValueError("Control and target qubits pair(s) are required.")
+    if len(args) != 2:
+        raise ValueError("Control and target qubits pair(s) are required.")
+    controls = list(slicing(args[0], length))
+    targets = list(slicing(args[1], length))
+    if len(controls) != len(targets):
+        raise ValueError("The number of control qubits and target qubits are must be same.")
+    for c, z in zip(controls, targets):
+        if c == z:
+            raise ValueError("Control qubit and target qubit are must be different.")
+    return zip(controls, targets)
 
 def get_maximum_index(indices):
     def _maximum_idx_single(idx):
