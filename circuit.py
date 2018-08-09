@@ -27,6 +27,8 @@ class Circuit:
         self.ops = ops or []
         self.n_qubits = n_qubits
         self.run_history = []
+        self.cache = None
+        self.cache_idx = -1
 
     def __getattr__(self, name):
         if name in self.gate_set:
@@ -38,16 +40,26 @@ class Circuit:
 
     def run(self):
         n_qubits = self.n_qubits
-        qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-        qubits[0] = 1.0
+        if self.cache is None:
+            qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
+            qubits[0] = 1.0
+        else:
+            qubits = self.cache.copy()
         helper = {
             "n_qubits": n_qubits,
             "indices": np.arange(2**n_qubits, dtype=np.uint32),
             "cregs": [0] * n_qubits,
         }
-        for op in self.ops:
+        save_cache = True
+        for i, op in enumerate(self.ops[self.cache_idx+1:]):
             gate = op.gate(*op.args, **op.kwargs)
             qubits = gate.apply(helper, qubits, op.target)
+            if save_cache:
+                if hasattr(gate, "no_cache") and gate.no_cache:
+                    save_cache = False
+                else:
+                    self.cache = qubits.copy()
+                    self.cache_idx = i
         self.run_history.append(tuple(helper["cregs"]))
         ignore_globals(qubits)
         return qubits

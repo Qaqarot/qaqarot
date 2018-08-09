@@ -143,6 +143,7 @@ class RZGate:
         return qubits
 
 class Measurement:
+    no_cache = True
     def __init__(self):
         pass
 
