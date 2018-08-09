@@ -80,12 +80,12 @@ class CXGate:
 
     def apply(self, helper, qubits, args):
         n_qubits = helper["n_qubits"]
+        i = helper["indices"]
         for control, target in qubit_pairs(args, n_qubits):
-            h = HGate()
-            cz = CZGate()
-            qubits = h.apply(helper, qubits, target)
-            qubits = cz.apply(helper, qubits, (control, target))
-            qubits = h.apply(helper, qubits, target)
+            newq = qubits.copy()
+            newq[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] = qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) == 0)]
+            newq[((i & (1 << control)) != 0) & ((i & (1 << target)) == 0)] = qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)]
+            qubits = newq
         return qubits
 
 class RXGate:
