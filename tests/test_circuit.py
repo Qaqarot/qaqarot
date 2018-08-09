@@ -21,16 +21,25 @@ def test_hgate2():
 def test_hgate3():
     assert is_vec_same(Circuit().h[:2].run(), Circuit().h[0].h[1].run())
 
+def test_pauli1():
+    assert is_vec_same(Circuit().x[0].y[0].run(), Circuit().z[0].run())
+
+def test_pauli2():
+    assert is_vec_same(Circuit().y[0].z[0].run(), Circuit().x[0].run())
+
+def test_pauli3():
+    assert is_vec_same(Circuit().z[0].x[0].run(), Circuit().y[0].run())
+
 def test_cx1():
     assert is_vec_same(
-            Circuit().h[0].h[1].cx[1,0].h[0].h[1].run(),
-            Circuit().cx[0,1].run()
+        Circuit().h[0].h[1].cx[1,0].h[0].h[1].run(),
+        Circuit().cx[0,1].run()
     )
 
 def test_cx2():
     assert is_vec_same(
-            Circuit().x[2].cx[:4:2,1:4:2].run(),
-            Circuit().x[2:4].run()
+        Circuit().x[2].cx[:4:2,1:4:2].run(),
+        Circuit().x[2:4].run()
     )
 
 def test_rz1():
@@ -38,8 +47,14 @@ def test_rz1():
 
 def test_rz2():
     assert is_vec_same(
-            Circuit().h[0].rz(np.pi / 3)[0].h[1].rz(np.pi / 3)[1].run(),
-            Circuit().h[0,1].rz(np.pi / 3)[:].run()
+        Circuit().h[0].rz(np.pi / 3)[0].h[1].rz(np.pi / 3)[1].run(),
+        Circuit().h[0,1].rz(np.pi / 3)[:].run()
+    )
+
+def test_rotation1():
+    assert is_vec_same(
+        Circuit().ry(-np.pi / 2)[0].rz(np.pi / 6)[0].ry(np.pi / 2)[0].run(),
+        Circuit().rx(np.pi / 6)[0].run()
     )
 
 def test_measurement1():

@@ -3,12 +3,15 @@ import gate
 
 DEFAULT_GATE_SET = {
     "i": gate.IGate,
-    "z": gate.ZGate,
     "x": gate.XGate,
+    "y": gate.YGate,
+    "z": gate.ZGate,
     "h": gate.HGate,
     "cz": gate.CZGate,
     "cx": gate.CXGate,
     "cnot": gate.CXGate,
+    "rx": gate.RXGate,
+    "ry": gate.RYGate,
     "rz": gate.RZGate,
     "phase": gate.RZGate,
     "u1": gate.RZGate,
@@ -46,6 +49,7 @@ class Circuit:
             gate = op.gate(*op.args, **op.kwargs)
             qubits = gate.apply(helper, qubits, op.target)
         self.run_history.append(tuple(helper["cregs"]))
+        ignore_globals(qubits)
         return qubits
 
     def last_result(self):
@@ -72,3 +76,10 @@ class _GateWrapper:
         self.circuit.n_qubits = max(gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         self.circuit.ops.append(self)
         return self.circuit
+
+def ignore_globals(qubits):
+    for i,q in enumerate(qubits):
+        if abs(q) > 0.0000001:
+            ang = abs(q) / q
+            qubits *= ang
+            return

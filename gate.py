@@ -9,17 +9,6 @@ class IGate:
     def apply(self, helper, qubits, targets):
         return qubits
 
-class ZGate:
-    def __init__(self):
-        pass
-
-    def apply(self, helper, qubits, targets):
-        n_qubits = helper["n_qubits"]
-        i = helper["indices"]
-        for target in slicing(targets, n_qubits):
-            qubits[(i & (1 << target)) != 0] *= -1
-        return qubits
-
 class XGate:
     def __init__(self):
         pass
@@ -32,6 +21,31 @@ class XGate:
             newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
             newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
             qubits = newq
+        return qubits
+
+class YGate:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, targets):
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        for target in slicing(targets, n_qubits):
+            newq = np.zeros_like(qubits)
+            newq[(i & (1 << target)) == 0] = -1.0j * qubits[(i & (1 << target)) != 0]
+            newq[(i & (1 << target)) != 0] = 1.0j * qubits[(i & (1 << target)) == 0]
+            qubits = newq
+        return qubits
+
+class ZGate:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, targets):
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        for target in slicing(targets, n_qubits):
+            qubits[(i & (1 << target)) != 0] *= -1
         return qubits
 
 class HGate:
@@ -70,8 +84,50 @@ class CXGate:
             h = HGate()
             cz = CZGate()
             qubits = h.apply(helper, qubits, target)
-            qubits = cz.apply(helper, qubits, control, target)
+            qubits = cz.apply(helper, qubits, (control, target))
             qubits = h.apply(helper, qubits, target)
+        return qubits
+
+class RXGate:
+    def __init__(self, theta):
+        self.theta = theta
+
+    def apply(self, helper, qubits, targets):
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        theta = self.theta
+        for target in slicing(targets, n_qubits):
+            newq = np.zeros_like(qubits)
+            newq[(i & (1 << target)) == 0] = (
+                np.cos(theta / 2) * qubits[(i & (1 << target)) == 0] +
+                -1.0j * np.sin(theta / 2) * qubits[(i & (1 << target)) != 0]
+            )
+            newq[(i & (1 << target)) != 0] = (
+                -1.0j * np.sin(theta / 2) * qubits[(i & (1 << target)) == 0] +
+                np.cos(theta / 2) * qubits[(i & (1 << target)) != 0]
+            )
+            qubits = newq
+        return qubits
+
+class RYGate:
+    def __init__(self, theta):
+        self.theta = theta
+
+    def apply(self, helper, qubits, targets):
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        theta = self.theta
+        for target in slicing(targets, n_qubits):
+            newq = np.zeros_like(qubits)
+            newq[(i & (1 << target)) == 0] = (
+                np.cos(theta / 2) * qubits[(i & (1 << target)) == 0] +
+                -np.sin(theta / 2) * qubits[(i & (1 << target)) != 0]
+            )
+            newq[(i & (1 << target)) != 0] = (
+                np.sin(theta / 2) * qubits[(i & (1 << target)) == 0] +
+                np.cos(theta / 2) * qubits[(i & (1 << target)) != 0]
+            )
+            qubits = newq
         return qubits
 
 class RZGate:
