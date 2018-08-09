@@ -19,7 +19,7 @@ DEFAULT_GATE_SET = {
 DEFAULT_DTYPE = np.complex128
 
 class Circuit:
-    def __init__(self, gate_set=None, ops=None, n_qubits=0):
+    def __init__(self, n_qubits=0, ops=None, gate_set=None):
         self.gate_set = gate_set or DEFAULT_GATE_SET.copy()
         self.ops = ops or []
         self.n_qubits = n_qubits
@@ -31,7 +31,7 @@ class Circuit:
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
     def copy(self):
-        return Circuit(self.gate_set, self.ops, self.n_qubits)
+        return Circuit(self.n_qubits, self.ops, self.gate_set)
 
     def run(self):
         n_qubits = self.n_qubits
