@@ -32,7 +32,7 @@ class Circuit:
 
     def __getattr__(self, name):
         if name in self.gate_set:
-            return _GateWrapper(self, self.gate_set[name])
+            return _GateWrapper(self, name, self.gate_set[name])
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
     def copy(self):
@@ -40,11 +40,15 @@ class Circuit:
 
     def run(self):
         n_qubits = self.n_qubits
+        if self.cache is not None:
+            if len(self.cache) == 2**n_qubits:
+                qubits = self.cache.copy()
+            else:
+                self.cache = None
+                self.cache_idx = -1
         if self.cache is None:
             qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
             qubits[0] = 1.0
-        else:
-            qubits = self.cache.copy()
         helper = {
             "n_qubits": n_qubits,
             "indices": np.arange(2**n_qubits, dtype=np.uint32),
@@ -71,9 +75,10 @@ class Circuit:
             raise ValueError("The Circuit has never been to run.")
 
 class _GateWrapper:
-    def __init__(self, circuit, gate):
+    def __init__(self, circuit, name, gate):
         self.circuit = circuit
         self.target = None
+        self.name = name
         self.gate = gate
         self.args = ()
         self.kwargs = {}
@@ -89,8 +94,19 @@ class _GateWrapper:
         self.circuit.ops.append(self)
         return self.circuit
 
+    def __str__(self):
+        if self.args:
+            args_str = str(self.args)
+            if self.kwargs:
+                args_str = args_str[:-1] + ", kwargs=" + str(self.kwargs) + ")"
+        elif self.kwargs:
+            args_str = "(kwargs=" + str(self.kwargs) + ")"
+        else:
+            args_str = ""
+        return self.name + args_str + " " + str(self.target)
+
 def ignore_globals(qubits):
-    for i,q in enumerate(qubits):
+    for i, q in enumerate(qubits):
         if abs(q) > 0.0000001:
             ang = abs(q) / q
             qubits *= ang

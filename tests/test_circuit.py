@@ -98,3 +98,9 @@ def test_measurement_hadamard1():
     # therefore, 2σ = 2 * sqrt(np(1-p))
     two_sigma = 2 * np.sqrt(n * 0.5 * 0.5)
     assert abs(a[1] - n/2) < two_sigma
+
+def test_caching_then_expand():
+    c = Circuit().h[0]
+    c.run()
+    qubits = c.i[1].run()
+    assert is_vec_same(qubits, Circuit().h[0].i[1].run())
