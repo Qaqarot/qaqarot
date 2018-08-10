@@ -68,6 +68,22 @@ class Circuit:
         ignore_globals(qubits)
         return qubits
 
+    def to_qasm(self):
+        n_qubits = self.n_qubits
+        helper = {
+            "n_qubits": n_qubits,
+        }
+        qasm = [
+            "OPENQASM 2.0;",
+            'include "qelib1.inc";',
+            "qreg q[{}];".format(n_qubits),
+            "creg c[{}];".format(n_qubits),
+        ]
+        for i, op in enumerate(self.ops[self.cache_idx+1:]):
+            gate = op.gate(*op.args, **op.kwargs)
+            qasm += gate.to_qasm(helper, op.target)
+        return "\n".join(qasm)
+
     def last_result(self):
         try:
             return self.run_history[-1]

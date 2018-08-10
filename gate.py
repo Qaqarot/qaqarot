@@ -9,6 +9,9 @@ class IGate:
     def apply(self, helper, qubits, targets):
         return qubits
 
+    def to_qasm(self, helper, targets):
+        return []
+
 class XGate:
     def __init__(self):
         pass
@@ -22,6 +25,14 @@ class XGate:
             newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
             qubits = newq
         return qubits
+
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("x q[{}];".format(target))
+        return qasm
+
 
 class YGate:
     def __init__(self):
@@ -37,6 +48,13 @@ class YGate:
             qubits = newq
         return qubits
 
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("y q[{}];".format(target))
+        return qasm
+
 class ZGate:
     def __init__(self):
         pass
@@ -47,6 +65,13 @@ class ZGate:
         for target in slicing(targets, n_qubits):
             qubits[(i & (1 << target)) != 0] *= -1
         return qubits
+
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("z q[{}];".format(target))
+        return qasm
 
 class HGate:
     def __init__(self):
@@ -63,6 +88,13 @@ class HGate:
             qubits = newq
         return qubits
 
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("h q[{}];".format(target))
+        return qasm
+
 class CZGate:
     def __init__(self):
         pass
@@ -73,6 +105,13 @@ class CZGate:
             i = helper["indices"]
             qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
         return qubits
+
+    def to_qasm(self, helper, args):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for control, target in qubit_pairs(args, n_qubits):
+            qasm.append("cz q[{}],q[{}];".format(control, target))
+        return qasm
 
 class CXGate:
     def __init__(self):
@@ -87,6 +126,13 @@ class CXGate:
             newq[((i & (1 << control)) != 0) & ((i & (1 << target)) == 0)] = qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)]
             qubits = newq
         return qubits
+
+    def to_qasm(self, helper, args):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for control, target in qubit_pairs(args, n_qubits):
+            qasm.append("cx q[{}],q[{}];".format(control, target))
+        return qasm
 
 class RXGate:
     def __init__(self, theta):
@@ -109,6 +155,14 @@ class RXGate:
             qubits = newq
         return qubits
 
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        theta = self.theta
+        for target in slicing(targets, n_qubits):
+            qasm.append("rx({}) q[{}];".format(theta, target))
+        return qasm
+
 class RYGate:
     def __init__(self, theta):
         self.theta = theta
@@ -130,6 +184,14 @@ class RYGate:
             qubits = newq
         return qubits
 
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        theta = self.theta
+        for target in slicing(targets, n_qubits):
+            qasm.append("ry({}) q[{}];".format(theta, target))
+        return qasm
+
 class RZGate:
     def __init__(self, theta):
         self.theta = theta
@@ -141,6 +203,14 @@ class RZGate:
         for target in slicing(targets, n_qubits):
             qubits[(i & (1 << target)) != 0] *= complex(math.cos(theta), math.sin(theta))
         return qubits
+
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        theta = self.theta
+        for target in slicing(targets, n_qubits):
+            qasm.append("rz({}) q[{}];".format(theta, target))
+        return qasm
 
 class Measurement:
     no_cache = True
@@ -163,6 +233,13 @@ class Measurement:
                 helper["cregs"][target] = 1
         return qubits
 
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("measure q[{}] -> c[{}];".format(target, target))
+        return qasm
+
 class DebugDisplay:
     def __init__(self, *args, **kwargs):
         self.ctor_args = (args, kwargs)
@@ -176,6 +253,9 @@ class DebugDisplay:
             print("qubits:", qubits)
             indices = np.arange(0, 2**n_qubits, dtype=int)
         return qubits
+
+    def to_qasm(self, helper, targets):
+        return []
 
 def slicing_singlevalue(arg, length):
     if isinstance(arg, slice):
