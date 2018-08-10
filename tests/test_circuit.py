@@ -113,6 +113,15 @@ def test_measurement_hadamard1():
     two_sigma = 2 * np.sqrt(n * 0.5 * 0.5)
     assert abs(a[1] - n/2) < two_sigma
 
+def test_measurement_after_qubits1():
+    for _ in range(50):
+        c = Circuit().h[0].m[0]
+        a = c.run()
+        if c.last_result() == (0,):
+            assert is_vec_same(a, np.array([1, 0]))
+        else:
+            assert is_vec_same(a, np.array([0, 1]))
+
 def test_caching_then_expand():
     c = Circuit().h[0]
     c.run()

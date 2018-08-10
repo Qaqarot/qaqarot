@@ -155,11 +155,11 @@ class Measurement:
             rand = random.random()
             if rand < p_zero:
                 qubits[(i & (1 << target)) != 0] = 0.0
-                qubits /= p_zero
+                qubits /= np.sqrt(p_zero)
                 helper["cregs"][target] = 0
             else:
                 qubits[(i & (1 << target)) == 0] = 0.0
-                qubits /= (1.0 - p_zero)
+                qubits /= np.sqrt(1.0 - p_zero)
                 helper["cregs"][target] = 1
         return qubits
 
