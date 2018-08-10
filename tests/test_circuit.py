@@ -71,6 +71,20 @@ def test_measurement2():
     cnt = Counter(c.run_history)
     assert cnt.most_common(1) == [((1,), 10000)]
 
+def test_measurement3():
+    # 75% |0> + 25% |1>
+    c = Circuit().rx(np.pi / 3)[0].m[0]
+    n = 10000
+    for _ in range(n):
+        c.run()
+    cnt = Counter(c.run_history)
+    most_common = cnt.most_common(1)[0]
+    assert most_common[0] == (0,)
+    # variance of binomial distribution (n -> ∞) is np(1-p)
+    # therefore, 2σ = 2 * sqrt(np(1-p))
+    two_sigma = 2 * np.sqrt(n * 0.75 * 0.25)
+    assert abs(most_common[1] - 0.75 * n) < two_sigma
+
 def test_measurement_multiqubit1():
     c = Circuit().x[0].m[1]
     for _ in range(10000):
