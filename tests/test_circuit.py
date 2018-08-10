@@ -100,6 +100,14 @@ def test_measurement_multiqubit2():
     cnt = Counter(c.run_history)
     assert cnt.most_common(1) == [((1,0), 10000)]
 
+def test_measurement_entangled_state():
+    # 1/sqrt(2) (|0> + |1>)
+    c = Circuit().h[0].cx[0, 1]
+    for _ in range(10000):
+        c.run()
+        result = c.last_result()
+        assert result == (0, 0) or result == (1, 1)
+
 def test_measurement_hadamard1():
     n = 10000
     c = Circuit().h[0].m[0]
