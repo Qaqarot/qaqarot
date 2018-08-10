@@ -4,8 +4,22 @@ import numpy as np
 from scipy.optimize import minimize
 from circuit import Circuit
 
+def maxcut_qaoa(n_step, n_sample, edges):
+    """Do the Maxcut QAOA.
+
+    :param n_step: The number of step of QAOA
+    :param n_sample: The number of sampling time of each measurement in VQE.
+                     If None, use calculated ideal value.
+    :param edges: The edges list of the graph.
+
+    Calculation is done in constructor.
+    To get the result, use `result` property.
+    """
+    ma = MaxcutQaoaCalculator(n_step, n_sample, edges)
+    return ma.result
+
 def expect(qubits, meas):
-    "Do the VQE simulation without sampling."
+    "For the VQE simulation without sampling."
     d = {"": (qubits, 1.0)}
     result = {}
     i = np.arange(len(qubits))
@@ -34,20 +48,6 @@ def expect(qubits, meas):
         result[m] = get(m)[1]
     return result
 
-def maxcut_qaoa(n_step, n_sample, edges):
-    """Do the Maxcut QAOA.
-
-    :param n_step: The number of step of QAOA
-    :param n_sample: The number of sampling time of each measurement in VQE.
-                     If None, use calculated ideal value.
-    :param edges: The edges list of the graph.
-
-    Calculation is done in constructor.
-    To get the result, use `result` property.
-    """
-    ma = MaxcutQaoaCalculator(n_step, n_sample, edges)
-    return ma.result
-
 class MaxcutQaoaCalculator:
     def __init__(self, n_step, n_sample, edges):
         self.n_step = n_step
@@ -72,11 +72,11 @@ class MaxcutQaoaCalculator:
         print("optimized params:", optimized.x)
         c = self.get_circuit(gammas, betas)
         qubits = c.run()
-        print("qubits:")
-        print(qubits)
+        #print("qubits:")
+        #print(qubits)
         p = (qubits.conjugate() * qubits).real
-        print("probabilities:")
-        print(p)
+        #print("probabilities:")
+        #print(p)
         maxi = p.argmax()
         maxi_bitstring = ("{:0" + str(n_qubits) + "b}").format(maxi)[::-1]
         self.result = list(maxi_bitstring)
