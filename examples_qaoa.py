@@ -48,11 +48,18 @@ def expect(qubits, meas):
         result[m] = get(m)[1]
     return result
 
+def get_scipy_minimizer(**kwargs):
+    return lambda fun, x0: minimize(fun, x0, **kwargs)
+
 class MaxcutQaoaCalculator:
-    def __init__(self, n_step, n_sample, edges):
+    def __init__(self, n_step, n_sample, edges, minimizer=None, verbose=True):
         self.n_step = n_step
         self.n_sample = n_sample
         self.edges = edges
+        self.verbose = verbose
+
+        self.n_query = 0
+        self.query_history = []
 
         n_qubits = -1
         for i, j in edges:
@@ -64,12 +71,17 @@ class MaxcutQaoaCalculator:
         params = np.random.rand(2 * n_step) * np.pi
         params[:n_step] *= 2
 
-        #optimized = minimize(obj_f, params, options={"disp": True})
-        optimized = minimize(obj_f, params, method="Powell", options={"ftol": 2.0e-2, "xtol": 2.0e-2, "disp": True})
+        if minimizer is None:
+            minimizer = get_scipy_minimizer(
+                method="Powell",
+                options={"ftol": 2.0e-2, "xtol": 2.0e-2, "disp": self.verbose}
+            )
+        optimized = minimizer(obj_f, params)
         gammas = optimized.x[:len(params)//2]
         betas = optimized.x[len(params)//2:]
-        print("initial   params:", params)
-        print("optimized params:", optimized.x)
+        if self.verbose:
+            print("initial   params:", params)
+            print("optimized params:", optimized.x)
         c = self.get_circuit(gammas, betas)
         qubits = c.run()
         #print("qubits:")
@@ -80,7 +92,8 @@ class MaxcutQaoaCalculator:
         maxi = p.argmax()
         maxi_bitstring = ("{:0" + str(n_qubits) + "b}").format(maxi)[::-1]
         self.result = list(maxi_bitstring)
-        print("Most significant index:", maxi_bitstring)
+        if self.verbose:
+            print("Most significant index:", maxi_bitstring)
 
     def get_circuit(self, gammas, betas):
         c = Circuit(self.n_qubits)
@@ -93,6 +106,7 @@ class MaxcutQaoaCalculator:
 
     def get_objective_func(self):
         def obj_f(params):
+            self.n_query += 1
             n_sample = self.n_sample
             gammas = params[:len(params)//2]
             betas = params[len(params)//2:]
@@ -117,8 +131,10 @@ class MaxcutQaoaCalculator:
                             val -= p
                         else:
                             val += p
-            print("params:", params)
-            print("val:", val)
+            if self.verbose:
+                print("params:", params)
+                print("val:", val)
+            self.query_history.append((params, val))
             return val
         return obj_f
 
