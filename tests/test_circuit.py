@@ -135,3 +135,12 @@ def test_caching_then_expand():
     c.run()
     qubits = c.i[1].run()
     assert is_vec_same(qubits, Circuit().h[0].i[1].run())
+
+def test_copy_empty():
+    c = Circuit()
+    c.run()
+    cc = c.copy(copy_cache=True, copy_history=True)
+    assert c.ops == cc.ops and c.ops is not cc.ops
+    assert c.cache is None and cc.cache is None
+    assert c.cache_idx == cc.cache_idx == -1
+    assert c.run_history == cc.run_history and c.run_history is not cc.run_history

@@ -36,8 +36,8 @@ class Circuit:
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
     def copy(self, copy_cache=True, copy_history=False):
-        copied = Circuit(self.n_qubits, self.ops, self.gate_set)
-        if copy_cache:
+        copied = Circuit(self.n_qubits, self.ops.copy(), self.gate_set.copy())
+        if copy_cache and self.cache is not None:
             copied.cache = self.cache.copy()
             copied.cache_idx = self.cache_idx
         if copy_history:
