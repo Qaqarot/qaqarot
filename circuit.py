@@ -35,8 +35,14 @@ class Circuit:
             return _GateWrapper(self, name, self.gate_set[name])
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
-    def copy(self):
-        return Circuit(self.n_qubits, self.ops, self.gate_set)
+    def copy(self, copy_cache=True, copy_history=False):
+        copied = Circuit(self.n_qubits, self.ops, self.gate_set)
+        if copy_cache:
+            copied.cache = self.cache.copy()
+            copied.cache_idx = self.cache_idx
+        if copy_history:
+            copied.run_history = self.run_history.copy()
+        return copied
 
     def run(self):
         n_qubits = self.n_qubits
