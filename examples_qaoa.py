@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import minimize
 from circuit import Circuit
 
-def maxcut_qaoa(n_step, n_sample, edges):
+def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     """Do the Maxcut QAOA.
 
     :param n_step: The number of step of QAOA
@@ -15,7 +15,7 @@ def maxcut_qaoa(n_step, n_sample, edges):
     Calculation is done in constructor.
     To get the result, use `result` property.
     """
-    ma = MaxcutQaoaCalculator(n_step, n_sample, edges)
+    ma = MaxcutQaoaCalculator(n_step, edges, minimizer, sampler, verbose)
     return ma.result
 
 def expect(qubits, meas):
@@ -51,15 +51,66 @@ def expect(qubits, meas):
 def get_scipy_minimizer(**kwargs):
     return lambda fun, x0: minimize(fun, x0, **kwargs)
 
+def calculate_from_state_vector(circuit, measures):
+    """Calculate the expectations without sampling."""
+    qubits = circuit.run()
+    val = 0.0
+    for meas in measures:
+        e = expect(qubits, meas)
+        for bits, p in e.items():
+            if bits.count("1") % 2:
+                val -= p
+            else:
+                val += p
+    return val
+
+def get_measurement_sampler(n_sample):
+    """Returns a function which get the expectations by sampling the measured circuit"""
+    def sampling_by_measurement(circuit, measures):
+        val = 0.0
+        for meas in measures:
+            c = circuit.copy(copy_cache=True, copy_history=False)
+            c.measure[tuple(meas)]
+            for _ in range(n_sample):
+                c.run()
+            counter = Counter(sum(e) % 2 for e in c.run_history)
+            for bits, cnt in counter.items():
+                if bits:
+                    val -= cnt / n_sample
+                else:
+                    val += cnt / n_sample
+        return val
+    return sampling_by_measurement
+
+def get_state_vector_sampler(n_sample):
+    """Returns a function which get the expectations by sampling the state vector"""
+    def sampling_by_measurement(circuit, measures):
+        qubits = circuit.run()
+        val = 0.0
+        for meas in measures:
+            e = expect(qubits, meas)
+            pvals = []
+            bits = []
+            for k, v in e.items():
+                bits.append(k)
+                pvals.append(v)
+            vals = np.array([k.count("1") % 2 for k in bits], dtype=np.float64) * -2 + 1
+            vals *= np.random.multinomial(n_sample, pvals)
+            vals /= n_sample
+            val += np.sum(vals)
+        return val
+    return sampling_by_measurement
+
 class MaxcutQaoaCalculator:
-    def __init__(self, n_step, n_sample, edges, minimizer=None, verbose=True):
+    def __init__(self, n_step, edges, minimizer=None, sampler=None, verbose=True):
         self.n_step = n_step
-        self.n_sample = n_sample
         self.edges = edges
         self.verbose = verbose
 
         self.n_query = 0
         self.query_history = []
+
+        self.sampler = sampler or calculate_from_state_vector
 
         n_qubits = -1
         for i, j in edges:
@@ -107,30 +158,12 @@ class MaxcutQaoaCalculator:
     def get_objective_func(self):
         def obj_f(params):
             self.n_query += 1
-            n_sample = self.n_sample
+            sampler = self.sampler
             gammas = params[:len(params)//2]
             betas = params[len(params)//2:]
             val = 0.0
-            for i, j in self.edges:
-                c = self.get_circuit(gammas, betas)
-                a = c.run()
-                if n_sample:
-                    c.measure[i, j]
-                    for _ in range(n_sample):
-                        c.run()
-                    counter = Counter(sum(e) % 2 for e in c.run_history)
-                    for bits, cnt in counter.items():
-                        if bits:
-                            val -= cnt / n_sample
-                        else:
-                            val += cnt / n_sample
-                else:
-                    e = expect(a, [i, j])
-                    for bits, p in e.items():
-                        if bits.count("1") % 2:
-                            val -= p
-                        else:
-                            val += p
+            c = self.get_circuit(gammas, betas)
+            val += sampler(c, self.edges)
             if self.verbose:
                 print("params:", params)
                 print("val:", val)
@@ -139,7 +172,7 @@ class MaxcutQaoaCalculator:
         return obj_f
 
 if __name__ == "__main__":
-    result = maxcut_qaoa(2, None, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
+    result = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
     print("""
        {4}
       / \\
