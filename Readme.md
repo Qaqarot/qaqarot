@@ -12,7 +12,8 @@ print(c.last_result()) # => (1, 1)
 ## Example: Maxcut QAOA
 
 ```
-result = maxcut_qaoa(2, None, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
+from examples_qaoa import *
+result = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
 print("""
        {4}
       / \\
