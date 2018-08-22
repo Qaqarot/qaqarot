@@ -11,9 +11,7 @@ def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     :param n_sample: The number of sampling time of each measurement in VQE.
                      If None, use calculated ideal value.
     :param edges: The edges list of the graph.
-
-    Calculation is done in constructor.
-    To get the result, use `result` property.
+    :returns result of maxcut
     """
     ma = MaxcutQaoaCalculator(n_step, edges, minimizer, sampler, verbose)
     return ma.result
