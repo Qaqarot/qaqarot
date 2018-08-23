@@ -189,8 +189,8 @@ if __name__ == "__main__":
     #result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3,3,2,2,5,8,9])
     nums = [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2]
     result = numpartition_qaoa(1, nums)
-    print(result)
-    group0 = sum(a for a,b in zip(nums, result) if b == '0')
-    group1 = sum(a for a,b in zip(nums, result) if b == '1')
-    print("Group 0:", group0)
-    print("Group 1:", group1)
+    print("Num partition:", nums)
+    group0 = [a for a,b in zip(nums, result) if b == '0']
+    group1 = [a for a,b in zip(nums, result) if b == '1']
+    print("Group 0:", sum(group0), group0)
+    print("Group 1:", sum(group1), group1)
