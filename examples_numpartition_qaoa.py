@@ -105,17 +105,14 @@ class NumPartitionQaoaCalculator:
         self.nums = nums
         self.verbose = verbose
 
-        raise NotImplementError
-
         self.n_query = 0
         self.query_history = []
 
         self.sampler = sampler or calculate_from_state_vector
 
-        n_qubits = -1
-        for i, j in edges:
-            n_qubits = max(n_qubits, i, j)
-        n_qubits += 1
+        self.circuit = None
+
+        n_qubits = len(nums)
         self.n_qubits = n_qubits
 
         obj_f = self.get_objective_func()
@@ -150,8 +147,12 @@ class NumPartitionQaoaCalculator:
         c = Circuit(self.n_qubits)
         c.h[:]
         for gamma, beta in zip(gammas, betas):
-            for i, j in self.edges:
-                c.cx[i, j].rz(gamma)[j].cx[i, j]
+            for i,x1 in enumerate(self.nums):
+                for j,x2 in enumerate(self.nums[i:]):
+                    ang = beta * (x1 * x2)
+                    if i != j:
+                        ang += ang
+                    c.cz(ang)[i, j]
             c.rx(-2.0 * beta)[:]
         return c
 
@@ -163,6 +164,12 @@ class NumPartitionQaoaCalculator:
             betas = params[len(params)//2:]
             val = 0.0
             c = self.get_circuit(gammas, betas)
+            for i,x1 in enumerate(self.nums):
+                for j,x2 in enumerate(self.nums):
+                    factor = x1 * x2
+                    if i != j:
+                        factor += factor
+                    val += factor * sampler(c, ((x1, x2),))
             val += sampler(c, self.edges)
             if self.verbose:
                 print("params:", params)
@@ -172,5 +179,6 @@ class NumPartitionQaoaCalculator:
         return obj_f
 
 if __name__ == "__main__":
-    result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3,3,2,2,5,8,9])
+    #result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3,3,2,2,5,8,9])
+    result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3])
     print(result)
