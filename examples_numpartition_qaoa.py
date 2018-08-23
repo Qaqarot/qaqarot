@@ -32,13 +32,19 @@ def expect(qubits, meas):
 
         qb_zero = qb.copy()
         qb_zero[(i & (1 << m)) != 0] = 0.0
-        qb_zero /= np.sqrt(p_zero)
-        d[bits[:-1] + "0"] = qb_zero, p * p_zero
+        if p_zero > 0.0000000001:
+            qb_zero /= np.sqrt(p_zero)
+            d[bits[:-1] + "0"] = qb_zero, p * p_zero
+        else:
+            d[bits[:-1] + "0"] = qb_zero, 0.0
 
         qb_one = qb.copy()
         qb_one[(i & (1 << m)) == 0] = 0.0
-        qb_one /= np.sqrt(1.0 - p_zero)
-        d[bits[:-1] + "1"] = qb_one, p * (1 - p_zero)
+        if 1.0 - p_zero > 0.0000000001:
+            qb_one /= np.sqrt(1.0 - p_zero)
+            d[bits[:-1] + "1"] = qb_one, p * (1.0 - p_zero)
+        else:
+            d[bits[:-1] + "1"] = qb_one, 0.0
         return d[bits]
 
     for m in itertools.product("01", repeat=len(meas)):
@@ -115,6 +121,9 @@ class NumPartitionQaoaCalculator:
         n_qubits = len(nums)
         self.n_qubits = n_qubits
 
+        factor = 1.0 / max(self.nums)**2
+        self.nums = [a * factor for a in self.nums]
+
         obj_f = self.get_objective_func()
         params = np.random.rand(2 * n_step) * np.pi
         params[:n_step] *= 2
@@ -148,11 +157,10 @@ class NumPartitionQaoaCalculator:
         c.h[:]
         for gamma, beta in zip(gammas, betas):
             for i,x1 in enumerate(self.nums):
-                for j,x2 in enumerate(self.nums[i:]):
+                for j,x2 in enumerate(self.nums[i+1:]):
+                    j += i + 1
                     ang = beta * (x1 * x2)
-                    if i != j:
-                        ang += ang
-                    c.cz(ang)[i, j]
+                    c.cx[i, j].rz(ang)[j].cx[i, j]
             c.rx(-2.0 * beta)[:]
         return c
 
@@ -169,8 +177,7 @@ class NumPartitionQaoaCalculator:
                     factor = x1 * x2
                     if i != j:
                         factor += factor
-                    val += factor * sampler(c, ((x1, x2),))
-            val += sampler(c, self.edges)
+                    val += factor * sampler(c, ((i, j),))
             if self.verbose:
                 print("params:", params)
                 print("val:", val)
@@ -180,5 +187,10 @@ class NumPartitionQaoaCalculator:
 
 if __name__ == "__main__":
     #result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3,3,2,2,5,8,9])
-    result = numpartition_qaoa(2, [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2,2,2,6,8,4,6,3,3,6,4,3])
+    nums = [3,2,6,9,2,5,7,3,3,6,7,3,5,3,2]
+    result = numpartition_qaoa(1, nums)
     print(result)
+    group0 = sum(a for a,b in zip(nums, result) if b == '0')
+    group1 = sum(a for a,b in zip(nums, result) if b == '1')
+    print("Group 0:", group0)
+    print("Group 1:", group1)
