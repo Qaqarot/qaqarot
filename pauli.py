@@ -324,4 +324,4 @@ class Expr(_ExprTuple):
         return " ".join(s_terms)
 
 def ising_bit(n):
-    return Expr((Term((Z(n),), 0.5), ((), 0.5)))
+    return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
