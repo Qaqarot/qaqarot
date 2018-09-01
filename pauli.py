@@ -1,0 +1,327 @@
+from collections import Counter, defaultdict, namedtuple
+from itertools import product
+from numbers import Number, Integral
+
+_PauliTuple = namedtuple("_PauliTuple", "n")
+
+# To avoid pylint error
+def _n(pauli):
+    return pauli.n
+
+class _PauliImpl:
+    @property
+    def op(self):
+        """Return operator type (X, Y, Z, I)"""
+        return self.__class__.__name__
+
+    @property
+    def is_identity(self):
+        return self.op == "I"
+
+    def __hash__(self):
+        return hash((self.op, _n(self)))
+
+    def __eq__(self, other):
+        return _n(self) == _n(other) and self.op == other.op
+
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            return Term.from_pauli(self, other)
+        if not isinstance(other, _PauliImpl):
+            return NotImplemented
+        if self.is_identity:
+            return other
+        if other.is_identity:
+            return self
+        if _n(self) == _n(other) and self.op == other.op:
+            return I
+        return Term.from_paulipair(self, other)
+
+    def __rmul__(self, other):
+        if isinstance(other, Number):
+            return Term.from_pauli(self, other)
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if isinstance(other, Number):
+            if other:
+                return Term.from_pauli(self, 1.0 / other)
+            raise ZeroDivisionError
+        return NotImplemented
+
+    def __add__(self, other):
+        return self.to_expr() + other
+
+    def __radd__(self, other):
+        return other + self.to_expr()
+
+    def __sub__(self, other):
+        return self.to_expr() - other
+
+    def __rsub__(self, other):
+        return other - self.to_expr()
+
+    def __neg__(self):
+        return Term.from_pauli(self, -1.0)
+
+    def to_term(self):
+        """Convert to Pauli Term"""
+        return Term.from_pauli(self)
+
+    def to_expr(self):
+        """Convert to Pauli Expr"""
+        return self.to_term().to_expr()
+
+class X(_PauliImpl, _PauliTuple):
+    """Pauli's X operator"""
+    pass
+
+class Y(_PauliImpl, _PauliTuple):
+    """Pauli's Y operator"""
+    pass
+
+class Z(_PauliImpl, _PauliTuple):
+    """Pauli's Z operator"""
+    pass
+
+class I(_PauliImpl, namedtuple("_I", "")):
+    """Identity operator"""
+    def __call__(self):
+        return self
+
+I = I()
+
+_TermTuple = namedtuple("_TermTuple", "ops coeff")
+
+class Term(_TermTuple):
+    @staticmethod
+    def from_paulipair(pauli1, pauli2):
+        return Term(Term.join_ops((pauli1,), (pauli2,)), 1.0)
+
+    @staticmethod
+    def from_pauli(pauli, coeff=1.0):
+        if pauli.is_identity or coeff == 0:
+            return Term((), coeff)
+        return Term((pauli,), coeff)
+
+    @staticmethod
+    def join_ops(ops1, ops2):
+        i = len(ops1) - 1
+        j = 0
+        while i >= 0 and j < len(ops2):
+            if ops1[i] == ops2[j]:
+                i -= 1
+                j += 1
+            else:
+                break
+        return ops1[:i + 1] + ops2[j:]
+
+    @staticmethod
+    def is_identity(self):
+        return not self.ops
+
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            return Term(self.ops, self.coeff * other)
+        if isinstance(other, Term):
+            ops = Term.join_ops(self.ops, other.ops)
+            coeff = self.coeff * other.coeff
+            return Term(ops, coeff)
+        if isinstance(other, _PauliImpl):
+            if other.is_identity:
+                return self
+            return Term(Term.join_ops(self.ops, (other,)), self.coeff)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, Number):
+            return Term(self.ops, self.coeff * other)
+        if isinstance(other, _PauliImpl):
+            if other.is_identity:
+                return self
+            return Term(Term.join_ops((other,), self.ops), self.coeff)
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if isinstance(other, (int, float)):
+            if other:
+                return Term(self.ops, self.coeff / other)
+            raise ZeroDivisionError
+        return NotImplemented
+
+    def __pow__(self, n):
+        if isinstance(n, Integral):
+            if n < 0:
+                raise ValueError("`pauli_term ** n` or `pow(pauli_term, n)`: n shall not be negative value.")
+            if n == 0:
+                return Term.from_pauli(I)
+            return Term(self.ops * n, self.coeff ** n)
+        return NotImplemented
+
+    def __add__(self, other):
+        return Expr.from_term(self) + other
+
+    def __radd__(self, other):
+        return other + self
+
+    def __sub__(self, other):
+        return Expr.from_term(self) - other
+
+    def __rsub__(self, other):
+        return other - self
+
+    def __neg__(self):
+        return Term(self.ops, -self.coeff)
+
+    def __repr__(self):
+        if self.coeff == 0:
+            return "0*I"
+        if self.coeff == -1.0:
+            s_coeff = "-"
+        else:
+            s_coeff = str(self.coeff) + "*"
+        if self.ops == ():
+            s_ops = "I"
+        else:
+            s_ops = "*".join(op.op + "(" + repr(op.n) + ")" for op in self.ops)
+        return s_coeff + s_ops
+
+    def to_expr(self):
+        return Expr.from_term(self)
+
+_ExprTuple = namedtuple("_ExprTuple", "terms")
+class Expr(_ExprTuple):
+    @staticmethod
+    def from_number(num):
+        return Expr.from_term(Term((), num))
+
+    @staticmethod
+    def from_term(term):
+        return Expr((term,))
+
+    def terms_to_dict(self):
+        return {term[0]: term[1] for term in self.terms}
+
+    @staticmethod
+    def from_terms_dict(terms_dict):
+        return Expr(tuple(Term(k, v) for k, v in terms_dict.items()))
+
+    @property
+    def is_identity(self):
+        if not self.terms:
+            return True
+        return len(self.terms) == 1 and not self.terms[0].ops and self.terms[0].coeff == 1.0
+
+    def __add__(self, other):
+        if isinstance(other, Number):
+            other = Expr.from_number(other)
+        elif isinstance(other, Term):
+            other = Expr.from_term(other)
+        if isinstance(other, Expr):
+            terms = self.terms_to_dict()
+            for op, coeff in other.terms:
+                if op in terms:
+                    terms[op] += coeff
+                    if terms[op] == 0:
+                        del terms[op]
+                else:
+                    terms[op] = coeff
+            return Expr.from_terms_dict(terms)
+        return NotImplemented
+
+    def __sub__(self, other):
+        if isinstance(other, Number):
+            other = Expr.from_number(other)
+        elif isinstance(other, Term):
+            other = Expr.from_term(other)
+        if isinstance(other, Expr):
+            terms = self.terms_to_dict()
+            for op, coeff in other.terms:
+                if op in terms:
+                    terms[op] -= coeff
+                    if terms[op] == 0:
+                        del terms[op]
+                else:
+                    terms[op] = -coeff
+            return Expr.from_terms_dict(terms)
+        return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, Number):
+            return Expr.from_number(other) + self
+        if isinstance(other, Term):
+            return Expr.from_term(other) + self
+        return NotImplemented
+
+    def __rsub__(self, other):
+        if isinstance(other, Number):
+            return Expr.from_number(other) - self
+        if isinstance(other, Term):
+            return Expr.from_term(other) - self
+        return NotImplemented
+
+    def __neg__(self):
+        return Expr(tuple((op, -coeff) for op, coeff in self.terms))
+
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            if other == 0:
+                return Expr.from_number(0.0)
+            return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, Term):
+            return Expr(tuple(term * other for term in self.terms))
+        if isinstance(other, Expr):
+            terms = defaultdict(float)
+            for t1, t2 in product(self.terms, other.terms):
+                term = t1 * t2
+                terms[term.ops] += term.coeff
+            return Expr.from_terms_dict(terms)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, Number):
+            if other == 0:
+                return Expr.from_number(0.0)
+            return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, Term):
+            return Expr(tuple(other * term for term in self.terms))
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if isinstance(other, Number):
+            if other:
+                return Expr(tuple(term / other for term in self.terms))
+            raise ZeroDivisionError
+        return NotImplemented
+
+    def __pow__(self, n):
+        if isinstance(n, Integral):
+            if n < 0:
+                raise ValueError("`pauli_expr ** n` or `pow(pauli_expr, n)`: n shall not be negative value.")
+            if n == 0:
+                return Expr.from_number(1.0)
+            val = self
+            for _ in range(n - 1):
+                val *= self
+            return val
+        return NotImplemented
+
+    def __repr__(self):
+        if not self.terms:
+            return "0*I+0"
+        s_terms = [repr(self.terms[0])]
+        for term in self.terms[1:]:
+            s = repr(term)
+            if s[0] == "+":
+                s_terms.append("+")
+                s_terms.append(s[1:])
+            elif s[0] == "-":
+                s_terms.append("-")
+                s_terms.append(s[1:])
+            else:
+                s_terms.append("+")
+                s_terms.append(s)
+        return " ".join(s_terms)
+
+def ising_bit(n):
+    return Expr((Term((Z(n),), 0.5), ((), 0.5)))
