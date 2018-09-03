@@ -3,6 +3,8 @@ from functools import reduce
 from itertools import product
 from numbers import Number, Integral
 
+from circuit import Circuit
+
 _PauliTuple = namedtuple("_PauliTuple", "n")
 
 # To avoid pylint error
@@ -276,6 +278,16 @@ class Term(_TermTuple):
             if op != "I":
                 new_ops.append(pauli_from_char(op, n))
         return Term(tuple(new_ops), new_coeff)
+
+    def append_to_circuit(self, circuit, simplify=True):
+        if simplify:
+            term = self.simplify()
+        else:
+            term = self
+        for op in term.ops[::-1]:
+            gate = op.op.lower()
+            if gate != "i":
+                getattr(circuit, gate)[op.n]
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
 class Expr(_ExprTuple):
