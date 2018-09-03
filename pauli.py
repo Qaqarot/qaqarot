@@ -26,6 +26,20 @@ def term_from_chars(chars):
     """"XZIY" => X(0) * Z(1) * Y(3)"""
     return Term.from_chars(chars)
 
+def to_term(pauli):
+    return pauli.to_term()
+
+def to_expr(term):
+    return term.to_expr()
+
+def commutation(expr1, expr2):
+    expr1 = expr1.to_expr().simplify()
+    expr2 = expr2.to_expr().simplify()
+    return expr1 * expr2 - expr2 * expr1
+
+def is_commutable(expr1, expr2, eps=0.00000001):
+    return sum(x * x for x in commutation(expr1, expr2).coeffs()) < eps
+
 class _PauliImpl:
     @property
     def op(self):
@@ -215,6 +229,9 @@ class Term(_TermTuple):
             s_ops = "*".join(op.op + "(" + repr(op.n) + ")" for op in self.ops)
         return s_coeff + s_ops
 
+    def to_term(self):
+        return self
+
     def to_expr(self):
         return Expr.from_term(self)
 
@@ -390,9 +407,18 @@ class Expr(_ExprTuple):
                 s_terms.append(s)
         return " ".join(s_terms)
 
+    def to_expr(self):
+        return self
+
     def coeffs(self):
         for term in self.terms:
             yield term.coeff
+
+    def commutation(self, other):
+        return commutation(self, other)
+
+    def is_commutable_with(self, other):
+        return is_commutable(self, other)
 
     def simplify(self):
         d = defaultdict(float)
