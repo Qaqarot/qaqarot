@@ -248,6 +248,9 @@ class Term(_TermTuple):
             for _op in ops[1:]:
                 _k, op = mul(op, _op)
                 k *= _k
+            if k.imag == 0:
+                # cast to float
+                k = k.real
             new_coeff *= k
             if op != "I":
                 new_ops.append(pauli_from_char(op, n))
@@ -390,6 +393,13 @@ class Expr(_ExprTuple):
     def coeffs(self):
         for term in self.terms:
             yield term.coeff
+
+    def simplify(self):
+        d = defaultdict(float)
+        for term in self.terms:
+            term = term.simplify()
+            d[term.ops] += term.coeff
+        return Expr.from_terms_dict(d)
 
 def ising_bit(n):
     return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
