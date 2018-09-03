@@ -138,6 +138,10 @@ class Term(_TermTuple):
         return Term((pauli,), coeff)
 
     @staticmethod
+    def from_ops_iter(ops, coeff):
+        return Term(tuple(ops), coeff)
+
+    @staticmethod
     def from_chars(chars):
         """"XZIY" => X(0) * Z(1) * Y(3)"""
         paulis = [pauli_from_char(c, n) for n, c in enumerate(chars) if c != "I"]
@@ -282,6 +286,10 @@ class Expr(_ExprTuple):
     @staticmethod
     def from_term(term):
         return Expr((term,))
+
+    @staticmethod
+    def from_terms_iter(terms):
+        return Expr(tuple(terms))
 
     def terms_to_dict(self):
         return {term[0]: term[1] for term in self.terms}
