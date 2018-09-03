@@ -1,4 +1,5 @@
 from collections import Counter, defaultdict, namedtuple
+from functools import reduce
 from itertools import product
 from numbers import Number, Integral
 
@@ -7,6 +8,23 @@ _PauliTuple = namedtuple("_PauliTuple", "n")
 # To avoid pylint error
 def _n(pauli):
     return pauli.n
+
+def pauli_from_char(ch, n=0):
+    """"X" => X, "Y" => Y, "Z" => Z, "I" => I"""
+    ch = ch.upper()
+    if ch == "I":
+        return I
+    if ch == "X":
+        return X(n)
+    if ch == "Y":
+        return Y(n)
+    if ch == "Z":
+        return Z(n)
+    raise ValueError("ch shall be X, Y, Z or I")
+
+def term_from_chars(chars):
+    """"XZIY" => X(0) * Z(1) * Y(3)"""
+    return Term.from_chars(chars)
 
 class _PauliImpl:
     @property
@@ -100,9 +118,20 @@ class Term(_TermTuple):
 
     @staticmethod
     def from_pauli(pauli, coeff=1.0):
+        """From X, Y, Z, I to Term"""
         if pauli.is_identity or coeff == 0:
             return Term((), coeff)
         return Term((pauli,), coeff)
+
+    @staticmethod
+    def from_chars(chars):
+        """"XZIY" => X(0) * Z(1) * Y(3)"""
+        paulis = [pauli_from_char(c, n) for n, c in enumerate(chars) if c != "I"]
+        if not paulis:
+            return 1.0 * I
+        if len(paulis) == 1:
+            return 1.0 * paulis[0]
+        return reduce(lambda a, b: a * b, paulis)
 
     @staticmethod
     def join_ops(ops1, ops2):
@@ -188,6 +217,41 @@ class Term(_TermTuple):
 
     def to_expr(self):
         return Expr.from_term(self)
+
+    def simplify(self):
+        def mul(op1, op2):
+            if op1 == "I":
+                return 1.0, op2
+            if op2 == "I":
+                return 1.0, op1
+            if op1 == op2:
+                return 1.0, "I"
+            if op1 == "X":
+                return (-1j, "Z") if op2 == "Y" else (1j, "Y")
+            if op1 == "Y":
+                return (-1j, "X") if op2 == "Z" else (1j, "Z")
+            if op1 == "Z":
+                return (-1j, "Y") if op2 == "X" else (1j, "X")
+
+        before = defaultdict(list)
+        for op in self.ops:
+            if op.op == "I":
+                continue
+            before[op.n].append(op.op)
+        new_coeff = self.coeff
+        new_ops = []
+        for n in sorted(before.keys()):
+            ops = before[n]
+            assert ops
+            k = 1.0
+            op = ops[0]
+            for _op in ops[1:]:
+                _k, op = mul(op, _op)
+                k *= _k
+            new_coeff *= k
+            if op != "I":
+                new_ops.append(pauli_from_char(op, n))
+        return Term(tuple(new_ops), new_coeff)
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
 class Expr(_ExprTuple):
@@ -322,6 +386,10 @@ class Expr(_ExprTuple):
                 s_terms.append("+")
                 s_terms.append(s)
         return " ".join(s_terms)
+
+    def coeffs(self):
+        for term in self.terms:
+            yield term.coeff
 
 def ising_bit(n):
     return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
