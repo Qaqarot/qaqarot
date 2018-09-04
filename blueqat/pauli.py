@@ -3,8 +3,6 @@ from functools import reduce
 from itertools import product
 from numbers import Number, Integral
 
-from circuit import Circuit
-
 _PauliTuple = namedtuple("_PauliTuple", "n")
 
 # To avoid pylint error

@@ -1,5 +1,5 @@
 import numpy as np
-import gate
+from . import gate
 
 DEFAULT_GATE_SET = {
     "i": gate.IGate,
@@ -71,7 +71,7 @@ class Circuit:
                     self.cache = qubits.copy()
                     self.cache_idx = i
         self.run_history.append(tuple(helper["cregs"]))
-        ignore_globals(qubits)
+        _ignore_globals(qubits)
         return qubits
 
     def to_qasm(self, output_prologue=True):
@@ -130,7 +130,7 @@ class _GateWrapper:
             args_str = ""
         return self.name + args_str + " " + str(self.target)
 
-def ignore_globals(qubits):
+def _ignore_globals(qubits):
     for i, q in enumerate(qubits):
         if abs(q) > 0.0000001:
             ang = abs(q) / q
