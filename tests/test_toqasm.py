@@ -1,4 +1,4 @@
-from circuit import Circuit
+from blueqat import Circuit
 
 QASM = """OPENQASM 2.0;
 include "qelib1.inc";

@@ -1,6 +1,6 @@
 from itertools import chain
 import pytest
-from gate import slicing
+from blueqat.gate import slicing
 
 class _GetItem:
     def __getitem__(self, args):

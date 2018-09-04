@@ -1,4 +1,4 @@
-from circuit import Circuit
+from blueqat import Circuit
 import numpy as np
 import sys
 from collections import Counter
