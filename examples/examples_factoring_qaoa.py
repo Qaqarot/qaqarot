@@ -4,7 +4,7 @@ from collections import Counter, OrderedDict
 import numpy as np
 from scipy.optimize import minimize
 
-from qubo_algebra import bit, extract
+from blueqat.pauli import ising_bit
 from blueqat import Circuit
 
 def factoring_qaoa(n_step, n, minimizer=None, sampler=None, verbose=True):
@@ -109,6 +109,17 @@ def get_state_vector_sampler(n_sample):
         return val
     return sampling_by_measurement
 
+def extract(expr):
+    def extract_term(term):
+        return tuple(sorted(k for k,v in Counter(term.ops).items() if v % 2))
+
+    d = {}
+    for term in expr.terms:
+        bits = extract_term(term)
+        if bits:
+            d[bits] = d.get(bits, 0) + term.coeff
+    return d
+
 class FactoringQaoaCalculator:
     def __init__(self, n_step, num, minimizer=None, sampler=None, verbose=True):
         self.n_step = n_step
@@ -134,10 +145,11 @@ class FactoringQaoaCalculator:
         def mk_expr(start, n):
             expr = 1
             for i in range(start, n):
-                expr = expr + 2**(i-start+1) * bit(i)
+                expr = expr + 2**(i-start+1) * ising_bit(i)
             return expr
         self.qubo = (num - mk_expr(0, self.n1_bits) * mk_expr(self.n1_bits, self.n_qubits))**2
         self.h = extract(self.qubo)
+        print(self.h)
 
         #factor = 1 / max(abs(x) for x in self.h.values())
         #for k in self.h:
@@ -185,15 +197,11 @@ class FactoringQaoaCalculator:
             for k,v in self.h.items():
                 if len(k) > 1:
                     for i in range(len(k)-1):
-                        c.cx[k[i], k[i+1]]
-                        #print("CX", k[i], k[i+1])
-                c.rz(gamma * v)[k[-1]]
-                #print("RZ", k[-1])
+                        c.cx[k[i].n, k[i+1].n]
+                c.rz(gamma * v)[k[-1].n]
                 if len(k) > 1:
                     for i in range(len(k)-1):
-                        c.cx[k[len(k)-i-2], k[len(k)-i-1]]
-                        #print("CX", k[len(k)-i-2], k[len(k)-i-1])
-                #print("")
+                        c.cx[k[len(k)-i-2].n, k[len(k)-i-1].n]
             c.rx(-2.0 * beta)[:]
         return c
 
@@ -205,8 +213,8 @@ class FactoringQaoaCalculator:
             betas = params[len(params)//2:]
             val = 0.0
             c = self.get_circuit(gammas, betas)
-            for k,v in self.h.items():
-                val += v * sampler(c, [k])
+            for ops, v in self.h.items():
+                val += v * sampler(c, [[op.n for op in ops]])
             if self.verbose:
                 print("params:", params)
                 print("val:", val)
