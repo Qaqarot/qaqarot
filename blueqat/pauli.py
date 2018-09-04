@@ -54,7 +54,18 @@ class _PauliImpl:
         return hash((self.op, _n(self)))
 
     def __eq__(self, other):
-        return _n(self) == _n(other) and self.op == other.op
+        if isinstance(other, _PauliImpl):
+            if self.is_identity:
+                return other.is_identity
+            return _n(self) == _n(other) and self.op == other.op
+        if isinstance(other, Term):
+            return self.to_term() == other
+        if isinstance(other, Expr):
+            return self.to_expr() == other
+        return NotImplemented
+
+    def __ne__(self, other):
+        return not self == other
 
     def __mul__(self, other):
         if isinstance(other, Number):
@@ -62,11 +73,11 @@ class _PauliImpl:
         if not isinstance(other, _PauliImpl):
             return NotImplemented
         if self.is_identity:
-            return other
+            return other.to_term()
         if other.is_identity:
-            return self
+            return self.to_term()
         if _n(self) == _n(other) and self.op == other.op:
-            return I
+            return I.to_term()
         return Term.from_paulipair(self, other)
 
     def __rmul__(self, other):
@@ -163,7 +174,7 @@ class Term(_TermTuple):
                 break
         return ops1[:i + 1] + ops2[j:]
 
-    @staticmethod
+    @property
     def is_identity(self):
         return not self.ops
 
@@ -236,6 +247,14 @@ class Term(_TermTuple):
     def to_term(self):
         return self
 
+    def __eq__(self, other):
+        if isinstance(other, _PauliImpl):
+            other = other.to_term()
+        return _TermTuple.__eq__(self, other) or _TermTuple.__eq__(self.simplify(), other.simplify())
+
+    def __ne__(self, other):
+        return not self == other
+
     def to_expr(self):
         return Expr.from_term(self)
 
@@ -269,10 +288,10 @@ class Term(_TermTuple):
             for _op in ops[1:]:
                 _k, op = mul(op, _op)
                 k *= _k
-            if k.imag == 0:
-                # cast to float
-                k = k.real
             new_coeff *= k
+            if new_coeff.imag == 0:
+                # cast to float
+                new_coeff = new_coeff.real
             if op != "I":
                 new_ops.append(pauli_from_char(op, n))
         return Term(tuple(new_ops), new_coeff)
@@ -313,6 +332,16 @@ class Expr(_ExprTuple):
         if not self.terms:
             return True
         return len(self.terms) == 1 and not self.terms[0].ops and self.terms[0].coeff == 1.0
+
+    def __eq__(self, other):
+        if isinstance(other, (_PauliImpl, Term)):
+            other = other.to_expr()
+        if isinstance(other, Expr):
+            return self.terms == other.terms or self.simplify().terms == other.simplify().terms
+        return NotImplemented
+
+    def __ne__(self, other):
+        return not self == other
 
     def __add__(self, other):
         if isinstance(other, Number):
@@ -443,7 +472,7 @@ class Expr(_ExprTuple):
         for term in self.terms:
             term = term.simplify()
             d[term.ops] += term.coeff
-        return Expr.from_terms_dict(d)
+        return Expr.from_terms_iter((k, d[k]) for k in sorted(d, key=repr))
 
 def ising_bit(n):
     return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
