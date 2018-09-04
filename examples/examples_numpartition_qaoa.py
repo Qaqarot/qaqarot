@@ -2,7 +2,7 @@ from collections import Counter
 import itertools
 import numpy as np
 from scipy.optimize import minimize
-from circuit import Circuit
+from blueqat import Circuit
 
 def numpartition_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     """Do the Number partition QAOA.

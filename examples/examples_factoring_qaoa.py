@@ -5,7 +5,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from qubo_algebra import bit, extract
-from circuit import Circuit
+from blueqat import Circuit
 
 def factoring_qaoa(n_step, n, minimizer=None, sampler=None, verbose=True):
     """Do the Number partition QAOA.
