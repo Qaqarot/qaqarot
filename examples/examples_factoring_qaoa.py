@@ -212,6 +212,6 @@ if __name__ == "__main__":
     print("n_qubits:", calc.n_qubits, "(%d patterns)" % 2**calc.n_qubits)
     for i, (ans, p) in enumerate(result.items()):
         is_ok = ans[0] * ans[1] == num
-        print("{:2}: {:4} = {:2} * {:2} (p = {:.4}) =>".format(i+1, num, ans[0], ans[1], p), ("NG", "OK")[is_ok])
+        print("{:2}: {:4} {} {:2} * {:2} (p = {:.4})".format(i+1, num, ("!=", "==")[is_ok], ans[0], ans[1], p))
         if is_ok:
             break
