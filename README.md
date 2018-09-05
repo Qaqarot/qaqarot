@@ -1,10 +1,17 @@
 # A quantum gate simulator.
 
 ## Install
+
 ```bash
 git clone https://github.com/mdrft/blueqat
 cd blueqat
 pip3 install -e .
+```
+
+or
+
+```bash
+pip3 install blueqat
 ```
 
 ## Example: 2-qubit Grover
@@ -19,5 +26,5 @@ print(c.last_result()) # => (1, 1)
 ## Example: Maxcut QAOA
 
 ```bash
-python examples/examples_maxcut_qaoa.py
+python examples/maxcut_qaoa.py
 ```
