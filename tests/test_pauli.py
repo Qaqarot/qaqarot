@@ -51,3 +51,6 @@ def test_equality_calced_expr():
     assert X(0) + X(0) == 2 * X(0)
     assert X(1) + Y(2) == 1j * Z(2) * X(2) + X(1)
     assert (X(0) + Y(1)) * (Z(2) - 2*Y(1)) == Z(2) * X(0) + Y(1) * Z(2) - 2 * X(0) * Y(1) - 2
+
+def test_notation():
+    assert X(0) * Z[2] + Y(1) * Z[2] == term_from_chars("XIZ") + term_from_chars("IYZ")

@@ -5,10 +5,6 @@ from numbers import Number, Integral
 
 _PauliTuple = namedtuple("_PauliTuple", "n")
 
-# To avoid pylint error
-def _n(pauli):
-    return pauli.n
-
 def pauli_from_char(ch, n=0):
     """"X" => X, "Y" => Y, "Z" => Z, "I" => I"""
     ch = ch.upper()
@@ -39,6 +35,13 @@ def commutation(expr1, expr2):
 
 def is_commutable(expr1, expr2, eps=0.00000001):
     return sum(x * x for x in commutation(expr1, expr2).coeffs()) < eps
+
+# To avoid pylint error
+def _n(pauli):
+    return pauli.n
+
+def _GetItem(self_, n):
+    return type(self_)(n)
 
 class _PauliImpl:
     @property
@@ -107,6 +110,11 @@ class _PauliImpl:
     def __neg__(self):
         return Term.from_pauli(self, -1.0)
 
+    def __repr__(self):
+        if self.is_identity:
+            return "I"
+        return self.op + "[" + str(_n(self)) + "]"
+
     def to_term(self):
         """Convert to Pauli Term"""
         return Term.from_pauli(self)
@@ -127,13 +135,26 @@ class Z(_PauliImpl, _PauliTuple):
     """Pauli's Z operator"""
     pass
 
+class _PauliCtor:
+    def __init__(self, ty):
+        self.ty = ty
+
+    def __call__(self, n):
+        return self.ty(n)
+
+    def __getitem__(self, n):
+        return self.ty(n)
+
+X = _PauliCtor(X)
+Y = _PauliCtor(Y)
+Z = _PauliCtor(Z)
+
 class I(_PauliImpl, namedtuple("_I", "")):
     """Identity operator"""
     def __call__(self):
         return self
 
 I = I()
-
 _TermTuple = namedtuple("_TermTuple", "ops coeff")
 
 class Term(_TermTuple):
@@ -241,7 +262,7 @@ class Term(_TermTuple):
         if self.ops == ():
             s_ops = "I"
         else:
-            s_ops = "*".join(op.op + "(" + repr(op.n) + ")" for op in self.ops)
+            s_ops = "*".join(op.op + "[" + repr(op.n) + "]" for op in self.ops)
         return s_coeff + s_ops
 
     def to_term(self):
