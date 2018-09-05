@@ -2,8 +2,10 @@ from collections import Counter, defaultdict, namedtuple
 from functools import reduce
 from itertools import product
 from numbers import Number, Integral
+from math import pi
 
 _PauliTuple = namedtuple("_PauliTuple", "n")
+half_pi = pi / 2
 
 def pauli_from_char(ch, n=0):
     """"X" => X, "Y" => Y, "Z" => Z, "I" => I"""
@@ -327,6 +329,34 @@ class Term(_TermTuple):
             if gate != "i":
                 getattr(circuit, gate)[op.n]
 
+    def get_time_evolution(self):
+        term = self.simplify()
+        coeff = term.coeff
+        if coeff.imag:
+            raise ValueError("Not a real coefficient.")
+        ops = term.ops
+        def append_to_circuit(circuit, t):
+            if not ops:
+                return
+            for op in ops:
+                n = op.n
+                if op.op == "X":
+                    circuit.h[n]
+                elif op.op == "Y":
+                    circuit.rx(-half_pi)[n]
+            for i in range(1, len(ops)):
+                circuit.cx[ops[i-1].n, ops[i].n]
+            circuit.rz(-2 * coeff * t)[ops[-1].n]
+            for i in range(len(ops)-1, 0, -1):
+                circuit.cx[ops[i-1].n, ops[i].n]
+            for op in ops:
+                n = op.n
+                if op.op == "X":
+                    circuit.h[n]
+                elif op.op == "Y":
+                    circuit.rx(half_pi)[n]
+        return append_to_circuit
+
 _ExprTuple = namedtuple("_ExprTuple", "terms")
 class Expr(_ExprTuple):
     @staticmethod
@@ -493,7 +523,7 @@ class Expr(_ExprTuple):
         for term in self.terms:
             term = term.simplify()
             d[term.ops] += term.coeff
-        return Expr.from_terms_iter((k, d[k]) for k in sorted(d, key=repr))
+        return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr))
 
 def ising_bit(n):
     return Expr((Term((Z(n),), 0.5), Term((), 0.5)))

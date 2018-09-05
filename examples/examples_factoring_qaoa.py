@@ -109,17 +109,6 @@ def get_state_vector_sampler(n_sample):
         return val
     return sampling_by_measurement
 
-def extract(expr):
-    def extract_term(term):
-        return tuple(sorted(k for k,v in Counter(term.ops).items() if v % 2))
-
-    d = {}
-    for term in expr.terms:
-        bits = extract_term(term)
-        if bits:
-            d[bits] = d.get(bits, 0) + term.coeff
-    return d
-
 class FactoringQaoaCalculator:
     def __init__(self, n_step, num, minimizer=None, sampler=None, verbose=True):
         self.n_step = n_step
@@ -148,8 +137,7 @@ class FactoringQaoaCalculator:
                 expr = expr + 2**(i-start+1) * ising_bit(i)
             return expr
         self.qubo = (num - mk_expr(0, self.n1_bits) * mk_expr(self.n1_bits, self.n_qubits))**2
-        self.h = extract(self.qubo)
-        print(self.h)
+        self.h = self.qubo.simplify()
 
         #factor = 1 / max(abs(x) for x in self.h.values())
         #for k in self.h:
@@ -191,17 +179,12 @@ class FactoringQaoaCalculator:
         self.result = OrderedDict((to_result(a[0]), a[1]) for a in p)
 
     def get_circuit(self, gammas, betas):
+        evolves = [term.get_time_evolution() for term in self.h.terms]
         c = Circuit(self.n_qubits)
         c.h[:]
         for gamma, beta in zip(gammas, betas):
-            for k,v in self.h.items():
-                if len(k) > 1:
-                    for i in range(len(k)-1):
-                        c.cx[k[i].n, k[i+1].n]
-                c.rz(gamma * v)[k[-1].n]
-                if len(k) > 1:
-                    for i in range(len(k)-1):
-                        c.cx[k[len(k)-i-2].n, k[len(k)-i-1].n]
+            for evolve in evolves:
+                evolve(c, gamma)
             c.rx(-2.0 * beta)[:]
         return c
 
@@ -213,8 +196,8 @@ class FactoringQaoaCalculator:
             betas = params[len(params)//2:]
             val = 0.0
             c = self.get_circuit(gammas, betas)
-            for ops, v in self.h.items():
-                val += v * sampler(c, [[op.n for op in ops]])
+            for term in self.h.terms:
+                val += term.coeff * sampler(c, [[op.n for op in term.ops]])
             if self.verbose:
                 print("params:", params)
                 print("val:", val)
