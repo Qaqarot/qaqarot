@@ -168,7 +168,7 @@ class FactoringQaoaCalculator:
             val = 1
             mul = 2
             for c in bitstring:
-                val += mul * (c == '0')
+                val += mul * (c == '1')
                 mul *= 2
             return val
 

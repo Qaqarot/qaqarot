@@ -249,7 +249,7 @@ class Term(_TermTuple):
         return Expr.from_term(self) - other
 
     def __rsub__(self, other):
-        return other - self
+        return other - Expr.from_term(self)
 
     def __neg__(self):
         return Term(self.ops, -self.coeff)
@@ -535,4 +535,4 @@ class Expr(_ExprTuple):
         return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr))
 
 def ising_bit(n):
-    return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
+    return 0.5 - 0.5*Z[n]
