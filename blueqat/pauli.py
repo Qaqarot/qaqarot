@@ -1,6 +1,6 @@
 from collections import Counter, defaultdict, namedtuple
 from functools import reduce
-from itertools import product
+from itertools import combinations, product
 from numbers import Number, Integral
 from math import pi
 
@@ -33,10 +33,10 @@ def to_expr(term):
 def commutation(expr1, expr2):
     expr1 = expr1.to_expr().simplify()
     expr2 = expr2.to_expr().simplify()
-    return expr1 * expr2 - expr2 * expr1
+    return (expr1 * expr2 - expr2 * expr1).simplify()
 
 def is_commutable(expr1, expr2, eps=0.00000001):
-    return sum(x * x for x in commutation(expr1, expr2).coeffs()) < eps
+    return sum((x * x.conjugate()).real for x in commutation(expr1, expr2).coeffs()) < eps
 
 # To avoid pylint error
 def _n(pauli):
@@ -267,9 +267,6 @@ class Term(_TermTuple):
             s_ops = "*".join(op.op + "[" + repr(op.n) + "]" for op in self.ops)
         return s_coeff + s_ops
 
-    def to_term(self):
-        return self
-
     def __eq__(self, other):
         if isinstance(other, _PauliImpl):
             other = other.to_term()
@@ -278,8 +275,17 @@ class Term(_TermTuple):
     def __ne__(self, other):
         return not self == other
 
+    def to_term(self):
+        return self
+
     def to_expr(self):
         return Expr.from_term(self)
+
+    def commutation(self, other):
+        return commutation(self, other)
+
+    def is_commutable_with(self, other):
+        return is_commutable(self, other)
 
     def simplify(self):
         def mul(op1, op2):
@@ -517,6 +523,9 @@ class Expr(_ExprTuple):
 
     def is_commutable_with(self, other):
         return is_commutable(self, other)
+
+    def is_all_terms_commutable(self):
+        return all(is_commutable(a, b) for a, b in combinations(self.terms, 2))
 
     def simplify(self):
         d = defaultdict(float)

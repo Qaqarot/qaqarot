@@ -54,3 +54,10 @@ def test_equality_calced_expr():
 
 def test_notation():
     assert X(0) * Z[2] + Y(1) * Z[2] == term_from_chars("XIZ") + term_from_chars("IYZ")
+
+def test_all_terms_commutable():
+    (X[0] * X[1] + Y[1] * X[2]).is_all_terms_commutable()
+    assert not (X[0] * X[1] + Y[1] * X[2]).is_all_terms_commutable()
+    assert (X[0] + Z[1]).is_all_terms_commutable()
+    assert (X[0] * Z[0] + Y[0]).is_all_terms_commutable()
+    assert (X[0] * Z[1] + Z[0] * X[1]).is_all_terms_commutable()
