@@ -243,7 +243,7 @@ class Term(_TermTuple):
         return Expr.from_term(self) + other
 
     def __radd__(self, other):
-        return other + self
+        return other + Expr.from_term(self)
 
     def __sub__(self, other):
         return Expr.from_term(self) - other
@@ -456,6 +456,8 @@ class Expr(_ExprTuple):
             if other == 0:
                 return Expr.from_number(0.0)
             return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, _PauliImpl):
+            other = other.to_term()
         if isinstance(other, Term):
             return Expr(tuple(term * other for term in self.terms))
         if isinstance(other, Expr):
@@ -471,6 +473,8 @@ class Expr(_ExprTuple):
             if other == 0:
                 return Expr.from_number(0.0)
             return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, _PauliImpl):
+            other = other.to_term()
         if isinstance(other, Term):
             return Expr(tuple(other * term for term in self.terms))
         return NotImplemented
