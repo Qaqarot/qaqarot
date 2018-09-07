@@ -61,3 +61,17 @@ def test_all_terms_commutable():
     assert (X[0] + Z[1]).is_all_terms_commutable()
     assert (X[0] * Z[0] + Y[0]).is_all_terms_commutable()
     assert (X[0] * Z[1] + Z[0] * X[1]).is_all_terms_commutable()
+
+def test_div():
+    assert X[0] / 0.5 == X[0] * 2
+    assert (X[0] + Y[0]) / 0.5 == (X[0] + Y[0]) * 2
+
+def test_rmul():
+    assert 2*X[0] == X[0]*2
+    assert (X[0] + Y[0]) * 3 == 3 * (X[0] + Y[0])
+    assert (X[0] + Y[0] - X[0]) * Z[0] == Y[0] * (X[0] + Z[0] - X[0])
+
+def test_radd():
+    assert X[0]*Z[0] + X[0] == X[0] + X[0]*Z[0]
+    assert X[0]*Z[0] + 123 == 123 + X[0]*Z[0]
+    assert X[0] + 123 == 123 + X[0]

@@ -246,13 +246,13 @@ class Term(_TermTuple):
         return Expr.from_term(self) + other
 
     def __radd__(self, other):
-        return other + self
+        return other + Expr.from_term(self)
 
     def __sub__(self, other):
         return Expr.from_term(self) - other
 
     def __rsub__(self, other):
-        return other - self
+        return other - Expr.from_term(self)
 
     def __neg__(self):
         return Term(self.ops, -self.coeff)
@@ -465,6 +465,8 @@ class Expr(_ExprTuple):
             if other == 0:
                 return Expr.from_number(0.0)
             return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, _PauliImpl):
+            other = other.to_term()
         if isinstance(other, Term):
             return Expr(tuple(term * other for term in self.terms))
         if isinstance(other, Expr):
@@ -480,6 +482,8 @@ class Expr(_ExprTuple):
             if other == 0:
                 return Expr.from_number(0.0)
             return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+        if isinstance(other, _PauliImpl):
+            other = other.to_term()
         if isinstance(other, Term):
             return Expr(tuple(other * term for term in self.terms))
         return NotImplemented
@@ -547,4 +551,4 @@ class Expr(_ExprTuple):
         return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr))
 
 def ising_bit(n):
-    return Expr((Term((Z(n),), 0.5), Term((), 0.5)))
+    return 0.5 - 0.5*Z[n]
