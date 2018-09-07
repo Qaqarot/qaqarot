@@ -25,18 +25,21 @@ def term_from_chars(chars):
     return Term.from_chars(chars)
 
 def to_term(pauli):
+    """Convert to Term from Pauli operator"""
     return pauli.to_term()
 
 def to_expr(term):
+    """Convert to Expr from Term or Pauli operator"""
     return term.to_expr()
 
-def commutation(expr1, expr2):
+def commutator(expr1, expr2):
+    """Commute expr1 and expr2"""
     expr1 = expr1.to_expr().simplify()
     expr2 = expr2.to_expr().simplify()
     return (expr1 * expr2 - expr2 * expr1).simplify()
 
 def is_commutable(expr1, expr2, eps=0.00000001):
-    return sum((x * x.conjugate()).real for x in commutation(expr1, expr2).coeffs()) < eps
+    return sum((x * x.conjugate()).real for x in commutator(expr1, expr2).coeffs()) < eps
 
 # To avoid pylint error
 def _n(pauli):
@@ -281,8 +284,8 @@ class Term(_TermTuple):
     def to_expr(self):
         return Expr.from_term(self)
 
-    def commutation(self, other):
-        return commutation(self, other)
+    def commutator(self, other):
+        return commutator(self, other)
 
     def is_commutable_with(self, other):
         return is_commutable(self, other)
@@ -324,6 +327,12 @@ class Term(_TermTuple):
             if op != "I":
                 new_ops.append(pauli_from_char(op, n))
         return Term(tuple(new_ops), new_coeff)
+
+    def n_iter(self):
+        return (op.n for op in self.ops)
+
+    def max_n(self):
+        return max(self.n_iter())
 
     def append_to_circuit(self, circuit, simplify=True):
         if simplify:
@@ -514,12 +523,15 @@ class Expr(_ExprTuple):
     def to_expr(self):
         return self
 
+    def max_n(self):
+        return max(term.max_n() for term in self.terms)
+
     def coeffs(self):
         for term in self.terms:
             yield term.coeff
 
-    def commutation(self, other):
-        return commutation(self, other)
+    def commutator(self, other):
+        return commutator(self, other)
 
     def is_commutable_with(self, other):
         return is_commutable(self, other)
