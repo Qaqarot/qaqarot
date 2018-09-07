@@ -35,6 +35,9 @@ class Circuit:
             return _GateWrapper(self, name, self.gate_set[name])
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
+    def __reversed__(self):
+        return Circuit(self.n_qubits, self.ops[::-1], self.gate_set.copy())
+
     def copy(self, copy_cache=True, copy_history=False):
         copied = Circuit(self.n_qubits, self.ops.copy(), self.gate_set.copy())
         if copy_cache and self.cache is not None:
