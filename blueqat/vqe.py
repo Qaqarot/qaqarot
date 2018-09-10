@@ -54,13 +54,11 @@ class QaoaAnsatz:
                     elif op.op == "Y":
                         c.rx(-np.pi / 2)[op.n]
                 measured = sampler(c, meas.n_iter())
-                #print("sampler out:", measured)
                 for bits, prob in measured.items():
                     if sum(bits) % 2:
                         val -= prob * meas.coeff
                     else:
                         val += prob * meas.coeff
-            #print(params, val)
             return val
         return objective
 
@@ -109,7 +107,6 @@ def expect(qubits, meas):
     result = {}
     i = np.arange(len(qubits))
     meas = tuple(meas)
-    #print("from qubits:", (qubits.conjugate() * qubits).real)
 
     def get(bits):
         if bits in d:
