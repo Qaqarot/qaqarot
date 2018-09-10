@@ -470,7 +470,7 @@ class Expr(_ExprTuple):
         if isinstance(other, Number):
             if other == 0:
                 return Expr.from_number(0.0)
-            return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+            return Expr.from_terms_iter(Term(op, coeff * other) for op, coeff in self.terms)
         if isinstance(other, _PauliImpl):
             other = other.to_term()
         if isinstance(other, Term):
@@ -487,7 +487,7 @@ class Expr(_ExprTuple):
         if isinstance(other, Number):
             if other == 0:
                 return Expr.from_number(0.0)
-            return Expr(tuple((op, coeff * other) for op, coeff in self.terms))
+            return Expr.from_terms_iter(Term(op, coeff * other) for op, coeff in self.terms)
         if isinstance(other, _PauliImpl):
             other = other.to_term()
         if isinstance(other, Term):
