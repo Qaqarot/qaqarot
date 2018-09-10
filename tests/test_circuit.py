@@ -144,3 +144,11 @@ def test_copy_empty():
     assert c.cache is None and cc.cache is None
     assert c.cache_idx == cc.cache_idx == -1
     assert c.run_history == cc.run_history and c.run_history is not cc.run_history
+
+def test_cache_then_append():
+    c = Circuit()
+    c.x[0]
+    c.run()
+    c.h[0]
+    c.run()
+    assert is_vec_same(c.run(), Circuit().x[0].h[0].run())

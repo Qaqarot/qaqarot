@@ -64,7 +64,7 @@ class Circuit:
             "cregs": [0] * n_qubits,
         }
         save_cache = True
-        for i, op in enumerate(self.ops[self.cache_idx+1:]):
+        for i, op in enumerate(self.ops[self.cache_idx + 1:], start=self.cache_idx + 1):
             gate = op.gate(*op.args, **op.kwargs)
             qubits = gate.apply(helper, qubits, op.target)
             if save_cache:
