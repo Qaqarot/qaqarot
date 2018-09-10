@@ -20,10 +20,11 @@ class XGate:
         n_qubits = helper["n_qubits"]
         i = helper["indices"]
         for target in slicing(targets, n_qubits):
-            newq = np.zeros_like(qubits)
-            newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
-            newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
-            qubits = newq
+            #newq = np.zeros_like(qubits)
+            #newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
+            #newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
+            #qubits = newq
+            qubits = qubits.reshape((2,)*n_qubits)[(slice(None),) * (n_qubits - target - 1) + (slice(None, None, -1),) + (slice(None),) * (target - 1)].reshape(-1)
         return qubits
 
     def to_qasm(self, helper, targets):

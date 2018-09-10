@@ -1,6 +1,6 @@
 from collections import Counter
 import itertools
-from math import pi
+import random
 
 import numpy as np
 from scipy.optimize import minimize as scipy_minimizer
@@ -31,18 +31,37 @@ class QaoaAnsatz:
 
     def get_circuit(self, params):
         c = self.init_circuit.copy()
-        betas = params[:len(params)/2]
-        gammas = params[len(params)/2:]
+        betas = params[:self.step]
+        gammas = params[self.step:]
         for beta, gamma in zip(betas, gammas):
+            beta *= np.pi
+            gamma *= np.pi
             for evo in self.time_evolutions:
-                evo(c, gamma)
-            c.rx(beta)[:]
+                evo(c, beta)
+            c.rx(gamma)[:]
         return c
 
     def get_objective(self, sampler):
         def objective(params):
-            c = self.get_circuit(params)
-            return sampler(c, self.hamiltonian.terms)
+            circuit = self.get_circuit(params)
+            circuit.run()
+            val = 0.0
+            for meas in self.hamiltonian:
+                c = circuit.copy(copy_cache=True, copy_history=False)
+                for op in meas.ops:
+                    if op.op == "X":
+                        c.h[op.n]
+                    elif op.op == "Y":
+                        c.rx(-np.pi / 2)[op.n]
+                measured = sampler(c, meas.n_iter())
+                #print("sampler out:", measured)
+                for bits, prob in measured.items():
+                    if sum(bits) % 2:
+                        val -= prob * meas.coeff
+                    else:
+                        val += prob * meas.coeff
+            #print(params, val)
+            return val
         return objective
 
 class VqeResult:
@@ -51,25 +70,35 @@ class VqeResult:
         self.circuit = circuit
         self.probs = probs
 
+    def __repr__(self):
+        return "VqeResult" + repr((self.params, self.circuit, self.probs))
+
+    def most_common(self, n=1):
+        return tuple(sorted(self.probs.items(), key=lambda item: -item[1]))[:n]
+
 class Vqe:
     def __init__(self, ansatz, minimizer=None, sampler=None):
         self.ansatz = ansatz
-        self.minimizer = minimizer
-        self.sampler = sampler
+        self.minimizer = minimizer or get_scipy_minimizer(
+            method="Powell",
+            options={"ftol": 5.0e-2, "xtol": 5.0e-2, "maxiter": 1000}
+        )
+        self.sampler = sampler or non_sampling_sampler
         self.result = VqeResult()
 
     def run(self):
         objective = self.ansatz.get_objective(self.sampler)
-        params = self.minimizer(objective)
+        params = self.minimizer(objective, self.ansatz.n_params())
         c = self.ansatz.get_circuit(params)
         self.result.params = params
+        self.result.probs = self.sampler(c, range(self.ansatz.n_qubits))
         self.result.circuit = c
-        self.result.probs = self.sampler(c)
         return self.result
 
 def get_scipy_minimizer(**kwargs):
     """Get minimizer which uses `scipy.optimize.minimize`"""
-    def minimizer(objective, params):
+    def minimizer(objective, n_params):
+        params = [random.random() for _ in range(n_params)]
         result = scipy_minimizer(objective, params, **kwargs)
         return result.x
     return minimizer
@@ -79,6 +108,8 @@ def expect(qubits, meas):
     d = {"": (qubits, 1.0)}
     result = {}
     i = np.arange(len(qubits))
+    meas = tuple(meas)
+    #print("from qubits:", (qubits.conjugate() * qubits).real)
 
     def get(bits):
         if bits in d:
@@ -86,88 +117,63 @@ def expect(qubits, meas):
         n = len(bits)
         m = meas[n - 1]
         qb, p = get(bits[:-1])
-        p_zero = (qb[(i & (1 << m)) == 0].T.conjugate() @ qubits[(i & (1 << m)) == 0]).real
+        if p == 0.0:
+            d[bits[:-1] + "0"] = qb, 0.0
+            d[bits[:-1] + "1"] = qb, 0.0
+            return d[bits]
 
-        qb_zero = qb.copy()
-        qb_zero[(i & (1 << m)) != 0] = 0.0
-        qb_zero /= np.sqrt(p_zero)
-        d[bits[:-1] + "0"] = qb_zero, p * p_zero
+        p_zero = (qb[(i & (1 << m)) == 0].T.conjugate() @ qb[(i & (1 << m)) == 0]).real
 
-        qb_one = qb.copy()
-        qb_one[(i & (1 << m)) == 0] = 0.0
-        qb_one /= np.sqrt(1.0 - p_zero)
-        d[bits[:-1] + "1"] = qb_one, p * (1 - p_zero)
+        try:
+            factor = 1.0 / np.sqrt(p_zero)
+            if not np.isfinite(factor):
+                raise ZeroDivisionError
+            qb_zero = qb.copy()
+            qb_zero[(i & (1 << m)) != 0] = 0.0
+            qb_zero *= factor
+            d[bits[:-1] + "0"] = qb_zero, p * p_zero
+        except ZeroDivisionError:
+            d[bits[:-1] + "0"] = qb, 0.0
+
+        try:
+            factor = 1.0 / np.sqrt(1.0 - p_zero)
+            if not np.isfinite(factor):
+                raise ZeroDivisionError
+            qb_one = qb.copy()
+            qb_one[(i & (1 << m)) == 0] = 0.0
+            qb_one *= factor
+            d[bits[:-1] + "1"] = qb_one, p * (1.0 - p_zero)
+        except ZeroDivisionError:
+            d[bits[:-1] + "1"] = qb, 0.0
         return d[bits]
 
     for m in itertools.product("01", repeat=len(meas)):
         m = "".join(m)
-        result[m] = get(m)[1]
-    return result
+        v = get(m)
+        if v[1]:
+            result[m] = v[1]
+    return {tuple(map(int, k)): v for k, v in result.items()}
 
-def non_sampling_sampler(circuit, measures):
+def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
-    circuit.run()
-    val = 0.0
-    for meas in measures:
-        c = circuit.copy(copy_cache=True, copy_history=False)
-        for op in meas.ops:
-            if op.op == "X":
-                c.h[op.n]
-            elif op.op == "Y":
-                c.rx(-pi / 2)[op.n]
-        e = expect(c.run(), meas)
-        for bits, p in e.items():
-            if bits.count("1") % 2:
-                val -= p
-            else:
-                val += p
-    return val
+    return expect(circuit.run(), meas)
 
 def get_measurement_sampler(n_sample):
     """Returns a function which get the expectations by sampling the measured circuit"""
-    def sampling_by_measurement(circuit, measures):
-        circuit.run()
-        val = 0.0
-        for meas in measures:
-            c = circuit.copy(copy_cache=True, copy_history=False)
-            for op in meas.ops:
-                if op.op == "X":
-                    c.h[op.n]
-                elif op.op == "Y":
-                    c.rx(-pi / 2)[op.n]
-            c.measure[tuple(meas.ops.n_iter())]
-            for _ in range(n_sample):
-                c.run()
-            counter = Counter(sum(e) % 2 for e in c.run_history)
-            for bits, cnt in counter.items():
-                if bits:
-                    val -= cnt / n_sample
-                else:
-                    val += cnt / n_sample
-        return val
+    def sampling_by_measurement(circuit, meas):
+        circuit.measure[tuple(meas)]
+        for _ in range(n_sample):
+            circuit.run()
+        counter = Counter(circuit.run_history)
+        return {k: v / n_sample for k, v in counter.items()}
     return sampling_by_measurement
 
 def get_state_vector_sampler(n_sample):
     """Returns a function which get the expectations by sampling the state vector"""
-    def sampling_by_measurement(circuit, measures):
-        circuit.run(copy_cache=True, copy_history=False)
+    def sampling_by_measurement(circuit, meas):
         val = 0.0
-        for meas in measures:
-            c = circuit.copy()
-            for op in meas.ops:
-                if op.op == "X":
-                    c.h[op.n]
-                elif op.op == "Y":
-                    c.rx(-pi / 2)[op.n]
-            e = expect(c.run(), meas)
-            pvals = []
-            bits = []
-            for k, v in e.items():
-                bits.append(k)
-                pvals.append(v)
-            vals = np.array([k.count("1") % 2 for k in bits], dtype=np.float64) * -2 + 1
-            vals *= np.random.multinomial(n_sample, pvals)
-            vals /= n_sample
-            val += np.sum(vals)
-        return val
+        e = expect(circuit.run(), meas)
+        bits, probs = zip(*e.items())
+        dists = np.random.multinomial(n_sample, probs) / n_sample
+        return dict(zip(tuple(map(int, bits)), dists))
     return sampling_by_measurement

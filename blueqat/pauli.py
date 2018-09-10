@@ -376,22 +376,28 @@ _ExprTuple = namedtuple("_ExprTuple", "terms")
 class Expr(_ExprTuple):
     @staticmethod
     def from_number(num):
-        return Expr.from_term(Term((), num))
+        if num:
+            return Expr.from_term(Term((), num))
+        else:
+            return Expr(())
 
     @staticmethod
     def from_term(term):
-        return Expr((term,))
+        if term.coeff:
+            return Expr((term,))
+        else:
+            return Expr(())
 
     @staticmethod
     def from_terms_iter(terms):
-        return Expr(tuple(terms))
+        return Expr(tuple(term for term in terms if term.coeff))
 
     def terms_to_dict(self):
-        return {term[0]: term[1] for term in self.terms}
+        return {term[0]: term[1] for term in self.terms if term.coeff}
 
     @staticmethod
     def from_terms_dict(terms_dict):
-        return Expr(tuple(Term(k, v) for k, v in terms_dict.items()))
+        return Expr(tuple(Term(k, v) for k, v in terms_dict.items() if v))
 
     @property
     def is_identity(self):
