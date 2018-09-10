@@ -507,6 +507,9 @@ class Expr(_ExprTuple):
             return val
         return NotImplemented
 
+    def __iter__(self):
+        return iter(self.terms)
+
     def __repr__(self):
         if not self.terms:
             return "0*I+0"
