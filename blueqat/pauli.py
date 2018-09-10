@@ -528,7 +528,7 @@ class Expr(_ExprTuple):
         return self
 
     def max_n(self):
-        return max(term.max_n() for term in self.terms)
+        return max(term.max_n() for term in self.terms if term.ops)
 
     def coeffs(self):
         for term in self.terms:
@@ -548,7 +548,7 @@ class Expr(_ExprTuple):
         for term in self.terms:
             term = term.simplify()
             d[term.ops] += term.coeff
-        return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr))
+        return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr) if d[k])
 
 def ising_bit(n):
     return 0.5 - 0.5*Z[n]

@@ -75,3 +75,6 @@ def test_radd():
     assert X[0]*Z[0] + X[0] == X[0] + X[0]*Z[0]
     assert X[0]*Z[0] + 123 == 123 + X[0]*Z[0]
     assert X[0] + 123 == 123 + X[0]
+
+def test_simplify1():
+    assert (Z[0] + 0*X[1]).simplify() == Z[0].to_expr()
