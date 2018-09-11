@@ -7,6 +7,8 @@ DEFAULT_GATE_SET = {
     "y": gate.YGate,
     "z": gate.ZGate,
     "h": gate.HGate,
+    "t": gate.TGate,
+    "s": gate.SGate,
     "cz": gate.CZGate,
     "cx": gate.CXGate,
     "cnot": gate.CXGate,

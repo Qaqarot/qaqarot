@@ -20,11 +20,10 @@ class XGate:
         n_qubits = helper["n_qubits"]
         i = helper["indices"]
         for target in slicing(targets, n_qubits):
-            #newq = np.zeros_like(qubits)
-            #newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
-            #newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
-            #qubits = newq
-            qubits = qubits.reshape((2,)*n_qubits)[(slice(None),) * (n_qubits - target - 1) + (slice(None, None, -1),) + (slice(None),) * (target - 1)].reshape(-1)
+            newq = np.zeros_like(qubits)
+            newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
+            newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
+            qubits = newq
         return qubits
 
     def to_qasm(self, helper, targets):
@@ -211,6 +210,44 @@ class RZGate:
         theta = self.theta
         for target in slicing(targets, n_qubits):
             qasm.append("rz({}) q[{}];".format(theta, target))
+        return qasm
+
+class TGate:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, targets):
+        sqrt2_inv = 1 / np.sqrt(2)
+        factor = complex(sqrt2_inv, sqrt2_inv)
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        for target in slicing(targets, n_qubits):
+            qubits[(i & (1 << target)) != 0] *= factor
+        return qubits
+
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("t q[{}];".format(target))
+        return qasm
+
+class SGate:
+    def __init__(self):
+        pass
+
+    def apply(self, helper, qubits, targets):
+        n_qubits = helper["n_qubits"]
+        i = helper["indices"]
+        for target in slicing(targets, n_qubits):
+            qubits[(i & (1 << target)) != 0] *= 1.j
+        return qubits
+
+    def to_qasm(self, helper, targets):
+        n_qubits = helper["n_qubits"]
+        qasm = []
+        for target in slicing(targets, n_qubits):
+            qasm.append("s q[{}];".format(target))
         return qasm
 
 class Measurement:

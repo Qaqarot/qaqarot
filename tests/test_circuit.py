@@ -51,6 +51,12 @@ def test_rz2():
         Circuit().h[0,1].rz(np.pi / 3)[:].run()
     )
 
+def test_tgate():
+    assert is_vec_same(Circuit().t[0].run(), Circuit().rz(np.pi / 4)[0].run())
+
+def test_sgate():
+    assert is_vec_same(Circuit().s[0].run(), Circuit().rz(np.pi / 2)[0].run())
+
 def test_rotation1():
     assert is_vec_same(
         Circuit().ry(-np.pi / 2)[0].rz(np.pi / 6)[0].ry(np.pi / 2)[0].run(),
