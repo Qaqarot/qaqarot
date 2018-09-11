@@ -563,5 +563,5 @@ class Expr(_ExprTuple):
             d[term.ops] += term.coeff
         return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr) if d[k])
 
-def ising_bit(n):
+def qubo_bit(n):
     return 0.5 - 0.5*Z[n]
