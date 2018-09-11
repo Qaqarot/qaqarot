@@ -35,8 +35,21 @@ class Circuit:
             return _GateWrapper(self, name, self.gate_set[name])
         raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
 
-    def __reversed__(self):
-        return Circuit(self.n_qubits, self.ops[::-1], self.gate_set.copy())
+    def __add__(self, other):
+        if not isinstance(other, Circuit):
+            return NotImplemented
+        c = self.copy()
+        c += other
+        return c
+
+    def __iadd__(self, other):
+        if not isinstance(other, Circuit):
+            return NotImplemented
+        if self.gate_set != other.gate_set:
+            raise ValueError("Cannot connect the circuits between different gate set.")
+        self.ops += other.ops
+        self.n_qubits = max(self.n_qubits, other.n_qubits)
+        return self
 
     def copy(self, copy_cache=True, copy_history=False):
         copied = Circuit(self.n_qubits, self.ops.copy(), self.gate_set.copy())

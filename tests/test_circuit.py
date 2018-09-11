@@ -152,3 +152,48 @@ def test_cache_then_append():
     c.h[0]
     c.run()
     assert is_vec_same(c.run(), Circuit().x[0].h[0].run())
+
+def test_concat_circuit1():
+    c1 = Circuit()
+    c1.h[0]
+    c1.run()
+    c2 = Circuit()
+    c2.h[1]
+    c2.run()
+    c1 += c2
+    assert is_vec_same(c1.run(), Circuit().h[0].h[1].run())
+
+def test_concat_circuit2():
+    c1 = Circuit()
+    c1.h[1]
+    c1.run()
+    c2 = Circuit()
+    c2.h[0]
+    c2.run()
+    c1 += c2
+    assert is_vec_same(c1.run(), Circuit().h[1].h[0].run())
+
+def test_concat_circuit3():
+    c1 = Circuit()
+    c1.x[0]
+    c2 = Circuit()
+    c2.h[0]
+    c1 += c2
+    assert is_vec_same(c1.run(), Circuit().x[0].h[0].run())
+    c1 = Circuit()
+    c1.h[0]
+    c2 = Circuit()
+    c2.x[0]
+    c1 += c2
+    assert is_vec_same(c1.run(), Circuit().h[0].x[0].run())
+
+def test_concat_circuit4():
+    c1 = Circuit()
+    c1.x[0]
+    c2 = Circuit()
+    c2.h[0]
+    c = c1 + c2
+    c.run()
+    assert is_vec_same(c.run(), Circuit().x[0].h[0].run())
+    assert is_vec_same(c1.run(), Circuit().x[0].run())
+    assert is_vec_same(c2.run(), Circuit().h[0].run())
