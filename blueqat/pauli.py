@@ -379,14 +379,14 @@ class Expr(_ExprTuple):
         if num:
             return Expr.from_term(Term((), num))
         else:
-            return Expr(())
+            return Expr.zero()
 
     @staticmethod
     def from_term(term):
         if term.coeff:
             return Expr((term,))
         else:
-            return Expr(())
+            return Expr.zero()
 
     @staticmethod
     def from_terms_iter(terms):
@@ -398,6 +398,10 @@ class Expr(_ExprTuple):
     @staticmethod
     def from_terms_dict(terms_dict):
         return Expr(tuple(Term(k, v) for k, v in terms_dict.items() if v))
+
+    @staticmethod
+    def zero():
+        return Expr(())
 
     @property
     def is_identity(self):

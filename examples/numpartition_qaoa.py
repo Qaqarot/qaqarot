@@ -11,7 +11,7 @@ def numpartition_qaoa(n_step, nums, minimizer=None, sampler=None):
     :param nums: The edges list of the graph.
     :returns Vqe object
     """
-    hamiltonian = pauli.Expr.from_number(0.0)
+    hamiltonian = pauli.Expr.zero()
     for i, x in enumerate(nums):
         hamiltonian += pauli.Z[i] * x
     hamiltonian = (hamiltonian ** 2).simplify()
