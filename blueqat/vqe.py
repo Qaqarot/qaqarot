@@ -35,10 +35,10 @@ class QaoaAnsatz:
         gammas = params[self.step:]
         for beta, gamma in zip(betas, gammas):
             beta *= np.pi
-            gamma *= np.pi
+            gamma *= 2 * np.pi
             for evo in self.time_evolutions:
-                evo(c, beta)
-            c.rx(gamma)[:]
+                evo(c, gamma)
+            c.rx(beta)[:]
         return c
 
     def get_objective(self, sampler):
@@ -84,8 +84,16 @@ class Vqe:
         self.sampler = sampler or non_sampling_sampler
         self.result = VqeResult()
 
-    def run(self):
+    def run(self, verbose=False):
         objective = self.ansatz.get_objective(self.sampler)
+        if verbose:
+            def verbose_objective(objective):
+                def f(params):
+                    val = objective(params)
+                    print("params:", params, "val:", val)
+                    return val
+                return f
+            objective = verbose_objective(objective)
         params = self.minimizer(objective, self.ansatz.n_params())
         c = self.ansatz.get_circuit(params)
         self.result.params = params
@@ -153,6 +161,12 @@ def expect(qubits, meas):
 
 def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
+    meas = tuple(meas)
+    if len(meas) == circuit.n_qubits and meas == tuple(range(circuit.n_qubits)):
+        qubits = circuit.run()
+        probs = (qubits.conjugate() * qubits).real
+        return {tuple(map(int, prod[::-1])): val \
+                for prod, val in zip(itertools.product("01", repeat=circuit.n_qubits), probs) if val}
     return expect(circuit.run(), meas)
 
 def get_measurement_sampler(n_sample):
