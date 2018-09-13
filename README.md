@@ -28,3 +28,6 @@ print(c.last_result()) # => (1, 1)
 ```bash
 python examples/maxcut_qaoa.py
 ```
+
+## Author
+
