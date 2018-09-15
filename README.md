@@ -31,3 +31,7 @@ python examples/maxcut_qaoa.py
 
 ## Author
 
+## Disclaimer
+
+Copyright 2018 The Blueqat Developers.
+
