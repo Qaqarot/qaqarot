@@ -46,6 +46,7 @@ Maxcut QAOA
 Author
 ======
 Takumi Kato (MDR Inc.)
+Yuichiro Minato (MDR Inc.)
 
 Disclaimer
 ==========
