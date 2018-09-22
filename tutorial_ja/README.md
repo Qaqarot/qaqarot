@@ -6,7 +6,7 @@ Blueqat日本語チュートリアル
 
 目次
 --------------------
-1.
-2.
-3.<a href="tutorial003_basic_gates.ipynb">基本的なゲートの応用</a>
+1.  
+2.  
+3.<a href="tutorial003_basic_gates.ipynb">基本的なゲートの応用</a>  
 4.<a href="tutorial004_K_from_Nqubit.ipynb">組みあわ最適化問題でN量子ビットからK量子ビットを選ぶ</a> 
