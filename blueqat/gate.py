@@ -1,8 +1,27 @@
-import numpy as np
-import random
-import math
+"""
+`gate` module implements quantum gate operations.
+This module is internally used.
+"""
 
-class IGate:
+import math
+import random
+from abc import ABC, abstractmethod
+import numpy as np
+
+class Gate(ABC):
+    """Abstract quantum gate class."""
+    @abstractmethod
+    def apply(self, helper, qubits, targets):
+        """Apply the gate. This method is called internally."""
+        pass
+
+    @abstractmethod
+    def to_qasm(self, helper, targets):
+        """Returns OpenQASM. This method is called internally."""
+        pass
+
+class IGate(Gate):
+    """Identity Gate"""
     def __init__(self):
         pass
 
@@ -12,7 +31,8 @@ class IGate:
     def to_qasm(self, helper, targets):
         return []
 
-class XGate:
+class XGate(Gate):
+    """Pauli's X Gate"""
     def __init__(self):
         pass
 
@@ -34,7 +54,8 @@ class XGate:
         return qasm
 
 
-class YGate:
+class YGate(Gate):
+    """Pauli's Y Gate"""
     def __init__(self):
         pass
 
@@ -55,7 +76,8 @@ class YGate:
             qasm.append("y q[{}];".format(target))
         return qasm
 
-class ZGate:
+class ZGate(Gate):
+    """Pauli's Z Gate"""
     def __init__(self):
         pass
 
@@ -73,7 +95,8 @@ class ZGate:
             qasm.append("z q[{}];".format(target))
         return qasm
 
-class HGate:
+class HGate(Gate):
+    """Hadamard Gate"""
     def __init__(self):
         pass
 
@@ -95,7 +118,8 @@ class HGate:
             qasm.append("h q[{}];".format(target))
         return qasm
 
-class CZGate:
+class CZGate(Gate):
+    """Control-Z gate"""
     def __init__(self):
         pass
 
@@ -113,7 +137,8 @@ class CZGate:
             qasm.append("cz q[{}],q[{}];".format(control, target))
         return qasm
 
-class CXGate:
+class CXGate(Gate):
+    """Control-X (CNOT) Gate"""
     def __init__(self):
         pass
 
@@ -134,7 +159,8 @@ class CXGate:
             qasm.append("cx q[{}],q[{}];".format(control, target))
         return qasm
 
-class RXGate:
+class RXGate(Gate):
+    """Rotate-X gate"""
     def __init__(self, theta):
         self.theta = theta
 
@@ -163,7 +189,8 @@ class RXGate:
             qasm.append("rx({}) q[{}];".format(theta, target))
         return qasm
 
-class RYGate:
+class RYGate(Gate):
+    """Rotate-Y gate"""
     def __init__(self, theta):
         self.theta = theta
 
@@ -192,7 +219,8 @@ class RYGate:
             qasm.append("ry({}) q[{}];".format(theta, target))
         return qasm
 
-class RZGate:
+class RZGate(Gate):
+    """Rotate-Z gate"""
     def __init__(self, theta):
         self.theta = theta
 
@@ -212,7 +240,8 @@ class RZGate:
             qasm.append("rz({}) q[{}];".format(theta, target))
         return qasm
 
-class TGate:
+class TGate(Gate):
+    """T ($\\pi/8$) gate"""
     def __init__(self):
         pass
 
@@ -232,7 +261,8 @@ class TGate:
             qasm.append("t q[{}];".format(target))
         return qasm
 
-class SGate:
+class SGate(Gate):
+    """S gate"""
     def __init__(self):
         pass
 
@@ -250,7 +280,8 @@ class SGate:
             qasm.append("s q[{}];".format(target))
         return qasm
 
-class Measurement:
+class Measurement(Gate):
+    """Measurement gate"""
     no_cache = True
     def __init__(self):
         pass
@@ -278,7 +309,8 @@ class Measurement:
             qasm.append("measure q[{}] -> c[{}];".format(target, target))
         return qasm
 
-class DebugDisplay:
+class DebugDisplay(Gate):
+    """For debugging."""
     def __init__(self, *args, **kwargs):
         self.ctor_args = (args, kwargs)
 
@@ -296,6 +328,7 @@ class DebugDisplay:
         return []
 
 def slicing_singlevalue(arg, length):
+    """Internally used."""
     if isinstance(arg, slice):
         start, stop, step = arg.indices(length)
         i = start
@@ -317,6 +350,7 @@ def slicing_singlevalue(arg, length):
         yield i
 
 def slicing(args, length):
+    """Internally used."""
     if isinstance(args, tuple):
         for arg in args:
             yield from slicing_singlevalue(arg, length)
@@ -324,6 +358,7 @@ def slicing(args, length):
         yield from slicing_singlevalue(args, length)
 
 def qubit_pairs(args, length):
+    """Internally used."""
     if not isinstance(args, tuple):
         raise ValueError("Control and target qubits pair(s) are required.")
     if len(args) != 2:
@@ -338,6 +373,7 @@ def qubit_pairs(args, length):
     return zip(controls, targets)
 
 def get_maximum_index(indices):
+    """Internally used."""
     def _maximum_idx_single(idx):
         if isinstance(idx, slice):
             start = -1
