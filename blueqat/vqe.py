@@ -129,26 +129,22 @@ def expect(qubits, meas):
 
         p_zero = (qb[(i & (1 << m)) == 0].T.conjugate() @ qb[(i & (1 << m)) == 0]).real
 
-        try:
+        if p_zero > 0.0000001:
             factor = 1.0 / np.sqrt(p_zero)
-            if not np.isfinite(factor):
-                raise ZeroDivisionError
             qb_zero = qb.copy()
             qb_zero[(i & (1 << m)) != 0] = 0.0
             qb_zero *= factor
             d[bits[:-1] + "0"] = qb_zero, p * p_zero
-        except ZeroDivisionError:
+        else:
             d[bits[:-1] + "0"] = qb, 0.0
 
-        try:
+        if 1.0 - p_zero > 0.0000001:
             factor = 1.0 / np.sqrt(1.0 - p_zero)
-            if not np.isfinite(factor):
-                raise ZeroDivisionError
             qb_one = qb.copy()
             qb_one[(i & (1 << m)) == 0] = 0.0
             qb_one *= factor
             d[bits[:-1] + "1"] = qb_one, p * (1.0 - p_zero)
-        except ZeroDivisionError:
+        else:
             d[bits[:-1] + "1"] = qb, 0.0
         return d[bits]
 
@@ -172,10 +168,11 @@ def non_sampling_sampler(circuit, meas):
 def get_measurement_sampler(n_sample):
     """Returns a function which get the expectations by sampling the measured circuit"""
     def sampling_by_measurement(circuit, meas):
-        circuit.measure[tuple(meas)]
+        meas = tuple(meas)
+        circuit.measure[meas]
         for _ in range(n_sample):
             circuit.run()
-        counter = Counter(circuit.run_history)
+        counter = Counter(tuple(reg[m] for m in meas) for reg in circuit.run_history)
         return {k: v / n_sample for k, v in counter.items()}
     return sampling_by_measurement
 
@@ -186,5 +183,40 @@ def get_state_vector_sampler(n_sample):
         e = expect(circuit.run(), meas)
         bits, probs = zip(*e.items())
         dists = np.random.multinomial(n_sample, probs) / n_sample
-        return dict(zip(tuple(map(int, bits)), dists))
+        return dict(zip(tuple(bits), dists))
     return sampling_by_measurement
+
+def get_qiskit_sampler(execute_args=None, api_args=None):
+    """Returns a function which get the expectation by sampling via Qiskit.
+
+    This function requires `qiskit` module.
+    """
+    try:
+        import qiskit
+    except ImportError:
+        raise ImportError("blueqat.vqe.get_qiskit_sampler() requires qiskit. Please install before call this function.")
+    if execute_args is None:
+        execute_args = {}
+    try:
+        shots = execute_args['shots']
+    except KeyError:
+        execute_args['shots'] = shots = 1024
+    qp = qiskit.QuantumProgram()
+    if api_args:
+        qp.set_api(**api_args)
+
+    def reduce_bits(bits, meas):
+        bits = [int(x) for x in bits[::-1]]
+        return tuple(bits[m] for m in meas)
+
+    def sampling(circuit, meas):
+        meas = tuple(meas)
+        circuit.measure[meas]
+        qasm = circuit.to_qasm()
+        qk_circuit = qiskit.load_qasm_string(qasm)
+        qp.add_circuit("blueqat_vqe", qk_circuit)
+        result = qp.execute(**execute_args)
+        qp.destroy_circuit("blueqat_vqe")
+        counts = Counter({reduce_bits(bits, meas): val for bits, val in result.get_counts().items()})
+        return {k: v / shots for k, v in counts.items()}
+    return sampling
