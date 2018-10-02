@@ -10,3 +10,4 @@ Blueqat日本語チュートリアル
 2.簡単なゲート回路を実行してみる  
 3.<a href="tutorial003_basic_gates.ipynb">基本的なゲートの応用</a>  
 4.<a href="tutorial004_K_from_Nqubit.ipynb">組みあわせ最適化問題でN量子ビットからK量子ビットを選ぶ</a> 
+5.<a href="tutorial005_QUBO_to_Pauli.ipynb">QUBOを量子ゲートモデルシミュレータに自動変換</a>
