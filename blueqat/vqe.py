@@ -186,7 +186,7 @@ def get_state_vector_sampler(n_sample):
         return dict(zip(tuple(bits), dists))
     return sampling_by_measurement
 
-def get_qiskit_sampler(execute_args=None, api_args=None):
+def get_qiskit_sampler(**execute_kwargs):
     """Returns a function which get the expectation by sampling via Qiskit.
 
     This function requires `qiskit` module.
@@ -195,15 +195,11 @@ def get_qiskit_sampler(execute_args=None, api_args=None):
         import qiskit
     except ImportError:
         raise ImportError("blueqat.vqe.get_qiskit_sampler() requires qiskit. Please install before call this function.")
-    if execute_args is None:
-        execute_args = {}
     try:
-        shots = execute_args['shots']
+        shots = execute_kwargs['shots']
     except KeyError:
-        execute_args['shots'] = shots = 1024
+        execute_kwargs['shots'] = shots = 1024
     qp = qiskit.QuantumProgram()
-    if api_args:
-        qp.set_api(**api_args)
 
     def reduce_bits(bits, meas):
         bits = [int(x) for x in bits[::-1]]
@@ -215,8 +211,9 @@ def get_qiskit_sampler(execute_args=None, api_args=None):
         qasm = circuit.to_qasm()
         qk_circuit = qiskit.load_qasm_string(qasm)
         qp.add_circuit("blueqat_vqe", qk_circuit)
-        result = qp.execute(**execute_args)
+        result = qp.execute(**execute_kwargs)
         qp.destroy_circuit("blueqat_vqe")
         counts = Counter({reduce_bits(bits, meas): val for bits, val in result.get_counts().items()})
         return {k: v / shots for k, v in counts.items()}
+
     return sampling
