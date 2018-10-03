@@ -45,7 +45,8 @@ Maxcut QAOA
 
 Tutorial
 ======
-日本語
+日本語  
+
 <a href="https://github.com/mdrft/Blueqat/tree/master/tutorial_ja">https://github.com/mdrft/Blueqat/tree/master/tutorial_ja</a>
 
 Author
