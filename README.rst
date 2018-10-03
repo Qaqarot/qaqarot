@@ -50,8 +50,8 @@ https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
 
 Author
 ======
-Takumi Kato (MDR)
-Yuichiro Minato (MDR)
+Takumi Kato (MDR),
+<a href="https://github.com/minatoyuichiro">Yuichiro Minato</a>(MDR)
 
 Disclaimer
 ==========
