@@ -43,10 +43,15 @@ Maxcut QAOA
      | x |
      {1}---{2}""".format(*result.most_common()[0][0]))
 
+Tutorial
+======
+日本語
+<a href="https://github.com/mdrft/Blueqat/tree/master/tutorial_ja">https://github.com/mdrft/Blueqat/tree/master/tutorial_ja</a>
+
 Author
 ======
-Takumi Kato (MDR Inc.)
-Yuichiro Minato (MDR Inc.)
+Takumi Kato (MDR)
+Yuichiro Minato (MDR)
 
 Disclaimer
 ==========
