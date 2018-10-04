@@ -45,12 +45,13 @@ Maxcut QAOA
 
 Tutorial
 ======
-日本語  
+日本語
+
 https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
 
 Author
 ======
-Takumi Kato (MDR),[Yuichiro Minato](https://github.com/minatoyuichiro)(MDR)
+Takumi Kato (MDR),Yuichiro Minato(MDR)
 
 Disclaimer
 ==========
