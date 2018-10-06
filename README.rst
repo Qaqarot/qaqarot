@@ -34,6 +34,7 @@ Circuit
 
 Method Chain
 =======
+
 ::
     # write as chain
     Circuit().h[0].x[0].z[0]
@@ -45,6 +46,7 @@ Method Chain
 
 Slice
 =======
+
 ::
     Circuit().z[1:3] # Zgate on 1,2
     Circuit().x[:3] # Xgate on (0, 1, 2)
@@ -54,24 +56,28 @@ Slice
 
 Rotation Gate
 =======
+
 ::
     Circuit().rz(math.pi / 4)[0]
 ::
 
 Measurement
 =======
+
 ::
     Circuit().m[0]
 ::
 
 Run()
 =======
+
 ::
     Circuit().h[0].cx[0,1].run()
 ::
 
 last_result() Method
 =======
+
 ::
     c = Circuit().h[0].cx[0,1].m[0]
     c.run() # array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
