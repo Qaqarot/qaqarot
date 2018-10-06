@@ -82,6 +82,38 @@ last_result() Method
     c.run() # array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
     c.last_result() # (1, 0)
 
+Hamiltonian
+=======
+
+::
+
+    from blueqat.pauli import *
+
+    hamiltonian1 = (1.23 * Z[0] + 4.56 * X[1] * Z[2]) ** 2
+    hamiltonian2 = (2.46 * Y[0] + 5.55 * Z[1] * X[2] * X[1]) ** 2
+    hamiltonian = hamiltonian1 + hamiltonian2
+    print(hamiltonian)
+
+simplify the hamiltonian
+
+::
+    hamiltonian = hamiltonian.simplify() # 無駄な演算子を省き、シンプルにする
+    print(hamiltonian)
+
+VQE
+=======
+
+::
+
+    from blueqat import vqe
+    from blueqat.pauli import qubo_bit as q
+
+    hamiltonian = -3*q(0)-3*q(1)-3*q(2)-3*q(3)-3*q(4)+2*q(0)*q(1)+2*q(0)*q(2)+2*q(0)*q(3)+2*q(0)*q(4)+2*q(1)*q(2)+2*q(1)*q(3)+2*q(1)*q(4)+2*q(2)*q(3)+2*q(2)*q(4)+2*q(3)*q(4)
+    step = 2
+
+    result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run() # VQEこれだけ
+    print(result.most_common(12))
+
 Example
 =======
 
