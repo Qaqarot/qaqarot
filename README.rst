@@ -1,3 +1,5 @@
+.. image:: MDR_Blueqat_color.png
+
 =======
 blueqat
 =======
