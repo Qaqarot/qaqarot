@@ -121,7 +121,7 @@ If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the
 
 ::
 
-hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
+    hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
 
 
 
