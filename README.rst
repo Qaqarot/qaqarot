@@ -99,6 +99,7 @@ Hamiltonian
 simplify the hamiltonian
 
 ::
+
     hamiltonian = hamiltonian.simplify() # 無駄な演算子を省き、シンプルにする
     print(hamiltonian)
 
