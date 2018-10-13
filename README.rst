@@ -127,14 +127,15 @@ Blueqat to Qiskit
 =======
 
 ::
+
     qiskit.register(APItoken)
     sampler = blueqat.vqe.get_qiskit_sampler(backend="backend name")
     result = blueqat.vqe.Vqe(QaoaAnsatz(...), sampler=sampler).run(verbose=True)
 
 Blueqat to QASM
 =======
-
 ::
+
     Circuit.to_qasm()
     
     #OPENQASM 2.0;
