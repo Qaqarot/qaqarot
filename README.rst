@@ -117,6 +117,14 @@ VQE
     result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run() # VQEこれだけ
     print(result.most_common(12))
 
+If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the equation
+
+::
+
+hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
+
+
+
 Example
 =======
 
