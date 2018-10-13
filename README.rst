@@ -6,6 +6,10 @@ blueqat
 
 A quantum gate simulator
 
+Version
+======
+0.1.9
+
 Install
 =======
 ::
