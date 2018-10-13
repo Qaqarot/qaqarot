@@ -186,7 +186,7 @@ def get_state_vector_sampler(n_sample):
         return dict(zip(tuple(bits), dists))
     return sampling_by_measurement
 
-def get_qiskit_sampler(**execute_kwargs):
+def get_qiskit_sampler(backend, **execute_kwargs):
     """Returns a function which get the expectation by sampling via Qiskit.
 
     This function requires `qiskit` module.
@@ -199,7 +199,6 @@ def get_qiskit_sampler(**execute_kwargs):
         shots = execute_kwargs['shots']
     except KeyError:
         execute_kwargs['shots'] = shots = 1024
-    qp = qiskit.QuantumProgram()
 
     def reduce_bits(bits, meas):
         bits = [int(x) for x in bits[::-1]]
@@ -210,9 +209,7 @@ def get_qiskit_sampler(**execute_kwargs):
         circuit.measure[meas]
         qasm = circuit.to_qasm()
         qk_circuit = qiskit.load_qasm_string(qasm)
-        qp.add_circuit("blueqat_vqe", qk_circuit)
-        result = qp.execute(**execute_kwargs)
-        qp.destroy_circuit("blueqat_vqe")
+        result = qiskit.execute(qk_circuit, backend, **execute_kwargs).result()
         counts = Counter({reduce_bits(bits, meas): val for bits, val in result.get_counts().items()})
         return {k: v / shots for k, v in counts.items()}
 
