@@ -8,7 +8,7 @@ from .circuit import Circuit
 
 class QaoaAnsatz:
     def __init__(self, hamiltonian, step=1, init_circuit=None):
-        self.hamiltonian = hamiltonian.simplify()
+        self.hamiltonian = hamiltonian.to_expr().simplify()
         if not self.check_hamiltonian():
             raise ValueError("Hamiltonian terms are not commutable")
 
