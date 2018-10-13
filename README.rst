@@ -123,7 +123,25 @@ If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the
 
     hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
 
+Blueqat to Qiskit
+=======
 
+::
+    qiskit.register(APItoken)
+    sampler = blueqat.vqe.get_qiskit_sampler(backend="backend name")
+    result = blueqat.vqe.Vqe(QaoaAnsatz(...), sampler=sampler).run(verbose=True)
+
+Blueqat to QASM
+=======
+
+::
+    Circuit.to_qasm()
+    
+    #OPENQASM 2.0;
+    #include "qelib1.inc";
+    #qreg q[1];
+    #creg c[1];
+    #h q[0];
 
 Example
 =======
