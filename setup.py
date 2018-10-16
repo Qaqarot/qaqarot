@@ -13,7 +13,7 @@ setuptools.setup(
     author_email="kato@mdrft.com",
     description="Quantum gate simulator",
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/rst",
     url="https://github.com/mdrft/blueqat",
     license="Apache 2",
     packages=setuptools.find_packages(),
