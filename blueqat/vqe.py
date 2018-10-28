@@ -6,40 +6,14 @@ import numpy as np
 from scipy.optimize import minimize as scipy_minimizer
 from .circuit import Circuit
 
-class QaoaAnsatz:
-    def __init__(self, hamiltonian, step=1, init_circuit=None):
-        self.hamiltonian = hamiltonian.to_expr().simplify()
-        if not self.check_hamiltonian():
-            raise ValueError("Hamiltonian terms are not commutable")
-
-        self.step = step
+class AnsatzBase:
+    def __init__(self, hamiltonian, n_params):
+        self.hamiltonian = hamiltonian
+        self.n_params = n_params
         self.n_qubits = self.hamiltonian.max_n() + 1
-        if init_circuit:
-            self.init_circuit = init_circuit
-            if init_circuit.n_qubits > self.n_qubits:
-                self.n_qubits = init_circuit.n_qubits
-        else:
-            self.init_circuit = Circuit(self.n_qubits).h[:]
-        self.init_circuit.run() # To make a cache.
-        self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
-
-    def check_hamiltonian(self):
-        return self.hamiltonian.is_all_terms_commutable()
-
-    def n_params(self):
-        return self.step * 2
 
     def get_circuit(self, params):
-        c = self.init_circuit.copy()
-        betas = params[:self.step]
-        gammas = params[self.step:]
-        for beta, gamma in zip(betas, gammas):
-            beta *= np.pi
-            gamma *= 2 * np.pi
-            for evo in self.time_evolutions:
-                evo(c, gamma)
-            c.rx(beta)[:]
-        return c
+        raise NotImplementedError
 
     def get_objective(self, sampler):
         def objective(params):
@@ -59,8 +33,41 @@ class QaoaAnsatz:
                         val -= prob * meas.coeff
                     else:
                         val += prob * meas.coeff
-            return val
+            return val.real
         return objective
+
+class QaoaAnsatz(AnsatzBase):
+    def __init__(self, hamiltonian, step=1, init_circuit=None):
+        super().__init__(hamiltonian, step * 2)
+        self.hamiltonian = hamiltonian.to_expr().simplify()
+        if not self.check_hamiltonian():
+            raise ValueError("Hamiltonian terms are not commutable")
+
+        self.step = step
+        self.n_qubits = self.hamiltonian.max_n() + 1
+        if init_circuit:
+            self.init_circuit = init_circuit
+            if init_circuit.n_qubits > self.n_qubits:
+                self.n_qubits = init_circuit.n_qubits
+        else:
+            self.init_circuit = Circuit(self.n_qubits).h[:]
+        self.init_circuit.run() # To make a cache.
+        self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
+
+    def check_hamiltonian(self):
+        return self.hamiltonian.is_all_terms_commutable()
+
+    def get_circuit(self, params):
+        c = self.init_circuit.copy()
+        betas = params[:self.step]
+        gammas = params[self.step:]
+        for beta, gamma in zip(betas, gammas):
+            beta *= np.pi
+            gamma *= 2 * np.pi
+            for evo in self.time_evolutions:
+                evo(c, gamma)
+            c.rx(beta)[:]
+        return c
 
 class VqeResult:
     def __init__(self, params=None, circuit=None, probs=None):
@@ -86,6 +93,7 @@ class Vqe:
 
     def run(self, verbose=False):
         objective = self.ansatz.get_objective(self.sampler)
+        n_qubits = self.ansatz.n_qubits
         if verbose:
             def verbose_objective(objective):
                 def f(params):
@@ -94,10 +102,10 @@ class Vqe:
                     return val
                 return f
             objective = verbose_objective(objective)
-        params = self.minimizer(objective, self.ansatz.n_params())
+        params = self.minimizer(objective, self.ansatz.n_params)
         c = self.ansatz.get_circuit(params)
         self.result.params = params
-        self.result.probs = self.sampler(c, range(self.ansatz.n_qubits))
+        self.result.probs = self.sampler(c, range(n_qubits))
         self.result.circuit = c
         return self.result
 
