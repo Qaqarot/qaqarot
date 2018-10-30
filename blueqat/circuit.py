@@ -1,5 +1,7 @@
+import warnings
 import numpy as np
 from . import gate
+from .backends.numpy_backend import NumPyBackend
 
 DEFAULT_GATE_SET = {
     "i": gate.IGate,
@@ -19,7 +21,6 @@ DEFAULT_GATE_SET = {
     "u1": gate.RZGate,
     "measure": gate.Measurement,
     "m": gate.Measurement,
-    "dbg": gate.DebugDisplay,
 }
 DEFAULT_DTYPE = np.complex128
 
@@ -27,10 +28,11 @@ class Circuit:
     def __init__(self, n_qubits=0, ops=None, gate_set=None):
         self.gate_set = gate_set or DEFAULT_GATE_SET.copy()
         self.ops = ops or []
-        self.n_qubits = n_qubits
-        self.run_history = []
         self.cache = None
         self.cache_idx = -1
+        self._backend = NumPyBackend()
+        if n_qubits > 0:
+            self.i[n_qubits - 1]
 
     def __getattr__(self, name):
         if name in self.gate_set:
@@ -50,47 +52,19 @@ class Circuit:
         if self.gate_set != other.gate_set:
             raise ValueError("Cannot connect the circuits between different gate set.")
         self.ops += other.ops
-        self.n_qubits = max(self.n_qubits, other.n_qubits)
         return self
 
-    def copy(self, copy_cache=True, copy_history=False):
+    def copy(self, copy_cache=True, copy_history=None):
         copied = Circuit(self.n_qubits, self.ops.copy(), self.gate_set.copy())
         if copy_cache and self.cache is not None:
             copied.cache = self.cache.copy()
             copied.cache_idx = self.cache_idx
-        if copy_history:
-            copied.run_history = self.run_history.copy()
+        if copy_history is not None:
+            warnings.warn("copy_history is deprecated", DeprecationWarning)
         return copied
 
-    def run(self):
-        n_qubits = self.n_qubits
-        if self.cache is not None:
-            if len(self.cache) == 2**n_qubits:
-                qubits = self.cache.copy()
-            else:
-                self.cache = None
-                self.cache_idx = -1
-        if self.cache is None:
-            qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-            qubits[0] = 1.0
-        helper = {
-            "n_qubits": n_qubits,
-            "indices": np.arange(2**n_qubits, dtype=np.uint32),
-            "cregs": [0] * n_qubits,
-        }
-        save_cache = True
-        for i, op in enumerate(self.ops[self.cache_idx + 1:], start=self.cache_idx + 1):
-            gate = op.gate(*op.args, **op.kwargs)
-            qubits = gate.apply(helper, qubits, op.target)
-            if save_cache:
-                if hasattr(gate, "no_cache") and gate.no_cache:
-                    save_cache = False
-                else:
-                    self.cache = qubits.copy()
-                    self.cache_idx = i
-        self.run_history.append(tuple(helper["cregs"]))
-        _ignore_globals(qubits)
-        return qubits
+    def run(self, *args, **kwargs):
+        return self._backend.run(self.ops, args, kwargs)
 
     def to_qasm(self, output_prologue=True):
         n_qubits = self.n_qubits
@@ -107,15 +81,25 @@ class Circuit:
         else:
             qasm = []
         for op in self.ops:
-            gate = op.gate(*op.args, **op.kwargs)
-            qasm += gate.to_qasm(helper, op.target)
+            qasm += op.to_qasm(helper, op.targets)
         return "\n".join(qasm)
 
     def last_result(self):
+        # Too noisy...
+        #warnings.warn("last_result will be deprecated", DeprecationWarning)
         try:
-            return self.run_history[-1]
+            return self._backend.run_history[-1]
         except IndexError:
             raise ValueError("The Circuit has never been to run.")
+
+    @property
+    def n_qubits(self):
+        return gate.find_n_qubits(self.ops)
+
+    @property
+    def run_history(self):
+        warnings.warn("run_history will be deprecated", DeprecationWarning)
+        return self._backend.run_history
 
 class _GateWrapper:
     def __init__(self, circuit, name, gate):
@@ -133,8 +117,7 @@ class _GateWrapper:
 
     def __getitem__(self, args):
         self.target = args
-        self.circuit.n_qubits = max(gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
-        self.circuit.ops.append(self)
+        self.circuit.ops.append(self.gate(self.target, *self.args, **self.kwargs))
         return self.circuit
 
     def __str__(self):
@@ -147,10 +130,3 @@ class _GateWrapper:
         else:
             args_str = ""
         return self.name + args_str + " " + str(self.target)
-
-def _ignore_globals(qubits):
-    for i, q in enumerate(qubits):
-        if abs(q) > 0.0000001:
-            ang = abs(q) / q
-            qubits *= ang
-            return
