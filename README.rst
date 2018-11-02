@@ -7,7 +7,7 @@ blueqat
 A quantum gate simulator
 
 Version
-======
+=======
 0.1.9
 
 Install
@@ -37,7 +37,7 @@ Circuit
     c = Circuit(3) #3qubits
 
 Method Chain
-=======
+============
 
 ::
 
@@ -59,14 +59,14 @@ Slice
     Circuit().x[1, 2] # 1qubit gate with comma
 
 Rotation Gate
-=======
+===============
 
 ::
 
     Circuit().rz(math.pi / 4)[0]
 
 Measurement
-=======
+===============
 
 ::
 
@@ -80,7 +80,7 @@ Run()
     Circuit().h[0].cx[0,1].run()
 
 last_result() Method
-=======
+=======================
 
 ::
 
@@ -89,7 +89,7 @@ last_result() Method
     c.last_result() # (1, 0)
 
 Hamiltonian
-=======
+=======================
 
 ::
 
@@ -128,7 +128,7 @@ If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the
     hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
 
 Blueqat to Qiskit
-=======
+======================
 
 ::
 
@@ -137,7 +137,7 @@ Blueqat to Qiskit
     result = blueqat.vqe.Vqe(QaoaAnsatz(...), sampler=sampler).run(verbose=True)
 
 Blueqat to QASM
-=======
+======================
 ::
 
     Circuit.to_qasm()
@@ -176,7 +176,7 @@ Maxcut QAOA
      {1}---{2}""".format(*result.most_common()[0][0]))
 
 Tutorial
-======
+========
 日本語
 
 https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
