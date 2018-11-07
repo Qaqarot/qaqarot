@@ -2,6 +2,7 @@ import warnings
 import numpy as np
 from . import gate
 from .backends.numpy_backend import NumPyBackend
+from .backends.qasm_output_backend import QasmOutputBackend
 
 DEFAULT_GATE_SET = {
     "i": gate.IGate,
@@ -30,7 +31,10 @@ class Circuit:
         self.ops = ops or []
         self.cache = None
         self.cache_idx = -1
-        self._backend = NumPyBackend()
+        self._backends = {
+                "_default": NumPyBackend(),
+                "to_qasm": QasmOutputBackend(),
+        }
         if n_qubits > 0:
             self.i[n_qubits - 1]
 
@@ -64,31 +68,16 @@ class Circuit:
         return copied
 
     def run(self, *args, **kwargs):
-        return self._backend.run(self.ops, args, kwargs)
+        return self._backends["_default"].run(self.ops, args, kwargs)
 
-    def to_qasm(self, output_prologue=True):
-        n_qubits = self.n_qubits
-        helper = {
-            "n_qubits": n_qubits,
-        }
-        if output_prologue:
-            qasm = [
-                "OPENQASM 2.0;",
-                'include "qelib1.inc";',
-                "qreg q[{}];".format(n_qubits),
-                "creg c[{}];".format(n_qubits),
-            ]
-        else:
-            qasm = []
-        for op in self.ops:
-            qasm += op.to_qasm(helper, op.targets)
-        return "\n".join(qasm)
+    def to_qasm(self, *args, **kwargs):
+        return self._backends["to_qasm"].run(self.ops, args, kwargs)
 
     def last_result(self):
         # Too noisy...
         #warnings.warn("last_result will be deprecated", DeprecationWarning)
         try:
-            return self._backend.run_history[-1]
+            return self._backends["_default"].run_history[-1]
         except IndexError:
             raise ValueError("The Circuit has never been to run.")
 
@@ -99,7 +88,7 @@ class Circuit:
     @property
     def run_history(self):
         warnings.warn("run_history will be deprecated", DeprecationWarning)
-        return self._backend.run_history
+        return self._backends["_default"].run_history
 
 class _GateWrapper:
     def __init__(self, circuit, name, gate):

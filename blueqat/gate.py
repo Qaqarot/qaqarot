@@ -22,11 +22,6 @@ class Gate(ABC):
         """Returns alternative gates to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
 
-    @abstractmethod
-    def to_qasm(self, helper, targets):
-        """Returns OpenQASM. This method is called internally."""
-        pass
-
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
     def target_iter(self, n_qubits):
@@ -40,71 +35,32 @@ class TwoQubitGate(Gate):
 class IGate(OneQubitGate):
     """Identity Gate"""
     lowername = "i"
-    def to_qasm(self, helper, targets):
-        return []
-
     def fallback(self):
         return []
 
 class XGate(OneQubitGate):
     """Pauli's X Gate"""
     lowername = "x"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("x q[{}];".format(target))
-        return qasm
 
 class YGate(OneQubitGate):
     """Pauli's Y Gate"""
     lowername = "y"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("y q[{}];".format(target))
-        return qasm
 
 class ZGate(OneQubitGate):
     """Pauli's Z Gate"""
     lowername = "z"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("z q[{}];".format(target))
-        return qasm
 
 class HGate(OneQubitGate):
     """Hadamard Gate"""
     lowername = "h"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("h q[{}];".format(target))
-        return qasm
 
 class CZGate(TwoQubitGate):
     """Control-Z gate"""
     lowername = "cz"
-    def to_qasm(self, helper, args):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for control, target in qubit_pairs(args, n_qubits):
-            qasm.append("cz q[{}],q[{}];".format(control, target))
-        return qasm
 
 class CXGate(TwoQubitGate):
     """Control-X (CNOT) Gate"""
     lowername = "cx"
-    def to_qasm(self, helper, args):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for control, target in qubit_pairs(args, n_qubits):
-            qasm.append("cx q[{}],q[{}];".format(control, target))
-        return qasm
 
 class RXGate(OneQubitGate):
     """Rotate-X gate"""
@@ -113,28 +69,12 @@ class RXGate(OneQubitGate):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        theta = self.theta
-        for target in self.target_iter(n_qubits):
-            qasm.append("rx({}) q[{}];".format(theta, target))
-        return qasm
-
 class RYGate(OneQubitGate):
     """Rotate-Y gate"""
     lowername = "ry"
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, **kwargs)
         self.theta = theta
-
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        theta = self.theta
-        for target in self.target_iter(n_qubits):
-            qasm.append("ry({}) q[{}];".format(theta, target))
-        return qasm
 
 class RZGate(OneQubitGate):
     """Rotate-Z gate"""
@@ -143,43 +83,17 @@ class RZGate(OneQubitGate):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        theta = self.theta
-        for target in self.target_iter(n_qubits):
-            qasm.append("rz({}) q[{}];".format(theta, target))
-        return qasm
-
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("t q[{}];".format(target))
-        return qasm
 
 class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("s q[{}];".format(target))
-        return qasm
 
 class Measurement(OneQubitGate):
     """Measurement gate"""
     lowername = "measure"
-    def to_qasm(self, helper, targets):
-        n_qubits = helper["n_qubits"]
-        qasm = []
-        for target in self.target_iter(n_qubits):
-            qasm.append("measure q[{}] -> c[{}];".format(target, target))
-        return qasm
 
 def slicing_singlevalue(arg, length):
     """Internally used."""
