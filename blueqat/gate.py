@@ -12,6 +12,10 @@ class Gate(ABC):
     """Abstract quantum gate class."""
     lowername = None
 
+    @property
+    def uppername(self):
+        return self.lowername.upper()
+
     def __init__(self, targets, **kwargs):
         if self.lowername is None:
             raise ValueError(f"{self.__class__.__name__}.lowername is not defined.")
