@@ -97,8 +97,7 @@ class Circuit:
             backend.run(self.ops, *args, **kwargs)
 
     def last_result(self):
-        # Too noisy...
-        #warnings.warn("last_result will be deprecated", DeprecationWarning)
+        warnings.warn("last_result is deprecated", DeprecationWarning)
         try:
             return self._backends["run_with_numpy"].run_history[-1]
         except IndexError:
@@ -110,7 +109,7 @@ class Circuit:
 
     @property
     def run_history(self):
-        warnings.warn("run_history will be deprecated", DeprecationWarning)
+        warnings.warn("run_history is deprecated", DeprecationWarning)
         try:
             return self._backends["run_with_numpy"].run_history
         except KeyError:
