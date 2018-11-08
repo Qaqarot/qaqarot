@@ -6,11 +6,11 @@ from .backendbase import Backend
 
 class QasmOutputBackend(Backend):
     """Backend for OpenQASM output."""
-    def _parse_run_args(self, output_prologue=True, *args, **kwargs):
-        return { 'output_prologue': output_prologue }
-
     def _preprocess_run(self, gates, args, kwargs):
-        args = self._parse_run_args(*args, **kwargs)
+        def _parse_run_args(output_prologue=True, **_kwargs):
+            return { 'output_prologue': output_prologue }
+
+        args = _parse_run_args(*args, **kwargs)
         n_qubits = find_n_qubits(gates)
         if args['output_prologue']:
             qasmlist = [

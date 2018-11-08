@@ -1,5 +1,6 @@
 import math
 import random
+import warnings
 import numpy as np
 from ..gate import *
 from .backendbase import Backend
@@ -8,20 +9,36 @@ DEFAULT_DTYPE = np.complex128
 
 class _NumPyBackendContext:
     """This class is internally used in NumPyBackend"""
-    def __init__(self, n_qubits, cache, cache_idx, save_cache=True):
+    def __init__(self, n_qubits):
         self.n_qubits = n_qubits
-        if cache is not None:
-            self.qubits = cache.copy()
-        else:
-            self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-            self.qubits[0] = 1.0
-
+        self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
         self.indices = np.arange(2**n_qubits, dtype=np.uint32)
-        self.cregs = [0] * n_qubits
-        self.save_cache = save_cache
+        self.save_cache = True
+        self.shots_result = {}
+
+    def prepare(self, cache, cache_idx):
+        if cache is not None:
+            np.copyto(self.qubits, cache)
+        else:
+            self.qubits.fill(0.0)
+            self.qubits[0] = 1.0
+        self.cregs = [0] * self.n_qubits
+
+    def store_shot(self):
+        def to_str(cregs):
+            return ''.join(str(b) for b in cregs) 
+        key = to_str(self.cregs)
+        self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 class NumPyBackend(Backend):
     """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
+    __return_type = {
+            "statevector": lambda ctx: _ignore_globals(ctx.qubits),
+            "shots": lambda ctx: ctx.shots_result,
+            "statevector_and_shots": lambda ctx: (ctx.qubits, _ignore_globals(ctx.shots_result)),
+            "_inner_ctx": lambda ctx: ctx,
+    }
+    DEFAULT_SHOTS = 1024
 
     def __init__(self):
         self.cache = None
@@ -50,19 +67,46 @@ class NumPyBackend(Backend):
             self.__clear_cache()
             return
 
-    def _preprocess_run(self, gates, _args, _kwargs):
+    def run(self, gates, args, kwargs):
+        def __parse_run_args(shots=None, returns=None, **kwargs):
+            if returns is None:
+                if shots is None:
+                    returns = "statevector"
+                else:
+                    returns = "shots"
+            if returns not in self.__return_type.keys():
+                raise ValueError(f"Unknown returns type '{returns}'")
+            if shots is None:
+                if returns is "statevector" or "_inner_ctx":
+                    shots = 1
+                else:
+                    shots = self.DEFAULT_SHOTS
+            if returns == "statevector" and shots > 1:
+                warnings.warn("Both `shots` > 1 and `returns` = 'statevector' is specified. It's waste of time.")
+            return shots, returns
+
+        shots, returns = __parse_run_args(*args, **kwargs)
         n_qubits = find_n_qubits(gates)
+        gates = self._resolve_fallback(gates)
+
         self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
-        ctx = _NumPyBackendContext(n_qubits, self.cache, self.cache_idx)
-        return self._resolve_fallback(gates)[self.cache_idx + 1:], ctx
+        ctx = _NumPyBackendContext(n_qubits)
+
+        for _ in range(shots):
+            self._run(gates, (ctx,), None)
+
+        return self.__return_type[returns](ctx)
+
+    def _preprocess_run(self, gates, args, kwargs):
+        ctx = args[0]
+        ctx.prepare(self.cache, self.cache_idx)
+        return gates[self.cache_idx+1:], ctx
 
     def _postprocess_run(self, ctx):
-        if ctx.n_qubits:
+        if ctx.cregs:
             self.run_history.append(tuple(ctx.cregs))
-        return _ignore_globals(ctx.qubits)
-
-    def run(self, gates, args, kwargs):
-        return self._run(gates, args, kwargs)
+        ctx.store_shot()
+        return ctx
 
     def gate_x(self, gate, ctx):
         qubits = ctx.qubits
