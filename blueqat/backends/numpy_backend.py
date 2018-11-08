@@ -1,3 +1,4 @@
+from collections import Counter
 import math
 import random
 import warnings
@@ -14,7 +15,7 @@ class _NumPyBackendContext:
         self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
         self.indices = np.arange(2**n_qubits, dtype=np.uint32)
         self.save_cache = True
-        self.shots_result = {}
+        self.shots_result = Counter()
 
     def prepare(self, cache, cache_idx):
         if cache is not None:
@@ -35,7 +36,7 @@ class NumPyBackend(Backend):
     __return_type = {
             "statevector": lambda ctx: _ignore_globals(ctx.qubits),
             "shots": lambda ctx: ctx.shots_result,
-            "statevector_and_shots": lambda ctx: (ctx.qubits, _ignore_globals(ctx.shots_result)),
+            "statevector_and_shots": lambda ctx: (_ignore_globals(ctx.qubits), ctx.shots_result),
             "_inner_ctx": lambda ctx: ctx,
     }
     DEFAULT_SHOTS = 1024
