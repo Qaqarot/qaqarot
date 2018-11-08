@@ -197,9 +197,9 @@ def test_concat_circuit4():
 
 def test_switch_backend1():
     c = Circuit().x[0].h[0]
-    assert np.array_equal(c.run(), c.run_with_backend("run_with_numpy"))
+    assert np.array_equal(c.run(), c.run_with_backend("numpy"))
 
-    BlueqatGlobalSetting.set_default_backend("to_qasm")
+    BlueqatGlobalSetting.set_default_backend("qasm_output")
     assert c.run() == c.to_qasm()
 
     # Different instance of QasmOutputBackend is used.
@@ -208,5 +208,5 @@ def test_switch_backend1():
     assert c.run(output_prologue=False) == c.run_with_backend(QasmOutputBackend(), False)
     assert c.run(False) == c.run_with_backend(QasmOutputBackend(), output_prologue=False)
 
-    BlueqatGlobalSetting.set_default_backend("run_with_numpy")
+    BlueqatGlobalSetting.set_default_backend("numpy")
     assert c.run(5) == c.run_with_numpy(shots=5)

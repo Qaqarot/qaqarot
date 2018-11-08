@@ -26,6 +26,35 @@ class Gate(ABC):
         """Returns alternative gates to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
 
+    def _str_args(self):
+        """Returns printable string of args."""
+        return ""
+
+    def _str_targets(self):
+        """Returns printable string of targets."""
+        def _slice_to_str(obj):
+            if isinstance(obj, slice):
+                start = "" if obj.start is None else str(obj.start.__index__())
+                stop = "" if obj.stop is None else str(obj.stop.__index__())
+                if obj.step is None:
+                    return f"{start}:{stop}"
+                else:
+                    step = str(obj.step.__index__())
+                    return f"{start}:{stop}:{step}"
+            else:
+                return obj.__index__()
+
+        if isinstance(self.targets, tuple):
+            return f"[{', '.join(_slice_to_str(idx for idx in self.targets))}]"
+        else:
+            return f"[{_slice_to_str(self.targets)}]"
+
+
+    def __str__(self):
+        str_args = self._str_args()
+        str_targets = self._str_targets()
+        return f'{self.uppername}{str_args} {str_targets}'
+
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
     def target_iter(self, n_qubits):
@@ -73,6 +102,9 @@ class RXGate(OneQubitGate):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
+    def _str_args(self):
+        return f'({self.theta})'
+
 class RYGate(OneQubitGate):
     """Rotate-Y gate"""
     lowername = "ry"
@@ -80,12 +112,18 @@ class RYGate(OneQubitGate):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
+    def _str_args(self):
+        return f'({self.theta})'
+
 class RZGate(OneQubitGate):
     """Rotate-Z gate"""
     lowername = "rz"
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, **kwargs)
         self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
 
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
@@ -163,4 +201,5 @@ def get_maximum_index(indices):
         return _maximum_idx_single(indices)
 
 def find_n_qubits(gates):
+    """Find n_qubits from gates"""
     return max((get_maximum_index(g.targets) for g in gates), default=-1) + 1

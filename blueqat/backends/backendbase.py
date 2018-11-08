@@ -4,9 +4,18 @@ This module is internally used.
 """
 
 from abc import ABC, abstractmethod
+import copy
 
 class Backend(ABC):
     """Abstract quantum gate processor backend class."""
+    def copy(self):
+        """Returns (deep)copy of Backend.
+
+        Backend developer must support `copy` method.
+        If required, the developer can override this method.
+        """
+        return copy.deepcopy(self)
+
     def _preprocess_run(self, gates, args, kwargs):
         """Preprocess of backend run.
         Backend developer can override this function.
