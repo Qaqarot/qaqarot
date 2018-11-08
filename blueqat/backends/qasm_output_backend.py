@@ -26,9 +26,6 @@ class QasmOutputBackend(Backend):
     def _postprocess_run(self, ctx):
         return "\n".join(ctx[0])
 
-    def run(self, gates, args, kwargs):
-        return self._run(gates, args, kwargs)
-
     def _one_qubit_gate_noargs(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append(f"{gate.lowername} q[{idx}];")

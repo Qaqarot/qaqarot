@@ -67,7 +67,7 @@ class NumPyBackend(Backend):
             self.__clear_cache()
             return
 
-    def run(self, gates, args, kwargs):
+    def run(self, gates, *args, **kwargs):
         def __parse_run_args(shots=None, returns=None, **kwargs):
             if returns is None:
                 if shots is None:

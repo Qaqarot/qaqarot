@@ -49,7 +49,7 @@ class Backend(ABC):
         self._run_gates(gates, ctx)
         return self._postprocess_run(ctx)
 
-    def run(self, gates, args, kwargs):
+    def run(self, gates, *args, **kwargs):
         """Run the backend."""
         return self._run(gates, args, kwargs)
 

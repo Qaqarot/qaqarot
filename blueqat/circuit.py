@@ -4,7 +4,7 @@ from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
 
-DEFAULT_GATE_SET = {
+GATE_SET = {
     "i": gate.IGate,
     "x": gate.XGate,
     "y": gate.YGate,
@@ -23,11 +23,15 @@ DEFAULT_GATE_SET = {
     "measure": gate.Measurement,
     "m": gate.Measurement,
 }
-DEFAULT_DTYPE = np.complex128
+
+BACKENDS = {
+    "run_with_numpy": NumPyBackend,
+    "to_qasm": QasmOutputBackend,
+}
+DEFAULT_BACKEND_NAME = "run_with_numpy"
 
 class Circuit:
-    def __init__(self, n_qubits=0, ops=None, gate_set=None):
-        self.gate_set = gate_set or DEFAULT_GATE_SET.copy()
+    def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
         self.cache = None
         self.cache_idx = -1
@@ -38,10 +42,28 @@ class Circuit:
         if n_qubits > 0:
             self.i[n_qubits - 1]
 
+    def __get_backend(self, backend_name):
+        try:
+            return self._backends[backend_name]
+        except KeyError:
+            backend = BACKENDS.get(backend_name)
+            if backend is None:
+                raise ValueError(f"Backend {backend_name} doesn't exist.")
+        self._backends[backend_name] = backend()
+        return self._backends[backend_name]
+
+    def __backend_runner_wrapper(self, backend_name):
+        backend = self.__get_backend(backend_name)
+        def runner(*args, **kwargs):
+            return backend.run(self.ops, *args, **kwargs)
+        return runner
+
     def __getattr__(self, name):
-        if name in self.gate_set:
-            return _GateWrapper(self, name, self.gate_set[name])
-        raise AttributeError("'circuit' object has no attribute or gate '" + name + "'")
+        if name in GATE_SET:
+            return _GateWrapper(self, name, GATE_SET[name])
+        if name in BACKENDS:
+            return self.__backend_runner_wrapper(name)
+        raise AttributeError("'circuit' object has no attribute or gate or backend'" + name + "'")
 
     def __add__(self, other):
         if not isinstance(other, Circuit):
@@ -53,13 +75,11 @@ class Circuit:
     def __iadd__(self, other):
         if not isinstance(other, Circuit):
             return NotImplemented
-        if self.gate_set != other.gate_set:
-            raise ValueError("Cannot connect the circuits between different gate set.")
         self.ops += other.ops
         return self
 
     def copy(self, copy_cache=True, copy_history=None):
-        copied = Circuit(self.n_qubits, self.ops.copy(), self.gate_set.copy())
+        copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_cache and self.cache is not None:
             copied.cache = self.cache.copy()
             copied.cache_idx = self.cache_idx
@@ -68,16 +88,19 @@ class Circuit:
         return copied
 
     def run(self, *args, **kwargs):
-        return self._backends["_default"].run(self.ops, args, kwargs)
+        return self.__get_backend(DEFAULT_BACKEND_NAME).run(self.ops, *args, **kwargs)
 
-    def to_qasm(self, *args, **kwargs):
-        return self._backends["to_qasm"].run(self.ops, args, kwargs)
+    def run_with_backend(self, backend, *args, **kwargs):
+        if isinstance(backend, str):
+            self.__get_backend(backend).run(self.ops, *args, **kwargs)
+        else:
+            backend.run(self.ops, *args, **kwargs)
 
     def last_result(self):
         # Too noisy...
         #warnings.warn("last_result will be deprecated", DeprecationWarning)
         try:
-            return self._backends["_default"].run_history[-1]
+            return self._backends["run_with_numpy"].run_history[-1]
         except IndexError:
             raise ValueError("The Circuit has never been to run.")
 
@@ -88,7 +111,10 @@ class Circuit:
     @property
     def run_history(self):
         warnings.warn("run_history will be deprecated", DeprecationWarning)
-        return self._backends["_default"].run_history
+        try:
+            return self._backends["run_with_numpy"].run_history
+        except KeyError:
+            return []
 
 class _GateWrapper:
     def __init__(self, circuit, name, gate):
@@ -119,3 +145,44 @@ class _GateWrapper:
         else:
             args_str = ""
         return self.name + args_str + " " + str(self.target)
+
+class BlueqatGlobalSetting:
+    @staticmethod
+    def register_gate(name, gateclass, allow_overwrite=False):
+        """Register new gate to gate set."""
+        if not allow_overwrite:
+            if name in GATE_SET:
+                raise ValueError(f"Gate '{name}' is already exists in gate set.")
+            if name in BACKENDS:
+                raise ValueError(f"Gate '{name}' is not exists but backend '{name}' is exists.")
+        GATE_SET[name] = gateclass
+
+    @staticmethod
+    def unregister_gate(name):
+        """Unregister a gate from gate set"""
+        if name not in GATE_SET:
+            raise ValueError(f"Gate '{name}' is not registered.")
+        del GATE_SET[name]
+
+    @staticmethod
+    def register_backend(name, backend, allow_overwrite=False):
+        """Register new backend."""
+        if not allow_overwrite:
+            if name in BACKENDS:
+                raise ValueError(f"Backend '{name}' is already registered as backend.")
+            if name in GATE_SET:
+                raise ValueError(f"Backend '{name}' is not exists but gate '{name}' is exists.")
+        BACKENDS[name] = backend
+
+    @staticmethod
+    def remove_backend(name):
+        """Unregister a backend."""
+        if name not in GATE_SET:
+            raise ValueError(f"Backend '{name}' is not registered.")
+        del BACKENDS[name]
+
+    @staticmethod
+    def set_default_backend(name):
+        if name not in BACKENDS:
+            raise ValueError(f"Backend '{name}' is not registered.")
+        DEFAULT_GATE_SET = name
