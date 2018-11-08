@@ -35,8 +35,6 @@ DEFAULT_BACKEND_NAME = "numpy"
 class Circuit:
     def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
-        self.cache = None
-        self.cache_idx = -1
         self._backends = {}
         self._default_backend = None
         if n_qubits > 0:
@@ -81,14 +79,25 @@ class Circuit:
         self.ops += other.ops
         return self
 
-    def copy(self, copy_backends=True, copy_cache=None, copy_history=None):
+    def copy(self, copy_backends=True, copy_default_backend=True, copy_cache=None, copy_history=None):
+        """Copy the circuit.
+
+        :params
+        copy_backends :bool copy backends if True.
+        copy_default_backend :bool copy default_backend if True
+        """
         copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_backends:
             copied._backends = {k: v.copy() for k, v in self._backends.items()}
+        if copy_default_backend:
+            copied._default_backend = self._default_backend
+
+        # Warn for deprecated options
         if copy_cache is not None:
             warnings.warn("copy_cache is deprecated. Use copy_backends instead.", DeprecationWarning)
         if copy_history is not None:
-            warnings.warn("copy_history is deprecated", DeprecationWarning)
+            warnings.warn("copy_history is deprecated.", DeprecationWarning)
+
         return copied
 
     def run(self, *args, **kwargs):
