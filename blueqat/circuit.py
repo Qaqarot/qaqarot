@@ -3,6 +3,7 @@ import numpy as np
 from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
+from .backends.mqc_backend import MQCBackend
 
 GATE_SET = {
     "i": gate.IGate,
@@ -26,6 +27,7 @@ GATE_SET = {
 
 BACKENDS = {
     "run_with_numpy": NumPyBackend,
+    "run_with_mqc": MQCBackend,
     "to_qasm": QasmOutputBackend,
 }
 DEFAULT_BACKEND_NAME = "run_with_numpy"

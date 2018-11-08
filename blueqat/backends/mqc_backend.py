@@ -1,26 +1,60 @@
 import json
 import math
 import random
+import urllib.request
+from collections import namedtuple
+
 import numpy as np
+
 from ..gate import *
 from .backendbase import Backend
+
+_MQCContext = namedtuple("MQCContext", "ops n_qubits token shots returns url")
+DEFAULT_URL = "https://api.mdrft.com/v1/command"
 
 class MQCBackend(Backend):
     """Backend for MDR Quantum Cloud."""
     def _preprocess_run(self, gates, args, kwargs):
-        # TODO: Token and shots!
+        def _parse_args(token, shots=1024, returns="shots", url=DEFAULT_URL, **_kwargs):
+            if returns not in ("shots", "_res", "_urllib_req", "_urllib_res", "_urllib_req_res"):
+                raise ValueError(f"Unknown returns type '{returns}'")
+            return token, shots, returns, url
+        token, shots, returns, url = _parse_args(*args, **kwargs)
         n_qubits = find_n_qubits(gates)
-        return gates, ([], n_qubits)
+        return gates, _MQCContext([], n_qubits, token, shots, returns, url)
 
     def _postprocess_run(self, ctx):
-        # TODO: POST to cloud. Not JSON dump!
-        return json.dumps(ctx[0])
+        req = urllib.request.Request(
+            ctx.url,
+            json.dumps({
+                "access_token": ctx.token,
+                "command": "createTask",
+                "payload": {
+                    "shots": ctx.shots,
+                    "ops": ctx.ops,
+                }
+            }).encode('utf-8'),
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+            }
+        )
+        if ctx.returns == "_urllib_req":
+            return req
+        with urllib.request.urlopen(req) as res:
+            if ctx.returns == "_urllib_res":
+                return res
+            if ctx.returns == "_urllib_req_res":
+                return req, res
+            result = json.loads(res.read())
+            if ctx.returns == "_res":
+                return result
+            assert ctx.returns == "shots"
+            return result["mqc_result"]
 
-    def run(self, gates, args, kwargs):
-        return self._run(gates, args, kwargs)
 
     def _one_qubit_gate_noargs(self, gate, ctx):
-        for idx in gate.target_iter(ctx[1]):
+        for idx in gate.target_iter(ctx.n_qubits):
             ctx[0].append({gate.uppername: [idx]})
         return ctx
 
@@ -50,5 +84,5 @@ class MQCBackend(Backend):
 
     def gate_measure(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append({"m": [idx]})
+            ctx[0].append({"M": [idx]})
         return ctx
