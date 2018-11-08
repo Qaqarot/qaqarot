@@ -92,9 +92,9 @@ class Circuit:
 
     def run_with_backend(self, backend, *args, **kwargs):
         if isinstance(backend, str):
-            self.__get_backend(backend).run(self.ops, *args, **kwargs)
+            return self.__get_backend(backend).run(self.ops, *args, **kwargs)
         else:
-            backend.run(self.ops, *args, **kwargs)
+            return backend.run(self.ops, *args, **kwargs)
 
     def last_result(self):
         warnings.warn("last_result is deprecated", DeprecationWarning)
@@ -184,4 +184,5 @@ class BlueqatGlobalSetting:
     def set_default_backend(name):
         if name not in BACKENDS:
             raise ValueError(f"Backend '{name}' is not registered.")
-        DEFAULT_GATE_SET = name
+        global DEFAULT_BACKEND_NAME
+        DEFAULT_BACKEND_NAME = name

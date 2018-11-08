@@ -16,8 +16,10 @@ class _NumPyBackendContext:
         self.indices = np.arange(2**n_qubits, dtype=np.uint32)
         self.save_cache = True
         self.shots_result = Counter()
+        self.cregs = None
 
-    def prepare(self, cache, cache_idx):
+    def prepare(self, cache):
+        """Prepare to run next shot."""
         if cache is not None:
             np.copyto(self.qubits, cache)
         else:
@@ -26,18 +28,19 @@ class _NumPyBackendContext:
         self.cregs = [0] * self.n_qubits
 
     def store_shot(self):
+        """Store current cregs to shots_result"""
         def to_str(cregs):
-            return ''.join(str(b) for b in cregs) 
+            return ''.join(str(b) for b in cregs)
         key = to_str(self.cregs)
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 class NumPyBackend(Backend):
     """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
     __return_type = {
-            "statevector": lambda ctx: _ignore_globals(ctx.qubits),
-            "shots": lambda ctx: ctx.shots_result,
-            "statevector_and_shots": lambda ctx: (_ignore_globals(ctx.qubits), ctx.shots_result),
-            "_inner_ctx": lambda ctx: ctx,
+        "statevector": lambda ctx: _ignore_globals(ctx.qubits),
+        "shots": lambda ctx: ctx.shots_result,
+        "statevector_and_shots": lambda ctx: (_ignore_globals(ctx.qubits), ctx.shots_result),
+        "_inner_ctx": lambda ctx: ctx,
     }
     DEFAULT_SHOTS = 1024
 
@@ -45,7 +48,7 @@ class NumPyBackend(Backend):
         self.cache = None
         self.cache_idx = -1
 
-        # run_history will be deprecated.
+        # run_history is deprecated.
         self.run_history = []
 
     def __save_cache(self, ctx):
@@ -69,7 +72,7 @@ class NumPyBackend(Backend):
             return
 
     def run(self, gates, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, **kwargs):
+        def __parse_run_args(shots=None, returns=None, **_kwargs):
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -83,7 +86,7 @@ class NumPyBackend(Backend):
                 else:
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
-                warnings.warn("Both `shots` > 1 and `returns` = 'statevector' is specified. It's waste of time.")
+                warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
             return shots, returns
 
         shots, returns = __parse_run_args(*args, **kwargs)
@@ -98,9 +101,9 @@ class NumPyBackend(Backend):
 
         return self.__return_type[returns](ctx)
 
-    def _preprocess_run(self, gates, args, kwargs):
+    def _preprocess_run(self, gates, args, _kwargs):
         ctx = args[0]
-        ctx.prepare(self.cache, self.cache_idx)
+        ctx.prepare(self.cache)
         return gates[self.cache_idx+1:], ctx
 
     def _postprocess_run(self, ctx):

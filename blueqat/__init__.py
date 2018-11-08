@@ -1,5 +1,5 @@
-from .circuit import Circuit
+from .circuit import Circuit, BlueqatGlobalSetting
 from . import pauli
 from . import vqe
 
-__all__ = ["pauli", "vqe", "Circuit"]
+__all__ = ["pauli", "vqe", "Circuit", "BlueqatGlobalSetting"]

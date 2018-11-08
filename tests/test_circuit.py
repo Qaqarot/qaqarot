@@ -1,4 +1,4 @@
-from blueqat import Circuit
+from blueqat import Circuit, BlueqatGlobalSetting
 import numpy as np
 import sys
 from collections import Counter
@@ -133,10 +133,12 @@ def test_caching_then_expand():
 def test_copy_empty():
     c = Circuit()
     c.run()
+    # copy_history: deprecated.
     cc = c.copy(copy_cache=True, copy_history=True)
     assert c.ops == cc.ops and c.ops is not cc.ops
     assert c.cache is None and cc.cache is None
     assert c.cache_idx == cc.cache_idx == -1
+    # run_history: deprecated.
     assert c.run_history == cc.run_history
     assert c.run_history is not cc.run_history
 
@@ -192,3 +194,19 @@ def test_concat_circuit4():
     assert is_vec_same(c.run(), Circuit().x[0].h[0].run())
     assert is_vec_same(c1.run(), Circuit().x[0].run())
     assert is_vec_same(c2.run(), Circuit().h[0].run())
+
+def test_switch_backend1():
+    c = Circuit().x[0].h[0]
+    assert np.array_equal(c.run(), c.run_with_backend("run_with_numpy"))
+
+    BlueqatGlobalSetting.set_default_backend("to_qasm")
+    assert c.run() == c.to_qasm()
+
+    # Different instance of QasmOutputBackend is used.
+    # Lhs is owned by Circuit, rhs is passed as argument. But in this case same result.
+    from blueqat.backends.qasm_output_backend import QasmOutputBackend
+    assert c.run(output_prologue=False) == c.run_with_backend(QasmOutputBackend(), False)
+    assert c.run(False) == c.run_with_backend(QasmOutputBackend(), output_prologue=False)
+
+    BlueqatGlobalSetting.set_default_backend("run_with_numpy")
+    assert c.run(5) == c.run_with_numpy(shots=5)
