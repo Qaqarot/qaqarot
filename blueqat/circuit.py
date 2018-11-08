@@ -139,6 +139,9 @@ class Circuit:
             raise ValueError(f"Unknown backend '{backend_name}'.")
         self._default_backend = backend_name
 
+    def get_default_backend_name(self):
+        return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
+
     @property
     def n_qubits(self):
         return gate.find_n_qubits(self.ops)
@@ -234,3 +237,7 @@ class BlueqatGlobalSetting:
             raise ValueError(f"Backend '{name}' is not registered.")
         global DEFAULT_BACKEND_NAME
         DEFAULT_BACKEND_NAME = name
+
+    @staticmethod
+    def get_default_backend_name():
+        return DEFAULT_BACKEND_NAME
