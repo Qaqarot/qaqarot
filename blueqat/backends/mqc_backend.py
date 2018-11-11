@@ -75,7 +75,7 @@ class MQCBackend(Backend):
 
     def _one_qubit_gate_args_theta(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append({gate.uppername: [gate.theta, idx]})
+            ctx[0].append({gate.uppername: [idx, gate.theta]})
         return ctx
 
     gate_rx = _one_qubit_gate_args_theta
