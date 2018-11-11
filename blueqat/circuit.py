@@ -102,16 +102,30 @@ class Circuit:
 
         return copied
 
-    def run(self, *args, **kwargs):
-        if self._default_backend is None:
-            return self.__get_backend(DEFAULT_BACKEND_NAME).run(self.ops, *args, **kwargs)
-        return self.__get_backend(self._default_backend).run(self.ops, *args, **kwargs)
+    def run(self, *args, backend=None, **kwargs):
+        if backend is None:
+            if self._default_backend is None:
+                backend = DEFAULT_BACKEND_NAME
+            else:
+                backend = self._default_backend
+        return self.__get_backend(backend).run(self.ops, *args, **kwargs)
 
     def run_with_backend(self, backend, *args, **kwargs):
         if isinstance(backend, str):
             return self.__get_backend(backend).run(self.ops, *args, **kwargs)
         else:
             return backend.run(self.ops, *args, **kwargs)
+
+    def make_cache(self, backend=None):
+        """Make a cache to reduce the time of run. Some backends may implemented it.
+
+        This is temporary API. It may changed or deprecated."""
+        if backend is None:
+            if self._default_backend is None:
+                backend = DEFAULT_BACKEND_NAME
+            else:
+                backend = self._default_backend
+        return self.__get_backend(backend).make_cache(self.ops)
 
     def to_qasm(self, *args, **kwargs):
         return self.run_with_qasm_output(*args, **kwargs)

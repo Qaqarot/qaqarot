@@ -206,7 +206,6 @@ def test_switch_backend1():
     # Lhs is owned by Circuit, rhs is passed as argument. But in this case same result.
     from blueqat.backends.qasm_output_backend import QasmOutputBackend
     assert c.run(output_prologue=False) == c.run_with_backend(QasmOutputBackend(), False)
-    assert c.run(False) == c.run_with_backend(QasmOutputBackend(), output_prologue=False)
 
     BlueqatGlobalSetting.set_default_backend("numpy")
-    assert c.run(5) == c.run_with_numpy(shots=5)
+    assert c.run(shots=5) == c.run_with_numpy(shots=5)

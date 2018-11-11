@@ -112,6 +112,9 @@ class NumPyBackend(Backend):
         ctx.store_shot()
         return ctx
 
+    def make_cache(self, gates):
+        self.run(gates)
+
     def gate_x(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits

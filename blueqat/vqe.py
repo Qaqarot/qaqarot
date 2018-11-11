@@ -5,6 +5,7 @@ import random
 import numpy as np
 from scipy.optimize import minimize as scipy_minimizer
 from .circuit import Circuit
+from .utils import to_inttuple
 
 class AnsatzBase:
     def __init__(self, hamiltonian, n_params):
@@ -18,10 +19,10 @@ class AnsatzBase:
     def get_objective(self, sampler):
         def objective(params):
             circuit = self.get_circuit(params)
-            circuit.run()
+            circuit.make_cache()
             val = 0.0
             for meas in self.hamiltonian:
-                c = circuit.copy(copy_cache=True, copy_history=False)
+                c = circuit.copy()
                 for op in meas.ops:
                     if op.op == "X":
                         c.h[op.n]
@@ -51,7 +52,7 @@ class QaoaAnsatz(AnsatzBase):
                 self.n_qubits = init_circuit.n_qubits
         else:
             self.init_circuit = Circuit(self.n_qubits).h[:]
-        self.init_circuit.run() # To make a cache.
+        self.init_circuit.make_cache()
         self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
 
     def check_hamiltonian(self):
@@ -167,28 +168,35 @@ def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
     meas = tuple(meas)
     if len(meas) == circuit.n_qubits and meas == tuple(range(circuit.n_qubits)):
-        qubits = circuit.run()
+        qubits = circuit.run(returns="statevector")
         probs = (qubits.conjugate() * qubits).real
         return {tuple(map(int, prod[::-1])): val \
                 for prod, val in zip(itertools.product("01", repeat=circuit.n_qubits), probs) if val}
-    return expect(circuit.run(), meas)
+    return expect(circuit.run(returns="statevector"), meas)
 
-def get_measurement_sampler(n_sample):
+def get_measurement_sampler(n_sample, run_options=None):
     """Returns a function which get the expectations by sampling the measured circuit"""
+    if run_options is None:
+        run_options = {}
+
     def sampling_by_measurement(circuit, meas):
+        def reduce_bits(bits, meas):
+            bits = [int(x) for x in bits[::-1]]
+            return tuple(bits[m] for m in meas)
+
         meas = tuple(meas)
         circuit.measure[meas]
-        for _ in range(n_sample):
-            circuit.run()
-        counter = Counter(tuple(reg[m] for m in meas) for reg in circuit.run_history)
-        return {k: v / n_sample for k, v in counter.items()}
+        counter = circuit.run(shots=n_sample, returns="shots", **run_options)
+        counts = Counter({reduce_bits(bits, meas): val for bits, val in counter.items()})
+        return {k: v / n_sample for k, v in counts.items()}
+
     return sampling_by_measurement
 
 def get_state_vector_sampler(n_sample):
     """Returns a function which get the expectations by sampling the state vector"""
     def sampling_by_measurement(circuit, meas):
         val = 0.0
-        e = expect(circuit.run(), meas)
+        e = expect(circuit.run(returns="statevector"), meas)
         bits, probs = zip(*e.items())
         dists = np.random.multinomial(n_sample, probs) / n_sample
         return dict(zip(tuple(bits), dists))

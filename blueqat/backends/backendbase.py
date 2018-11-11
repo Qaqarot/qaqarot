@@ -58,6 +58,13 @@ class Backend(ABC):
         self._run_gates(gates, ctx)
         return self._postprocess_run(ctx)
 
+    def make_cache(self, gates):
+        """Make internal cache to reduce the time of running the circuit.
+
+        Some backends may implement this method. Otherwise, this method do nothing.
+        This is a temporary API and may changed or deprecated in future."""
+        return None
+
     def run(self, gates, *args, **kwargs):
         """Run the backend."""
         return self._run(gates, args, kwargs)
