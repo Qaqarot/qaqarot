@@ -222,7 +222,7 @@ def get_maximum_index(indices):
         else:
             return idx.__index__()
     if isinstance(indices, tuple):
-        return max(_maximum_idx_single(i) for i in indices)
+        return max((_maximum_idx_single(i) for i in indices), default=-1)
     else:
         return _maximum_idx_single(indices)
 
