@@ -133,6 +133,32 @@ class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
 
+class ToffoliGate(Gate):
+    """Toffoli (CCX) gate"""
+    lowername = "ccx"
+
+    def fallback(self):
+        c1, c2, t = self.targets
+        return [
+            HGate(t),
+            CXGate((c2, t)),
+            RZGate(t, -math.pi / 4),
+            CXGate((c1, t)),
+            RZGate(t, math.pi / 4),
+            CXGate((c2, t)),
+            RZGate(t, -math.pi / 4),
+            CXGate((c1, t)),
+            RZGate(c2, math.pi / 4),
+            RZGate(t, math.pi / 4),
+            HGate(t),
+            CXGate((c1, c2)),
+            RZGate(c1, math.pi / 4),
+            RZGate(c2, -math.pi / 4),
+            CXGate((c1, c2)),
+        ]
+
+        
+
 class Measurement(OneQubitGate):
     """Measurement gate"""
     lowername = "measure"

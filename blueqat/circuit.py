@@ -21,6 +21,8 @@ GATE_SET = {
     "rz": gate.RZGate,
     "phase": gate.RZGate,
     "u1": gate.RZGate,
+    "ccx": gate.ToffoliGate,
+    "toffoli": gate.ToffoliGate,
     "measure": gate.Measurement,
     "m": gate.Measurement,
 }
