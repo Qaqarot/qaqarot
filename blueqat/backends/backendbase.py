@@ -6,6 +6,8 @@ This module is internally used.
 from abc import ABC, abstractmethod
 import copy
 
+from ..gate import find_n_qubits
+
 class Backend(ABC):
     """Abstract quantum gate processor backend class."""
     def copy(self):
@@ -30,12 +32,13 @@ class Backend(ABC):
 
     def _run_gates(self, gates, ctx):
         """Iterate gates and call backend's action for each gates"""
+        n_qubits = find_n_qubits(gates)
         for gate in gates:
             action = self._get_action(gate)
             if action is not None:
                 ctx = action(gate, ctx)
             else:
-                ctx = self._run_gates(gate.fallback(), ctx)
+                ctx = self._run_gates(gate.fallback(n_qubits), ctx)
         return ctx
 
     def _run(self, gates, args, kwargs):
@@ -80,10 +83,11 @@ class Backend(ABC):
 
     def _resolve_fallback(self, gates):
         """Resolve fallbacks and flatten gates."""
+        n_qubits = find_n_qubits(gates)
         flattened = []
         for g in gates:
             if self._has_action(g):
                 flattened.append(g)
             else:
-                flattened += self._resolve_fallback(g.fallback())
+                flattened += self._resolve_fallback(g.fallback(n_qubits))
         return flattened

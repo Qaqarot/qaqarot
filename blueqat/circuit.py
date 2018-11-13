@@ -23,6 +23,10 @@ GATE_SET = {
     "u1": gate.RZGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
+    "t": gate.TGate,
+    "tdg": gate.TDagGate,
+    "s": gate.SGate,
+    "sdg": gate.SDagGate,
     "measure": gate.Measurement,
     "m": gate.Measurement,
 }

@@ -22,7 +22,7 @@ class Gate(ABC):
         self.kwargs = kwargs
         self.targets = targets
 
-    def fallback(self):
+    def fallback(self, n_qubits):
         """Returns alternative gates to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
 
@@ -60,6 +60,12 @@ class OneQubitGate(Gate):
     def target_iter(self, n_qubits):
         return slicing(self.targets, n_qubits)
 
+    def _make_fallback_for_target_iter(self, n_qubits, fallback):
+        gates = []
+        for t in self.target_iter(n_qubits):
+            gates += fallback(t)
+        return gates
+
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
     def control_target_iter(self, n_qubits):
@@ -68,7 +74,7 @@ class TwoQubitGate(Gate):
 class IGate(OneQubitGate):
     """Identity Gate"""
     lowername = "i"
-    def fallback(self):
+    def fallback(self, n_qubits):
         return []
 
 class XGate(OneQubitGate):
@@ -128,36 +134,49 @@ class RZGate(OneQubitGate):
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 4)])
+
+class TDagGate(OneQubitGate):
+    """Dagger of T ($\\pi/8$) gate"""
+    lowername = "tdg"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 4)])
 
 class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 2)])
+
+class SDagGate(OneQubitGate):
+    """Dagger of S gate"""
+    lowername = "s"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
 
 class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
-
-    def fallback(self):
+    def fallback(self, n_qubits):
         c1, c2, t = self.targets
         return [
             HGate(t),
             CXGate((c2, t)),
-            RZGate(t, -math.pi / 4),
+            TDagGate(t),
             CXGate((c1, t)),
-            RZGate(t, math.pi / 4),
+            TGate(t),
             CXGate((c2, t)),
-            RZGate(t, -math.pi / 4),
+            TDagGate(t),
             CXGate((c1, t)),
-            RZGate(c2, math.pi / 4),
-            RZGate(t, math.pi / 4),
+            TGate(c2),
+            TGate(t),
             HGate(t),
             CXGate((c1, c2)),
-            RZGate(c1, math.pi / 4),
-            RZGate(c2, -math.pi / 4),
+            TGate(c1),
+            TDagGate(c2),
             CXGate((c1, c2)),
         ]
-
-        
 
 class Measurement(OneQubitGate):
     """Measurement gate"""
