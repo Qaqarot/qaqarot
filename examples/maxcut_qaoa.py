@@ -22,12 +22,12 @@ def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     return vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, n_step), minimizer, sampler)
 
 if __name__ == "__main__":
-    vqe = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
-    vqe.run()
+    runner = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)])
+    result = runner.run()
     print("""
        {4}
       / \\
      {0}---{3}
      | x |
      {1}---{2}
-""".format(*vqe.result.most_common()[0][0]))
+""".format(*result.most_common()[0][0]))

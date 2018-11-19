@@ -24,10 +24,10 @@ if __name__ == "__main__":
         options={"disp": True}
     )
     nums = [3,2,6,9,2,5,7,3,3,6,7,3]
-    vqe = numpartition_qaoa(2, nums, minimizer=minimizer)
-    vqe.run(verbose=True)
+    runner = numpartition_qaoa(2, nums, minimizer=minimizer)
+    vqeresult = runner.run(verbose=True)
     print("Num partition:", nums)
-    best = vqe.result.most_common()[0]
+    best = vqeresult.most_common()[0]
     print("Probability:", best[1])
     result = "".join(map(str, best[0]))
     group0 = [a for a, b in zip(nums, result) if b == '0']

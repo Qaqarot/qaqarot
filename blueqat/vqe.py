@@ -1,6 +1,8 @@
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import reduce
 import itertools
 import random
+import warnings
 
 import numpy as np
 from scipy.optimize import minimize as scipy_minimizer
@@ -14,27 +16,33 @@ class AnsatzBase:
         self.n_qubits = self.hamiltonian.max_n() + 1
 
     def get_circuit(self, params):
+        """Make a circuit from parameters."""
         raise NotImplementedError
 
+    def get_energy(self, circuit, sampler):
+        """Calculate energy from circuit and sampler."""
+        val = 0.0
+        for meas in self.hamiltonian:
+            c = circuit.copy()
+            for op in meas.ops:
+                if op.op == "X":
+                    c.h[op.n]
+                elif op.op == "Y":
+                    c.rx(-np.pi / 2)[op.n]
+            measured = sampler(c, meas.n_iter())
+            for bits, prob in measured.items():
+                if sum(bits) % 2:
+                    val -= prob * meas.coeff
+                else:
+                    val += prob * meas.coeff
+        return val.real
+
     def get_objective(self, sampler):
+        """Get an objective function to be optimized."""
         def objective(params):
             circuit = self.get_circuit(params)
             circuit.make_cache()
-            val = 0.0
-            for meas in self.hamiltonian:
-                c = circuit.copy()
-                for op in meas.ops:
-                    if op.op == "X":
-                        c.h[op.n]
-                    elif op.op == "Y":
-                        c.rx(-np.pi / 2)[op.n]
-                measured = sampler(c, meas.n_iter())
-                for bits, prob in measured.items():
-                    if sum(bits) % 2:
-                        val -= prob * meas.coeff
-                    else:
-                        val += prob * meas.coeff
-            return val.real
+            return self.get_energy(circuit, sampler)
         return objective
 
 class QaoaAnsatz(AnsatzBase):
@@ -56,6 +64,7 @@ class QaoaAnsatz(AnsatzBase):
         self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
 
     def check_hamiltonian(self):
+        """Check hamiltonian is commutable. This condition is required for QaoaAnsatz"""
         return self.hamiltonian.is_all_terms_commutable()
 
     def get_circuit(self, params):
@@ -71,16 +80,35 @@ class QaoaAnsatz(AnsatzBase):
         return c
 
 class VqeResult:
-    def __init__(self, params=None, circuit=None, probs=None):
+    def __init__(self, vqe=None, params=None, circuit=None):
+        self.vqe = vqe
         self.params = params
         self.circuit = circuit
-        self.probs = probs
-
-    def __repr__(self):
-        return "VqeResult" + repr((self.params, self.circuit, self.probs))
+        self._probs = None
 
     def most_common(self, n=1):
-        return tuple(sorted(self.probs.items(), key=lambda item: -item[1]))[:n]
+        return tuple(sorted(self.get_probs().items(), key=lambda item: -item[1]))[:n]
+
+    @property
+    def probs(self):
+        """Get probabilities. This property is obsoleted. Use get_probs()."""
+        warnings.warn("VqeResult.probs is obsoleted. " +
+                      "Use VqeResult.get_probs().", DeprecationWarning)
+        return self.get_probs()
+
+    def get_probs(self, sampler=None, rerun=None, store=True):
+        """Get probabilities."""
+        if rerun is None:
+            rerun = sampler is not None
+        if self._probs is not None and not rerun:
+            return self._probs
+        if sampler is None:
+            sampler = self.vqe.sampler
+        probs = sampler(self.circuit, range(self.circuit.n_qubits))
+        if store:
+            self._probs = probs
+        return probs
+
 
 class Vqe:
     def __init__(self, ansatz, minimizer=None, sampler=None):
@@ -90,11 +118,10 @@ class Vqe:
             options={"ftol": 5.0e-2, "xtol": 5.0e-2, "maxiter": 1000}
         )
         self.sampler = sampler or non_sampling_sampler
-        self.result = VqeResult()
+        self._result = None
 
     def run(self, verbose=False):
         objective = self.ansatz.get_objective(self.sampler)
-        n_qubits = self.ansatz.n_qubits
         if verbose:
             def verbose_objective(objective):
                 def f(params):
@@ -105,10 +132,14 @@ class Vqe:
             objective = verbose_objective(objective)
         params = self.minimizer(objective, self.ansatz.n_params)
         c = self.ansatz.get_circuit(params)
-        self.result.params = params
-        self.result.probs = self.sampler(c, range(n_qubits))
-        self.result.circuit = c
-        return self.result
+        return VqeResult(self, params, c)
+
+    @property
+    def result(self):
+        """Vqe.result is deprecated. Use `result = Vqe.run()`."""
+        warnings.warn("Vqe.result is deprecated. Use `result = Vqe.run()`",
+                      DeprecationWarning)
+        return self._result if self._result is not None else VqeResult()
 
 def get_scipy_minimizer(**kwargs):
     """Get minimizer which uses `scipy.optimize.minimize`"""
@@ -120,49 +151,27 @@ def get_scipy_minimizer(**kwargs):
 
 def expect(qubits, meas):
     "For the VQE simulation without sampling."
-    d = {"": (qubits, 1.0)}
     result = {}
     i = np.arange(len(qubits))
     meas = tuple(meas)
 
-    def get(bits):
-        if bits in d:
-            return d[bits]
-        n = len(bits)
-        m = meas[n - 1]
-        qb, p = get(bits[:-1])
-        if p == 0.0:
-            d[bits[:-1] + "0"] = qb, 0.0
-            d[bits[:-1] + "1"] = qb, 0.0
-            return d[bits]
+    def to_mask(n):
+        return reduce(lambda acc, im: acc | (n & (1 << im[0])) << (im[1] - im[0]), enumerate(meas), 0)
 
-        p_zero = (qb[(i & (1 << m)) == 0].T.conjugate() @ qb[(i & (1 << m)) == 0]).real
+    mask = reduce(lambda acc, v: acc | (1 << v), meas, 0)
 
-        if p_zero > 0.0000001:
-            factor = 1.0 / np.sqrt(p_zero)
-            qb_zero = qb.copy()
-            qb_zero[(i & (1 << m)) != 0] = 0.0
-            qb_zero *= factor
-            d[bits[:-1] + "0"] = qb_zero, p * p_zero
-        else:
-            d[bits[:-1] + "0"] = qb, 0.0
+    cnt = defaultdict(float)
+    for i, v in enumerate(qubits):
+        cnt[i & mask] += (v * v.conjugate()).real
+    #print("m:", meas)
+    #print("cnt:", dict(cnt))
 
-        if 1.0 - p_zero > 0.0000001:
-            factor = 1.0 / np.sqrt(1.0 - p_zero)
-            qb_one = qb.copy()
-            qb_one[(i & (1 << m)) == 0] = 0.0
-            qb_one *= factor
-            d[bits[:-1] + "1"] = qb_one, p * (1.0 - p_zero)
-        else:
-            d[bits[:-1] + "1"] = qb, 0.0
-        return d[bits]
+    #for i in range(2**len(meas)):
+    #    print(f"to_mask({i}) = {to_mask(i)}")
 
-    for m in itertools.product("01", repeat=len(meas)):
-        m = "".join(m)
-        v = get(m)
-        if v[1]:
-            result[m] = v[1]
-    return {tuple(map(int, k)): v for k, v in result.items()}
+    ret = {m: cnt[to_mask(i)] for i, m in enumerate(itertools.product((0, 1), repeat=len(meas)))}
+    #print("ret:", ret)
+    return ret
 
 def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""

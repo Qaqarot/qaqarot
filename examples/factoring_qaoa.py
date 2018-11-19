@@ -45,8 +45,8 @@ def factoring_qaoa(n_step, num, minimizer=None, sampler=None, verbose=True):
 
 if __name__ == "__main__":
     num = 11*3
-    vqe, separator = factoring_qaoa(2, num)
-    result = vqe.run(verbose=True)
+    runner, separator = factoring_qaoa(2, num)
+    result = runner.run(verbose=True)
     for i, (bits, prob) in enumerate(result.most_common(100)):
         p, q = separator(bits)
         is_ok = p * q == num

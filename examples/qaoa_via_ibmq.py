@@ -25,13 +25,13 @@ if __name__ == "__main__":
     # If you use IBM Q remote backend, use qiskit.register.
     # import qiskit
     # qiskit.register(your token here)
-    vqe = maxcut_qaoa(1, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)],
+    runner = maxcut_qaoa(1, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)],
             sampler=vqe.get_qiskit_sampler(backend="local_qasm_simulator"))
-    vqe.run(verbose=True)
+    result = runner.run(verbose=True)
     print("""
        {4}
       / \\
      {0}---{3}
      | x |
      {1}---{2}
-""".format(*vqe.result.most_common()[0][0]))
+""".format(*result.most_common()[0][0]))

@@ -28,12 +28,12 @@ if __name__ == "__main__":
     #sampler = vqe.get_measurement_sampler(1024)
     sampler = vqe.get_measurement_sampler(1024, {"token": token})
 
-    vqe = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)], sampler=sampler)
-    vqe.run(verbose=True)
+    runner = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)], sampler=sampler)
+    result = runner.run(verbose=True)
     print("""
        {4}
       / \\
      {0}---{3}
      | x |
      {1}---{2}
-""".format(*vqe.result.most_common()[0][0]))
+""".format(*result.most_common()[0][0]))
