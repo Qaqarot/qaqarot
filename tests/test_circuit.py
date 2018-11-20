@@ -197,7 +197,7 @@ def test_concat_circuit4():
 
 def test_switch_backend1():
     c = Circuit().x[0].h[0]
-    assert np.array_equal(c.run(), c.run_with_backend("numpy"))
+    assert np.array_equal(c.run(), c.run(backend="numpy"))
 
     BlueqatGlobalSetting.set_default_backend("qasm_output")
     assert c.run() == c.to_qasm()
@@ -205,7 +205,7 @@ def test_switch_backend1():
     # Different instance of QasmOutputBackend is used.
     # Lhs is owned by Circuit, rhs is passed as argument. But in this case same result.
     from blueqat.backends.qasm_output_backend import QasmOutputBackend
-    assert c.run(output_prologue=False) == c.run_with_backend(QasmOutputBackend(), False)
+    assert c.run(output_prologue=False) == c.run(False, backend=QasmOutputBackend())
 
     BlueqatGlobalSetting.set_default_backend("numpy")
     assert c.run(shots=5) == c.run_with_numpy(shots=5)
