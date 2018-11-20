@@ -2,7 +2,7 @@ import json
 import math
 import random
 import urllib.request
-from collections import namedtuple
+from collections import Counter, namedtuple
 
 import numpy as np
 
@@ -50,7 +50,7 @@ class MQCBackend(Backend):
             if ctx.returns == "_res":
                 return result
             assert ctx.returns == "shots"
-            return result["mqc_result"]
+            return Counter(result["mqc_result"])
 
 
     def _one_qubit_gate_noargs(self, gate, ctx):
