@@ -43,6 +43,8 @@ class Circuit:
         self.ops = ops or []
         self._backends = {}
         self._default_backend = None
+        # ad-hoc
+        self.n_qubits = n_qubits
         if n_qubits > 0:
             self.i[n_qubits - 1]
 
@@ -59,7 +61,7 @@ class Circuit:
     def __backend_runner_wrapper(self, backend_name):
         backend = self.__get_backend(backend_name)
         def runner(*args, **kwargs):
-            return backend.run(self.ops, *args, **kwargs)
+            return backend.run(self.ops, self.n_qubits, *args, **kwargs)
         return runner
 
     def __getattr__(self, name):
@@ -83,6 +85,7 @@ class Circuit:
         if not isinstance(other, Circuit):
             return NotImplemented
         self.ops += other.ops
+        self.n_qubits = max(self.n_qubits, other.n_qubits)
         return self
 
     def copy(self, copy_backends=True, copy_default_backend=True, copy_cache=None, copy_history=None):
@@ -114,14 +117,7 @@ class Circuit:
                 backend = self.__get_backend(self._default_backend)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
-        return backend.run(self.ops, *args, **kwargs)
-
-    # Use run(backend="...") instead of this.
-    #def run_with_backend(self, backend, *args, **kwargs):
-    #    if isinstance(backend, str):
-    #        return self.__get_backend(backend).run(self.ops, *args, **kwargs)
-    #    else:
-    #        return backend.run(self.ops, *args, **kwargs)
+        return backend.run(self.ops, self.n_qubits, *args, **kwargs)
 
     def make_cache(self, backend=None):
         """Make a cache to reduce the time of run. Some backends may implemented it.
@@ -132,7 +128,7 @@ class Circuit:
                 backend = DEFAULT_BACKEND_NAME
             else:
                 backend = self._default_backend
-        return self.__get_backend(backend).make_cache(self.ops)
+        return self.__get_backend(backend).make_cache(self.ops, self.n_qubits)
 
     def to_qasm(self, *args, **kwargs):
         return self.run_with_qasm_output(*args, **kwargs)
@@ -166,10 +162,6 @@ class Circuit:
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
 
     @property
-    def n_qubits(self):
-        return gate.find_n_qubits(self.ops)
-
-    @property
     def run_history(self):
         warnings.warn("run_history is deprecated", DeprecationWarning)
         try:
@@ -194,6 +186,8 @@ class _GateWrapper:
     def __getitem__(self, args):
         self.target = args
         self.circuit.ops.append(self.gate(self.target, *self.args, **self.kwargs))
+        # ad-hoc
+        self.circuit.n_qubits = max(gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         return self.circuit
 
     def __str__(self):

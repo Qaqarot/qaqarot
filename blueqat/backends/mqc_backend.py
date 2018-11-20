@@ -14,13 +14,12 @@ DEFAULT_URL = "https://api.mdrft.com/v1/command"
 
 class MQCBackend(Backend):
     """Backend for MDR Quantum Cloud."""
-    def _preprocess_run(self, gates, args, kwargs):
+    def _preprocess_run(self, gates, n_qubits, args, kwargs):
         def _parse_args(token, shots=1024, returns="shots", url=DEFAULT_URL, **_kwargs):
             if returns not in ("shots", "_res", "_urllib_req", "_urllib_res", "_urllib_req_res"):
                 raise ValueError(f"Unknown returns type '{returns}'")
             return token, shots, returns, url
         token, shots, returns, url = _parse_args(*args, **kwargs)
-        n_qubits = find_n_qubits(gates)
         return gates, _MQCContext([], n_qubits, token, shots, returns, url)
 
     def _postprocess_run(self, ctx):

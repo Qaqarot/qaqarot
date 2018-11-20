@@ -162,7 +162,7 @@ def expect(qubits, meas):
 
     cnt = defaultdict(float)
     for i, v in enumerate(qubits):
-        cnt[i & mask] += (v * v.conjugate()).real
+        cnt[i & mask] += v.real ** 2 + v.imag ** 2
     #print("m:", meas)
     #print("cnt:", dict(cnt))
 
@@ -176,11 +176,15 @@ def expect(qubits, meas):
 def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
     meas = tuple(meas)
-    if len(meas) == circuit.n_qubits and meas == tuple(range(circuit.n_qubits)):
+    n_qubits = circuit.n_qubits
+    if len(meas) == n_qubits and meas == tuple(range(n_qubits)):
         qubits = circuit.run(returns="statevector")
-        probs = (qubits.conjugate() * qubits).real
-        return {tuple(map(int, prod[::-1])): val \
-                for prod, val in zip(itertools.product("01", repeat=circuit.n_qubits), probs) if val}
+        probs = qubits.real ** 2 + qubits.imag ** 2
+        ret =  {tuple(map(int, prod[::-1])): val \
+                for prod, val in zip(itertools.product("01", repeat=n_qubits), probs) if val}
+        #print("ret:", ret)
+        #print("exp:", expect(circuit.run(returns="statevector"), meas))
+        return ret
     return expect(circuit.run(returns="statevector"), meas)
 
 def get_measurement_sampler(n_sample, run_options=None):

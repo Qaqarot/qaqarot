@@ -6,8 +6,6 @@ This module is internally used.
 from abc import ABC, abstractmethod
 import copy
 
-from ..gate import find_n_qubits
-
 class Backend(ABC):
     """Abstract quantum gate processor backend class."""
     def copy(self):
@@ -18,7 +16,7 @@ class Backend(ABC):
         """
         return copy.deepcopy(self)
 
-    def _preprocess_run(self, gates, args, kwargs):
+    def _preprocess_run(self, gates, n_qubits, args, kwargs):
         """Preprocess of backend run.
         Backend developer can override this function.
         """
@@ -30,18 +28,17 @@ class Backend(ABC):
         """
         return None
 
-    def _run_gates(self, gates, ctx):
+    def _run_gates(self, gates, n_qubits, ctx):
         """Iterate gates and call backend's action for each gates"""
-        n_qubits = find_n_qubits(gates)
         for gate in gates:
             action = self._get_action(gate)
             if action is not None:
                 ctx = action(gate, ctx)
             else:
-                ctx = self._run_gates(gate.fallback(n_qubits), ctx)
+                ctx = self._run_gates(gate.fallback(n_qubits), n_qubits, ctx)
         return ctx
 
-    def _run(self, gates, args, kwargs):
+    def _run(self, gates, n_qubits, args, kwargs):
         """Default implementation of `Backend.run`.
         Backend developer shouldn't override this function, but override `run` instead of this.
 
@@ -57,20 +54,20 @@ class Backend(ABC):
             3. Define postprocessing process (and make return value). Override `_postprocess_run`
         Otherwise, the developer can override `run` method if they want to change the flow of run.
         """
-        gates, ctx = self._preprocess_run(gates, args, kwargs)
-        self._run_gates(gates, ctx)
+        gates, ctx = self._preprocess_run(gates, n_qubits, args, kwargs)
+        self._run_gates(gates, n_qubits, ctx)
         return self._postprocess_run(ctx)
 
-    def make_cache(self, gates):
+    def make_cache(self, gates, n_qubits):
         """Make internal cache to reduce the time of running the circuit.
 
         Some backends may implement this method. Otherwise, this method do nothing.
         This is a temporary API and may changed or deprecated in future."""
         return None
 
-    def run(self, gates, *args, **kwargs):
+    def run(self, gates, n_qubits, *args, **kwargs):
         """Run the backend."""
-        return self._run(gates, args, kwargs)
+        return self._run(gates, n_qubits, args, kwargs)
 
     def _get_action(self, gate):
         try:
@@ -81,13 +78,12 @@ class Backend(ABC):
     def _has_action(self, gate):
         return hasattr(self, "gate_" + gate.lowername)
 
-    def _resolve_fallback(self, gates):
+    def _resolve_fallback(self, gates, n_qubits):
         """Resolve fallbacks and flatten gates."""
-        n_qubits = find_n_qubits(gates)
         flattened = []
         for g in gates:
             if self._has_action(g):
                 flattened.append(g)
             else:
-                flattened += self._resolve_fallback(g.fallback(n_qubits))
+                flattened += self._resolve_fallback(g.fallback(n_qubits), n_qubits)
         return flattened
