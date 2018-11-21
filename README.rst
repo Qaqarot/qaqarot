@@ -104,7 +104,7 @@ simplify the hamiltonian
 
 ::
 
-    hamiltonian = hamiltonian.simplify() # 無駄な演算子を省き、シンプルにする
+    hamiltonian = hamiltonian.simplify()
     print(hamiltonian)
 
 VQE
@@ -118,7 +118,7 @@ VQE
     hamiltonian = -3*q(0)-3*q(1)-3*q(2)-3*q(3)-3*q(4)+2*q(0)*q(1)+2*q(0)*q(2)+2*q(0)*q(3)+2*q(0)*q(4)+2*q(1)*q(2)+2*q(1)*q(3)+2*q(1)*q(4)+2*q(2)*q(3)+2*q(2)*q(4)+2*q(3)*q(4)
     step = 2
 
-    result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run() # VQEこれだけ
+    result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run()
     print(result.most_common(12))
 
 If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the equation

@@ -1,9 +1,9 @@
 import setuptools
 
-with open("README.rst", "r") as f:
+with open("README.rst", "r", encoding="utf-8") as f:
     long_description = f.read()
 
-with open("blueqat/_version.py", "r") as f:
+with open("blueqat/_version.py", "r", encoding="utf-8") as f:
     exec(f.read())
 
 setuptools.setup(
