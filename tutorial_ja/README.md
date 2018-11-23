@@ -8,6 +8,6 @@ Blueqat日本語チュートリアル
 --------------------
 1.<a href="tutorial001_basic_circuit.ipynb">基本的操作</a>  
 2.<a href="tutorial003_basic_gates.ipynb">基本的なゲートの応用</a>  
-3.ハミルトニアンと組合せ最適化問題  
+3.<a href="tutorial003_vqe.ipynb">ハミルトニアンと組合せ最適化問題</a>    
 4.<a href="tutorial004_K_from_Nqubit.ipynb">組みあわせ最適化問題でN量子ビットからK量子ビットを選ぶ</a>  
 5.<a href="tutorial005_QUBO_to_Pauli.ipynb">QUBOを量子ゲートモデルシミュレータに自動変換</a>
