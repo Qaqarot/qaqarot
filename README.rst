@@ -10,6 +10,11 @@ Version
 =======
 0.1.9
 
+Build info
+=======
+.. image:: https://circleci.com/gh/mdrft/Blueqat.svg?style=svg
+    :target: https://circleci.com/gh/mdrft/Blueqat
+
 Install
 =======
 ::
