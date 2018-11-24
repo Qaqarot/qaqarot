@@ -13,3 +13,5 @@ Blueqat日本語チュートリアル
 5.<a href="tutorial005_QUBO_to_Pauli.ipynb">QUBOを量子ゲートモデルシミュレータに自動変換</a>  
 6.<a href="tutorial006_grover.ipynb">Grover（グローバー）の検索アルゴリズム</a>  
 7.<a href="tutorial007_qft.ipynb">量子フーリエ変換アルゴリズム</a>  
+7.<a href="tutorial008_phase_estimation.ipynb">位相推定アルゴリズム</a>  
+7.<a href="tutorial009_teleportation.ipynb">量子テレポーテーション</a>  
