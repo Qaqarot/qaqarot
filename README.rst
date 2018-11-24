@@ -12,6 +12,7 @@ Version
 
 Build info
 =======
+
 [![CircleCI](https://circleci.com/gh/mdrft/Blueqat.svg?style=svg)](https://circleci.com/gh/mdrft/Blueqat)
 
 Install
