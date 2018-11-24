@@ -158,33 +158,22 @@ def expect(qubits, meas):
     def to_mask(n):
         return reduce(lambda acc, im: acc | (n & (1 << im[0])) << (im[1] - im[0]), enumerate(meas), 0)
 
+    def to_key(k):
+        return tuple(1 if k & (1 << i) else 0 for i in meas)
+
     mask = reduce(lambda acc, v: acc | (1 << v), meas, 0)
 
     cnt = defaultdict(float)
     for i, v in enumerate(qubits):
-        cnt[i & mask] += v.real ** 2 + v.imag ** 2
-    #print("m:", meas)
-    #print("cnt:", dict(cnt))
-
-    #for i in range(2**len(meas)):
-    #    print(f"to_mask({i}) = {to_mask(i)}")
-
-    ret = {m: cnt[to_mask(i)] for i, m in enumerate(itertools.product((0, 1), repeat=len(meas)))}
-    #print("ret:", ret)
-    return ret
+        p = v.real ** 2 + v.imag ** 2
+        if p != 0.0:
+            cnt[i & mask] += p
+    return {to_key(k): v for k, v in cnt.items()}
 
 def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
     meas = tuple(meas)
     n_qubits = circuit.n_qubits
-    if len(meas) == n_qubits and meas == tuple(range(n_qubits)):
-        qubits = circuit.run(returns="statevector")
-        probs = qubits.real ** 2 + qubits.imag ** 2
-        ret =  {tuple(map(int, prod[::-1])): val \
-                for prod, val in zip(itertools.product("01", repeat=n_qubits), probs) if val}
-        #print("ret:", ret)
-        #print("exp:", expect(circuit.run(returns="statevector"), meas))
-        return ret
     return expect(circuit.run(returns="statevector"), meas)
 
 def get_measurement_sampler(n_sample, run_options=None):
