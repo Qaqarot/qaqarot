@@ -12,6 +12,29 @@ from .backendbase import Backend
 _MQCContext = namedtuple("MQCContext", "ops n_qubits token shots returns url")
 DEFAULT_URL = "https://api.mdrft.com/v1/command"
 
+class MQCError(Exception):
+    def __init__(self, err):
+        self.err_type = err.__class__.__name__
+        self.err = err
+        self.statuscode = None
+        self.err_json = None
+        if isinstance(err, urllib.request.HTTPError):
+            self.statuscode = err.code
+            self.err_msg = err.read().decode(encoding="utf-8", errors="backslashreplace")
+            try:
+                self.err_json = json.loads(self.err_msg)
+            except json.JSONDecodeError:
+                pass
+        else:
+            self.err_msg = str(err)
+
+    def __str__(self):
+        s = self.err_type + ", "
+        if self.statuscode is not None:
+            s += "Status Code: " + str(self.statuscode) + ", "
+        s += self.err_msg
+        return s
+
 class MQCBackend(Backend):
     """Backend for MDR Quantum Cloud."""
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
@@ -40,16 +63,25 @@ class MQCBackend(Backend):
         )
         if ctx.returns == "_urllib_req":
             return req
-        with urllib.request.urlopen(req) as res:
+        try:
+            with urllib.request.urlopen(req) as res:
+                if ctx.returns == "_urllib_res":
+                    return res
+                if ctx.returns == "_urllib_req_res":
+                    return req, res
+                result = json.loads(res.read())
+                if ctx.returns == "_res":
+                    return result
+                assert ctx.returns == "shots"
+                return Counter(result["mqc_result"])
+        except urllib.request.HTTPError as e:
             if ctx.returns == "_urllib_res":
-                return res
+                return e.fp
             if ctx.returns == "_urllib_req_res":
-                return req, res
-            result = json.loads(res.read())
-            if ctx.returns == "_res":
-                return result
-            assert ctx.returns == "shots"
-            return Counter(result["mqc_result"])
+                return req, e.fp
+            raise MQCError(e)
+        except urllib.request.URLError as e:
+            raise MQCError(e)
 
 
     def _one_qubit_gate_noargs(self, gate, ctx):
