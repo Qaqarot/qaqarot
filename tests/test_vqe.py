@@ -4,21 +4,38 @@ from blueqat import (
     Circuit,
 )
 from blueqat.vqe import (
+    VqeResult,
     non_sampling_sampler,
     expect,
 )
+
+
+@pytest.mark.parametrize('probs, expected', [
+    (
+        {
+            (0, 0): 0.185990056957774,
+            (0, 1): 0.31400994304222624,
+            (1, 0): 0.3140099430422262,
+            (1, 1): 0.18599005695777357
+        },
+        (((0, 1), 0.31400994304222624),)
+    ),
+])
+def test_most_common(probs, expected):
+    result = VqeResult(probs=probs)
+    assert result.most_common() == expected
 
 
 @pytest.mark.parametrize('circuit, meas, expected', [
     (
         Circuit(4),
         (1, 2),
-        { (0, 0): 1.0 },
+        {(0, 0): 1.0},
     ),
     (
         Circuit(2),
         (0, 1),
-        { (0, 0): 1.0 },
+        {(0, 0): 1.0},
     ),
 ])
 def test_non_sampling_sampler(circuit, meas, expected):
