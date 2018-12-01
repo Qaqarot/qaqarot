@@ -15,6 +15,11 @@ from blueqat.vqe import (
         (1, 2),
         { (0, 0): 1.0 },
     ),
+    (
+        Circuit(2),
+        (0, 1),
+        { (0, 0): 1.0 },
+    ),
 ])
 def test_non_sampling_sampler(circuit, meas, expected):
     assert isinstance(non_sampling_sampler, types.FunctionType)
