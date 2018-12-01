@@ -4,7 +4,6 @@ from blueqat import (
     Circuit,
 )
 from blueqat.vqe import (
-    get_scipy_minimizer,
     non_sampling_sampler,
     expect,
 )
