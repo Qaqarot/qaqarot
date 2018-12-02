@@ -8,7 +8,7 @@ A quantum gate simulator
 
 Version
 =======
-0.1.9
+0.3.0
 
 Build info
 =======
