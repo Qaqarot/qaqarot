@@ -24,7 +24,8 @@ class TestVqeResult(object):
         ),
     ])
     def test_most_common(self, probs, expected):
-        result = VqeResult(probs=probs)
+        result = VqeResult()
+        result._probs = probs
         assert result.most_common() == expected
 
 
@@ -70,7 +71,7 @@ def test_non_sampling_sampler(circuit, meas, expected):
 def test_expect(qubits, meas, expected):
 
     def assert_sampling(actual, expected, eps=0.0000001):
-        assert list(actual.keys()) == list(expected.keys())
+        assert list(sorted(actual.keys())) == list(sorted(expected.keys()))
         for k in expected:
             assert abs(actual[k] - expected[k]) < eps
 

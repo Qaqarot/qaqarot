@@ -1,4 +1,4 @@
-from blueqat import Circuit
+from blueqat import Circuit, BlueqatGlobalSetting
 import numpy as np
 import sys
 from collections import Counter
@@ -65,27 +65,21 @@ def test_rotation1():
 
 def test_measurement1():
     c = Circuit().m[0]
-    for _ in range(10000):
-        c.run()
-    cnt = Counter(c.run_history)
-    assert cnt.most_common(1) == [((0,), 10000)]
+    cnt = c.run(shots=10000)
+    assert cnt.most_common(1) == [("0", 10000)]
 
 def test_measurement2():
     c = Circuit().x[0].m[0]
-    for _ in range(10000):
-        c.run()
-    cnt = Counter(c.run_history)
-    assert cnt.most_common(1) == [((1,), 10000)]
+    cnt = c.run(shots=10000)
+    assert cnt.most_common(1) == [("1", 10000)]
 
 def test_measurement3():
     # 75% |0> + 25% |1>
     c = Circuit().rx(np.pi / 3)[0].m[0]
     n = 10000
-    for _ in range(n):
-        c.run()
-    cnt = Counter(c.run_history)
+    cnt = c.run(shots=n)
     most_common = cnt.most_common(1)[0]
-    assert most_common[0] == (0,)
+    assert most_common[0] == "0"
     # variance of binomial distribution (n -> ∞) is np(1-p)
     # therefore, 2σ = 2 * sqrt(np(1-p))
     two_sigma = 2 * np.sqrt(n * 0.75 * 0.25)
@@ -93,33 +87,27 @@ def test_measurement3():
 
 def test_measurement_multiqubit1():
     c = Circuit().x[0].m[1]
-    for _ in range(10000):
-        c.run()
-    cnt = Counter(c.run_history)
+    cnt = c.run(shots=10000)
     # 0-th qubit is also 0 because it is not measured.
-    assert cnt.most_common(1) == [((0,0), 10000)]
+    assert cnt.most_common(1) == [("00", 10000)]
 
 def test_measurement_multiqubit2():
     c = Circuit().x[0].m[1::-1]
-    for _ in range(10000):
-        c.run()
-    cnt = Counter(c.run_history)
-    assert cnt.most_common(1) == [((1,0), 10000)]
+    cnt = c.run(shots=10000)
+    assert cnt.most_common(1) == [("10", 10000)]
 
 def test_measurement_entangled_state():
     # 1/sqrt(2) (|0> + |1>)
     c = Circuit().h[0].cx[0, 1]
     for _ in range(10000):
-        c.run()
-        result = c.last_result()
-        assert result == (0, 0) or result == (1, 1)
+        cnt = c.run(shots=1)
+        result = cnt.most_common()
+        assert result == [("00", 1)] or result == [("11", 1)]
 
 def test_measurement_hadamard1():
     n = 10000
     c = Circuit().h[0].m[0]
-    for _ in range(n):
-        c.run()
-    cnt = Counter(c.run_history)
+    cnt = c.run(shots=n)
     a, b = cnt.most_common(2)
     assert a[1] + b[1] == n
     # variance of binomial distribution (n -> ∞) is np(1-p)
@@ -130,8 +118,8 @@ def test_measurement_hadamard1():
 def test_measurement_after_qubits1():
     for _ in range(50):
         c = Circuit().h[0].m[0]
-        a = c.run()
-        if c.last_result() == (0,):
+        a, cnt = c.run(shots=1, returns="statevector_and_shots")
+        if cnt.most_common(1)[0] == ('0', 1):
             assert is_vec_same(a, np.array([1, 0]))
         else:
             assert is_vec_same(a, np.array([0, 1]))
@@ -145,11 +133,14 @@ def test_caching_then_expand():
 def test_copy_empty():
     c = Circuit()
     c.run()
+    # copy_history: deprecated.
     cc = c.copy(copy_cache=True, copy_history=True)
     assert c.ops == cc.ops and c.ops is not cc.ops
-    assert c.cache is None and cc.cache is None
-    assert c.cache_idx == cc.cache_idx == -1
-    assert c.run_history == cc.run_history and c.run_history is not cc.run_history
+    assert c._backends['numpy'].cache is None and cc._backends['numpy'].cache is None
+    assert c._backends['numpy'].cache_idx == cc._backends['numpy'].cache_idx == -1
+    # run_history: deprecated.
+    assert c.run_history == cc.run_history
+    assert c.run_history is not cc.run_history
 
 def test_cache_then_append():
     c = Circuit()
@@ -203,3 +194,18 @@ def test_concat_circuit4():
     assert is_vec_same(c.run(), Circuit().x[0].h[0].run())
     assert is_vec_same(c1.run(), Circuit().x[0].run())
     assert is_vec_same(c2.run(), Circuit().h[0].run())
+
+def test_switch_backend1():
+    c = Circuit().x[0].h[0]
+    assert np.array_equal(c.run(), c.run(backend="numpy"))
+
+    BlueqatGlobalSetting.set_default_backend("qasm_output")
+    assert c.run() == c.to_qasm()
+
+    # Different instance of QasmOutputBackend is used.
+    # Lhs is owned by Circuit, rhs is passed as argument. But in this case same result.
+    from blueqat.backends.qasm_output_backend import QasmOutputBackend
+    assert c.run(output_prologue=False) == c.run(False, backend=QasmOutputBackend())
+
+    BlueqatGlobalSetting.set_default_backend("numpy")
+    assert c.run(shots=5) == c.run_with_numpy(shots=5)

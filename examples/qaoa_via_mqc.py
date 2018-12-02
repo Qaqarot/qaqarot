@@ -1,4 +1,4 @@
-from blueqat import pauli, vqe
+from blueqat import pauli, vqe, BlueqatGlobalSetting
 
 def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     """Setup QAOA.
@@ -22,11 +22,13 @@ def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     return vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, n_step), minimizer, sampler)
 
 if __name__ == "__main__":
-    # If you use IBM Q remote backend, use qiskit.register.
-    # import qiskit
-    # qiskit.register(your token here)
-    runner = maxcut_qaoa(1, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)],
-            sampler=vqe.get_qiskit_sampler(backend="local_qasm_simulator"))
+    print("Input token:")
+    token = input().strip()
+    BlueqatGlobalSetting.set_default_backend("mqc")
+    #sampler = vqe.get_measurement_sampler(1024)
+    sampler = vqe.get_measurement_sampler(1024, {"token": token})
+
+    runner = maxcut_qaoa(2, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)], sampler=sampler)
     result = runner.run(verbose=True)
     print("""
        {4}

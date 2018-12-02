@@ -42,3 +42,9 @@ def test_qasm_noprologue():
     c = Circuit().x[0].y[0].z[0]
     qasm = c.to_qasm(output_prologue=False)
     assert qasm == correct_qasm
+
+def test_qasm_noprologue2():
+    correct_qasm = "x q[0];\ny q[0];\nz q[0];"
+    c = Circuit().x[0].y[0].z[0]
+    qasm = c.to_qasm(False)
+    assert qasm == correct_qasm
