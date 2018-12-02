@@ -24,7 +24,8 @@ class TestVqeResult(object):
         ),
     ])
     def test_most_common(self, probs, expected):
-        result = VqeResult(probs=probs)
+        result = VqeResult()
+        result._probs = probs
         assert result.most_common() == expected
 
 
