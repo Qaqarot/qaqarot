@@ -25,7 +25,9 @@ Install
     cd blueqat
     pip3 install -e .
 
-or .. code-block:: sh
+or
+
+.. code-block:: sh
 
     pip3 install blueqat
 
