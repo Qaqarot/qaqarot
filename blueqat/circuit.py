@@ -133,13 +133,6 @@ class Circuit:
     def to_qasm(self, *args, **kwargs):
         return self.run_with_qasm_output(*args, **kwargs)
 
-    def last_result(self):
-        warnings.warn("last_result is deprecated", DeprecationWarning)
-        try:
-            return self._backends["run_with_numpy"].run_history[-1]
-        except IndexError:
-            raise ValueError("The Circuit has never been to run.")
-
     def set_default_backend(self, backend_name):
         """Set the default backend of this circuit.
 
@@ -160,14 +153,6 @@ class Circuit:
 
     def get_default_backend_name(self):
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
-
-    @property
-    def run_history(self):
-        warnings.warn("run_history is deprecated", DeprecationWarning)
-        try:
-            return self._backends["run_with_numpy"].run_history
-        except KeyError:
-            return []
 
 class _GateWrapper:
     def __init__(self, circuit, name, gate):
