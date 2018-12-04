@@ -49,9 +49,6 @@ class NumPyBackend(Backend):
         self.cache = None
         self.cache_idx = -1
 
-        # run_history is deprecated.
-        self.run_history = []
-
     def __clear_cache(self):
         self.cache = None
         self.cache_idx = -1
@@ -107,7 +104,6 @@ class NumPyBackend(Backend):
                     self.cache = ctx.qubits.copy()
                     self.cache_idx += 1
             if ctx.cregs:
-                self.run_history.append(tuple(ctx.cregs))
                 ctx.store_shot()
 
         return self.__return_type[returns](ctx)
