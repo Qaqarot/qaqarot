@@ -75,7 +75,14 @@ def test_toffoli_gate(bin):
     expected_meas = "001" if bin[0] and bin[1] else "000"
     assert c.run(shots=1) == Counter([expected_meas])
 
+def test_u3_gate():
+    assert is_vec_same(Circuit().u3(1.23, 4.56, -5.43)[1].run(), Circuit().rz(4.56)[1].ry(1.23)[1].rz(-5.43)[1].run())
 
+def test_u2_gate():
+    assert is_vec_same(Circuit().u2(-1.23, 4.56)[1].run(), Circuit().u3(np.pi / 2, -1.23, 4.56)[1].run())
+
+def test_u1_gate():
+    assert is_vec_same(Circuit().u1(-1.23)[1].run(), Circuit().u3(0, 0, -1.23)[1].run())
 
 def test_rotation1():
     assert is_vec_same(
