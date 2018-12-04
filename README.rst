@@ -1,4 +1,4 @@
-.. image:: https://github.com/mdrft/Blueqat/blob/master/MDR_Blueqat_color.png
+.. image:: https://raw.githubusercontent.com/mdrft/Blueqat/master/MDR_Blueqat_color.png
 
 =======
 blueqat
