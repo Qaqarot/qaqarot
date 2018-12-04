@@ -1,4 +1,5 @@
 from blueqat import Circuit, BlueqatGlobalSetting
+import pytest
 import numpy as np
 import sys
 from collections import Counter
@@ -56,6 +57,25 @@ def test_tgate():
 
 def test_sgate():
     assert is_vec_same(Circuit().s[0].run(), Circuit().rz(np.pi / 2)[0].run())
+
+def test_tdg_gate():
+    assert is_vec_same(Circuit().s[1].tdg[1].tdg[1].run(), Circuit().i[1].run())
+
+def test_sdg_gate():
+    assert is_vec_same(Circuit().s[1].sdg[1].run(), Circuit().i[1].run())
+
+@pytest.mark.parametrize('bin', [(0, 0), (0, 1), (1, 0), (1, 1)])
+def test_toffoli_gate(bin):
+    c = Circuit()
+    if bin[0]:
+        c.x[0]
+    if bin[1]:
+        c.x[1]
+    c.ccx[0, 1, 2].m[2]
+    expected_meas = "001" if bin[0] and bin[1] else "000"
+    assert c.run(shots=1) == Counter([expected_meas])
+
+
 
 def test_rotation1():
     assert is_vec_same(
