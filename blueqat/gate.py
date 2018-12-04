@@ -178,6 +178,34 @@ class ToffoliGate(Gate):
             CXGate((c1, c2)),
         ]
 
+class U1Gate(OneQubitGate):
+    """U1 gate"""
+    def __init__(self, targets, lmbda, **kwargs):
+        super().__init__(targets, **kwargs)
+        self.lmbda = lmbda
+    lowername = "u1"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lmbda)])
+
+class U2Gate(OneQubitGate):
+    """U2 gate"""
+    def __init__(self, targets, phi, lmbda, **kwargs):
+        super().__init__(targets, **kwargs)
+        self.phi = phi
+        self.lmbda = lmbda
+    lowername = "u2"
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lmbda)])
+
+class U3Gate(OneQubitGate):
+    """U3 gate"""
+    def __init__(self, targets, theta, phi, lmbda, **kwargs):
+        super().__init__(targets, **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lmbda = lmbda
+    lowername = "u3"
+
 class Measurement(OneQubitGate):
     """Measurement gate"""
     lowername = "measure"

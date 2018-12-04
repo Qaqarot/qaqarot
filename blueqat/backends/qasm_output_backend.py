@@ -54,6 +54,21 @@ class QasmOutputBackend(Backend):
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
 
+    def gate_u1(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append(f"{gate.lowername}({gate.lmbda}) q[{idx}];")
+        return ctx
+
+    def gate_u2(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append(f"{gate.lowername}({gate.phi}, {gate.lmbda}) q[{idx}];")
+        return ctx
+
+    def gate_u3(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append(f"{gate.lowername}({gate.theta}, {gate.phi}, {gate.lmbda}) q[{idx}];")
+        return ctx
+
     def gate_measure(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append(f"measure q[{idx}] -> c[{idx}];")

@@ -253,6 +253,41 @@ class NumPyBackend(Backend):
             qubits[(i & (1 << target)) != 0] *= 1.j
         return ctx
 
+    def gate_u1(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        lmbda = gate.lmbda
+        for target in gate.target_iter(n_qubits):
+            qubits[(i & (1 << target)) != 0] *= complex(math.cos(lmbda), math.sin(lmbda))
+        return ctx
+
+    def gate_u3(self, gate, ctx):
+        qubits = ctx.qubits
+        newq = ctx.qubits_buf
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        theta = gate.theta
+        phi = gate.phi
+        lmbda = gate.lmbda
+        a00 = math.cos(theta / 2)
+        a11 = a00 * complex(math.cos(phi + lmbda), math.sin(phi + lmbda))
+        a01 = a10 = math.sin(theta / 2)
+        a01 *= complex(math.cos(lmbda), math.sin(lmbda))
+        a10 *= complex(math.cos(phi), math.sin(phi))
+        for target in gate.target_iter(n_qubits):
+            np.copyto(newq, qubits)
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = qubits[t0] * a00
+            newq[t0] -= qubits[t1] * a01
+            newq[t1] = qubits[t0] * a10
+            newq[t1] += qubits[t1] * a11
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
+        return ctx
+
     def gate_measure(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
