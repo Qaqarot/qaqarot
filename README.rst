@@ -88,14 +88,13 @@ Run()
 
     Circuit().h[0].cx[0,1].run()
 
-last_result() Method
-====================
+Run(shots=n)
+============
 
 .. code-block:: python
 
-    c = Circuit().h[0].cx[0,1].m[0]
-    c.run() # array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
-    c.last_result() # (1, 0)
+    c = Circuit().h[0].cx[0,1].m[:]
+    c.run(shots=100) # => Counter({'00': 48, '11': 52}) (random value.)
 
 Hamiltonian
 ===========

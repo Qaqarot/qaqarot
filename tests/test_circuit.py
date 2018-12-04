@@ -134,13 +134,10 @@ def test_copy_empty():
     c = Circuit()
     c.run()
     # copy_history: deprecated.
-    cc = c.copy(copy_cache=True, copy_history=True)
+    cc = c.copy(copy_backends=True)
     assert c.ops == cc.ops and c.ops is not cc.ops
     assert c._backends['numpy'].cache is None and cc._backends['numpy'].cache is None
     assert c._backends['numpy'].cache_idx == cc._backends['numpy'].cache_idx == -1
-    # run_history: deprecated.
-    assert c.run_history == cc.run_history
-    assert c.run_history is not cc.run_history
 
 def test_cache_then_append():
     c = Circuit()
