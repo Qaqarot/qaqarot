@@ -194,7 +194,7 @@ Tutorial
 
 Author
 ======
-Takumi Kato (MDR), Yuichiro Minato (MDR)
+Takumi Kato (MDR), Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies)
 
 Disclaimer
 ==========
