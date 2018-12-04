@@ -1,4 +1,6 @@
-.. image:: https://github.com/mdrft/Blueqat/blob/master/MDR_Blueqat_color.png
+.. image:: https://raw.githubusercontent.com/mdrft/Blueqat/master/MDR_Blueqat_color.png
+    :target: https://github.com/mdrft/Blueqat
+    :alt: Blueqat
 
 =======
 blueqat
@@ -188,9 +190,7 @@ Maxcut QAOA
 
 Tutorial
 ========
-日本語
-
-https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
+`Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
 
 Document
 ========
@@ -200,7 +200,7 @@ https://blueqat.readthedocs.io/ja/latest/
 
 Author
 ======
-Takumi Kato (MDR),Yuichiro Minato (MDR), Satoshi Takezawa (TerraSky)
+Takumi Kato (MDR), Yuichiro Minato (MDR), Satoshi Takezawa (TerraSky)
 
 Disclaimer
 ==========
