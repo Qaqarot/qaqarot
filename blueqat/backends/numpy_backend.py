@@ -117,8 +117,10 @@ class NumPyBackend(Backend):
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) != 0]
-            newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0]
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = qubits[t1]
+            newq[t1] = qubits[t0]
             qubits, newq = newq, qubits
         ctx.qubits = qubits
         ctx.qubits_buf = newq
@@ -130,8 +132,10 @@ class NumPyBackend(Backend):
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            newq[(i & (1 << target)) == 0] = -1.0j * qubits[(i & (1 << target)) != 0]
-            newq[(i & (1 << target)) != 0] = 1.0j * qubits[(i & (1 << target)) == 0]
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = -1.0j * qubits[t1]
+            newq[t1] = 1.0j * qubits[t0]
             qubits, newq = newq, qubits
         ctx.qubits = qubits
         ctx.qubits_buf = newq
@@ -151,8 +155,10 @@ class NumPyBackend(Backend):
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            newq[(i & (1 << target)) == 0] = qubits[(i & (1 << target)) == 0] + qubits[(i & (1 << target)) != 0]
-            newq[(i & (1 << target)) != 0] = qubits[(i & (1 << target)) == 0] - qubits[(i & (1 << target)) != 0]
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = qubits[t0] + qubits[t1]
+            newq[t1] = qubits[t0] - qubits[t1]
             newq /= np.sqrt(2)
             qubits, newq = newq, qubits
         ctx.qubits = qubits
@@ -191,14 +197,10 @@ class NumPyBackend(Backend):
         i = ctx.indices
         theta = gate.theta
         for target in gate.target_iter(n_qubits):
-            newq[(i & (1 << target)) == 0] = (
-                np.cos(theta / 2) * qubits[(i & (1 << target)) == 0] +
-                -1.0j * np.sin(theta / 2) * qubits[(i & (1 << target)) != 0]
-            )
-            newq[(i & (1 << target)) != 0] = (
-                -1.0j * np.sin(theta / 2) * qubits[(i & (1 << target)) == 0] +
-                np.cos(theta / 2) * qubits[(i & (1 << target)) != 0]
-            )
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = np.cos(theta / 2) * qubits[t0] + -1.0j * np.sin(theta / 2) * qubits[t1]
+            newq[t1] = -1.0j * np.sin(theta / 2) * qubits[t0] + np.cos(theta / 2) * qubits[t1]
             qubits, newq = newq, qubits
         ctx.qubits = qubits
         ctx.qubits_buf = newq
@@ -211,15 +213,10 @@ class NumPyBackend(Backend):
         i = ctx.indices
         theta = gate.theta
         for target in gate.target_iter(n_qubits):
-            newq = np.zeros_like(qubits)
-            newq[(i & (1 << target)) == 0] = (
-                np.cos(theta / 2) * qubits[(i & (1 << target)) == 0] +
-                -np.sin(theta / 2) * qubits[(i & (1 << target)) != 0]
-            )
-            newq[(i & (1 << target)) != 0] = (
-                np.sin(theta / 2) * qubits[(i & (1 << target)) == 0] +
-                np.cos(theta / 2) * qubits[(i & (1 << target)) != 0]
-            )
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = np.cos(theta / 2) * qubits[t0] + -np.sin(theta / 2) * qubits[t1]
+            newq[t1] = np.sin(theta / 2) * qubits[t0] + np.cos(theta / 2) * qubits[t1]
             qubits, newq = newq, qubits
         ctx.qubits = qubits
         ctx.qubits_buf = newq
