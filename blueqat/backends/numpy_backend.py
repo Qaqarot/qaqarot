@@ -74,7 +74,7 @@ class NumPyBackend(Backend):
             if returns not in self.__return_type.keys():
                 raise ValueError(f"Unknown returns type '{returns}'")
             if shots is None:
-                if returns is "statevector" or "_inner_ctx":
+                if returns in ("statevector", "_inner_ctx"):
                     shots = 1
                 else:
                     shots = self.DEFAULT_SHOTS
