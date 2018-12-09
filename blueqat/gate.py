@@ -8,6 +8,7 @@ import random
 from abc import ABC, abstractmethod
 import numpy as np
 
+
 class Gate(ABC):
     """Abstract quantum gate class."""
     lowername = None
@@ -49,14 +50,15 @@ class Gate(ABC):
         else:
             return f"[{_slice_to_str(self.targets)}]"
 
-
     def __str__(self):
         str_args = self._str_args()
         str_targets = self._str_targets()
         return f'{self.uppername}{str_args} {str_targets}'
 
+
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
+
     def target_iter(self, n_qubits):
         return slicing(self.targets, n_qubits)
 
@@ -66,64 +68,80 @@ class OneQubitGate(Gate):
             gates += fallback(t)
         return gates
 
+
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
+
     def control_target_iter(self, n_qubits):
         return qubit_pairs(self.targets, n_qubits)
+
 
 class IGate(OneQubitGate):
     """Identity Gate"""
     lowername = "i"
+
     def fallback(self, n_qubits):
         return []
+
 
 class XGate(OneQubitGate):
     """Pauli's X Gate"""
     lowername = "x"
 
+
 class YGate(OneQubitGate):
     """Pauli's Y Gate"""
     lowername = "y"
+
 
 class ZGate(OneQubitGate):
     """Pauli's Z Gate"""
     lowername = "z"
 
+
 class HGate(OneQubitGate):
     """Hadamard Gate"""
     lowername = "h"
+
 
 class CZGate(TwoQubitGate):
     """Control-Z gate"""
     lowername = "cz"
 
+
 class CXGate(TwoQubitGate):
     """Control-X (CNOT) Gate"""
     lowername = "cx"
 
+
 class RXGate(OneQubitGate):
     """Rotate-X gate"""
     lowername = "rx"
+
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
     def _str_args(self):
         return f'({self.theta})'
+
 
 class RYGate(OneQubitGate):
     """Rotate-Y gate"""
     lowername = "ry"
+
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, **kwargs)
         self.theta = theta
 
     def _str_args(self):
         return f'({self.theta})'
+
 
 class RZGate(OneQubitGate):
     """Rotate-Z gate"""
     lowername = "rz"
+
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, **kwargs)
         self.theta = theta
@@ -131,33 +149,43 @@ class RZGate(OneQubitGate):
     def _str_args(self):
         return f'({self.theta})'
 
+
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 4)])
+
 
 class TDagGate(OneQubitGate):
     """Dagger of T ($\\pi/8$) gate"""
     lowername = "tdg"
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 4)])
+
 
 class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 2)])
+
 
 class SDagGate(OneQubitGate):
     """Dagger of S gate"""
     lowername = "s"
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
+
 
 class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
+
     def fallback(self, n_qubits):
         c1, c2, t = self.targets
         return [
@@ -178,9 +206,11 @@ class ToffoliGate(Gate):
             CXGate((c1, c2)),
         ]
 
+
 class Measurement(OneQubitGate):
     """Measurement gate"""
     lowername = "measure"
+
 
 def slicing_singlevalue(arg, length):
     """Internally used."""
@@ -204,6 +234,7 @@ def slicing_singlevalue(arg, length):
             i += length
         yield i
 
+
 def slicing(args, length):
     """Internally used."""
     if isinstance(args, tuple):
@@ -211,6 +242,7 @@ def slicing(args, length):
             yield from slicing_singlevalue(arg, length)
     else:
         yield from slicing_singlevalue(args, length)
+
 
 def qubit_pairs(args, length):
     """Internally used."""
@@ -226,6 +258,7 @@ def qubit_pairs(args, length):
         if c == z:
             raise ValueError("Control qubit and target qubit are must be different.")
     return zip(controls, targets)
+
 
 def get_maximum_index(indices):
     """Internally used."""
@@ -244,6 +277,7 @@ def get_maximum_index(indices):
         return max((_maximum_idx_single(i) for i in indices), default=-1)
     else:
         return _maximum_idx_single(indices)
+
 
 def find_n_qubits(gates):
     """Find n_qubits from gates"""
