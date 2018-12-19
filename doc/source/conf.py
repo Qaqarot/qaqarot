@@ -14,15 +14,15 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'Blueqat'
-copyright = '2018, MDR Inc.'
-author = 'MDR Inc.'
+copyright = '2018, The Blueqat Developers'
+author = 'The Blueqat Developers'
 
 # The short X.Y version
 version = ''
@@ -41,6 +41,8 @@ release = ''
 # ones.
 extensions = [
         'sphinx.ext.autodoc',
+        'sphinx.ext.viewcode',
+        'sphinx.ext.mathjax'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -60,7 +62,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -173,3 +175,12 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
+
+
+# -- Extension configuration -------------------------------------------------
+locale_dirs = ['locale/']
+autodoc_member_order = 'groupwise'
+
+def setup(app):
+    app.add_stylesheet('custom.css')
+    app.add_javascript('custom.js')
