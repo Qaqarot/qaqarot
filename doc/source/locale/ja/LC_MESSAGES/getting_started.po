@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2018, MDR Inc.
+# This file is distributed under the same license as the Blueqat package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Blueqat \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-12-19 16:11+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: ../../source/getting_started.rst:3
+msgid "Getting Started"
+msgstr "はじめの一歩"
+
+#: ../../source/getting_started.rst:6
+msgid "Prerequisites"
+msgstr "前提条件"
+
+#: ../../source/getting_started.rst:8
+msgid "Python3"
+msgstr ""
+
+#: ../../source/getting_started.rst:9
+msgid "numpy"
+msgstr ""
+
+#: ../../source/getting_started.rst:10
+msgid "scipy"
+msgstr ""
+
+#: ../../source/getting_started.rst:13
+msgid "Install"
+msgstr "インストール"
+
+#: ../../source/getting_started.rst:21
+msgid "or"
+msgstr "または"
+
+#: ../../source/getting_started.rst:29
+msgid "Basics"
+msgstr "基本"
+
+#: ../../source/getting_started.rst:32
+msgid "Circuit"
+msgstr "回路の作り方"
+
+#: ../../source/getting_started.rst:46
+msgid "Method Chain"
+msgstr "メソッド・チェーン"
+
+#: ../../source/getting_started.rst:58
+msgid "Slice"
+msgstr "Sliceによる複数ビット操作"
+
+#: ../../source/getting_started.rst:68
+msgid "Rotation Gate"
+msgstr "ローテーション操作"
+
+#: ../../source/getting_started.rst:75
+msgid "Measurement"
+msgstr "測定"
+
+#: ../../source/getting_started.rst:82
+msgid "Run()"
+msgstr "実行"
+
+#: ../../source/getting_started.rst:89
+msgid "Run(shots=n)"
+msgstr "回数を指定した実行"
+
+#: ../../source/getting_started.rst:97
+msgid "Hamiltonian"
+msgstr "ハミルトニアン"
+
+#: ../../source/getting_started.rst:108
+msgid "simplify the hamiltonian"
+msgstr "ハミルトニアンの単純化"
+
+#: ../../source/getting_started.rst:116
+msgid "VQE"
+msgstr ""
+
+#: ../../source/getting_started.rst:129
+msgid ""
+"If you want to create an ising model hamiltonian use Z(x) instead of q(x)"
+" in the equation"
+msgstr ""
+"イジングモデルのハミルトニアンを作る場合は、q(x)ではなくZ(x)を使ってください。"
+
+#: ../../source/getting_started.rst:136
+msgid "Blueqat to Qiskit"
+msgstr "BlueqatからQiskit"
+
+#: ../../source/getting_started.rst:145
+msgid "Blueqat to QASM"
+msgstr "BlueqatからQASM"
+
+#: ../../source/getting_started.rst:158
+msgid "Example"
+msgstr "例"
+
+#: ../../source/getting_started.rst:161
+msgid "2-qubit Grover"
+msgstr ""
+
+#: ../../source/getting_started.rst:171
+msgid "Maxcut QAOA"
+msgstr ""
+

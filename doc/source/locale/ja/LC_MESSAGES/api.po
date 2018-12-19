@@ -1,0 +1,343 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2018, MDR Inc.
+# This file is distributed under the same license as the Blueqat package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Blueqat \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-12-19 16:11+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: ../../source/api/blueqat.rst:2
+msgid "blueqat package"
+msgstr "blueqatパッケージ"
+
+#: ../../source/api/blueqat.rst:5
+msgid "Submodules"
+msgstr ""
+
+#: ../../source/api/blueqat.rst:8
+msgid "blueqat.circuit module"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting:1 blueqat.Circuit:1
+#: blueqat.circuit.BlueqatGlobalSetting:1 blueqat.circuit.Circuit:1
+#: blueqat.vqe.AnsatzBase:1 blueqat.vqe.Vqe:1 blueqat.vqe.VqeResult:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting:1 blueqat.circuit.BlueqatGlobalSetting:1 of
+msgid "Setting for Blueqat."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:1
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:1 of
+msgid "Register new backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_gate:1
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:1 of
+msgid "Register new gate to gate set."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.remove_backend:1
+#: blueqat.circuit.BlueqatGlobalSetting.remove_backend:1 of
+msgid "Unregister a backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_gate:1
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:1 of
+msgid "Unregister a gate from gate set"
+msgstr ""
+
+#: blueqat.Circuit.copy:1 blueqat.circuit.Circuit.copy:1 of
+msgid "Copy the circuit."
+msgstr ""
+
+#: blueqat.Circuit.copy:3 blueqat.circuit.Circuit.copy:3 of
+msgid ""
+":params copy_backends :bool copy backends if True. copy_default_backend "
+":bool copy default_backend if True"
+msgstr ""
+
+#: blueqat.Circuit.make_cache:1 blueqat.circuit.Circuit.make_cache:1 of
+msgid "Make a cache to reduce the time of run. Some backends may implemented it."
+msgstr ""
+
+#: blueqat.Circuit.make_cache:3 blueqat.circuit.Circuit.make_cache:3 of
+msgid "This is temporary API. It may changed or deprecated."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:1
+#: blueqat.circuit.Circuit.set_default_backend:1 of
+msgid "Set the default backend of this circuit."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:3
+#: blueqat.circuit.Circuit.set_default_backend:3 of
+msgid ""
+"This setting is only applied for this circuit. If you want to change the "
+"default backend of all gates, use "
+"`BlueqatGlobalSetting.set_default_backend()`."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:7
+#: blueqat.circuit.Circuit.set_default_backend:7 of
+msgid ""
+"After set the default backend by this method, global setting is ignored "
+"even if `BlueqatGlobalSetting.set_default_backend()` is called. If you "
+"want to use global default setting, call this method with "
+"backend_name=None."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:11
+#: blueqat.circuit.Circuit.set_default_backend:11 of
+msgid ""
+":params backend_name: str or None: new default backend name. if None is "
+"given, global setting is applied."
+msgstr ""
+
+#: ../../source/api/blueqat.rst:16
+msgid "blueqat.gate module"
+msgstr ""
+
+#: blueqat.gate:1 of
+msgid ""
+"`gate` module implements quantum gate operations. This module is "
+"internally used."
+msgstr ""
+
+#: blueqat.gate.CXGate:1 blueqat.gate.CZGate:1 of
+msgid "Bases: :class:`blueqat.gate.TwoQubitGate`"
+msgstr ""
+
+#: blueqat.gate.CXGate:1 of
+msgid "Control-X (CNOT) Gate"
+msgstr ""
+
+#: blueqat.gate.CZGate:1 of
+msgid "Control-Z gate"
+msgstr ""
+
+#: blueqat.gate.Gate:1 of
+msgid "Bases: :class:`abc.ABC`"
+msgstr ""
+
+#: blueqat.gate.Gate:1 of
+msgid "Abstract quantum gate class."
+msgstr ""
+
+#: blueqat.gate.Gate.fallback:1 blueqat.gate.IGate.fallback:1
+#: blueqat.gate.SDagGate.fallback:1 blueqat.gate.SGate.fallback:1
+#: blueqat.gate.TDagGate.fallback:1 blueqat.gate.TGate.fallback:1
+#: blueqat.gate.ToffoliGate.fallback:1 of
+msgid "Returns alternative gates to make equivalent circuit."
+msgstr ""
+
+#: blueqat.gate.HGate:1 blueqat.gate.IGate:1 blueqat.gate.Measurement:1
+#: blueqat.gate.RXGate:1 blueqat.gate.RYGate:1 blueqat.gate.RZGate:1
+#: blueqat.gate.SDagGate:1 blueqat.gate.SGate:1 blueqat.gate.TDagGate:1
+#: blueqat.gate.TGate:1 blueqat.gate.XGate:1 blueqat.gate.YGate:1
+#: blueqat.gate.ZGate:1 of
+msgid "Bases: :class:`blueqat.gate.OneQubitGate`"
+msgstr ""
+
+#: blueqat.gate.HGate:1 of
+msgid "Hadamard Gate"
+msgstr ""
+
+#: blueqat.gate.IGate:1 of
+msgid "Identity Gate"
+msgstr ""
+
+#: blueqat.gate.Measurement:1 of
+msgid "Measurement gate"
+msgstr ""
+
+#: blueqat.gate.OneQubitGate:1 blueqat.gate.ToffoliGate:1
+#: blueqat.gate.TwoQubitGate:1 of
+msgid "Bases: :class:`blueqat.gate.Gate`"
+msgstr ""
+
+#: blueqat.gate.OneQubitGate:1 of
+msgid "Abstract quantum gate class for 1 qubit gate."
+msgstr ""
+
+#: blueqat.gate.RXGate:1 of
+msgid "Rotate-X gate"
+msgstr ""
+
+#: blueqat.gate.RYGate:1 of
+msgid "Rotate-Y gate"
+msgstr ""
+
+#: blueqat.gate.RZGate:1 of
+msgid "Rotate-Z gate"
+msgstr ""
+
+#: blueqat.gate.SDagGate:1 of
+msgid "Dagger of S gate"
+msgstr ""
+
+#: blueqat.gate.SGate:1 of
+msgid "S gate"
+msgstr ""
+
+#: blueqat.gate.TDagGate:1 of
+msgid "Dagger of T ($\\pi/8$) gate"
+msgstr ""
+
+#: blueqat.gate.TGate:1 of
+msgid "T ($\\pi/8$) gate"
+msgstr ""
+
+#: blueqat.gate.ToffoliGate:1 of
+msgid "Toffoli (CCX) gate"
+msgstr ""
+
+#: blueqat.gate.TwoQubitGate:1 of
+msgid "Abstract quantum gate class for 2 qubits gate."
+msgstr ""
+
+#: blueqat.gate.XGate:1 of
+msgid "Pauli's X Gate"
+msgstr ""
+
+#: blueqat.gate.YGate:1 of
+msgid "Pauli's Y Gate"
+msgstr ""
+
+#: blueqat.gate.ZGate:1 of
+msgid "Pauli's Z Gate"
+msgstr ""
+
+#: blueqat.gate.find_n_qubits:1 of
+msgid "Find n_qubits from gates"
+msgstr ""
+
+#: blueqat.gate.get_maximum_index:1 blueqat.gate.qubit_pairs:1
+#: blueqat.gate.slicing:1 blueqat.gate.slicing_singlevalue:1 of
+msgid "Internally used."
+msgstr ""
+
+#: ../../source/api/blueqat.rst:24
+msgid "blueqat.pauli module"
+msgstr ""
+
+#: blueqat.pauli.Expr:1 of
+msgid "Bases: :class:`blueqat.pauli._ExprTuple`"
+msgstr ""
+
+#: blueqat.pauli.Term:1 of
+msgid "Bases: :class:`blueqat.pauli._TermTuple`"
+msgstr ""
+
+#: blueqat.pauli.Term.from_chars:1 blueqat.pauli.term_from_chars:1 of
+msgid "\"XZIY\" => X(0) * Z(1) * Y(3)"
+msgstr ""
+
+#: blueqat.pauli.Term.from_pauli:1 of
+msgid "From X, Y, Z, I to Term"
+msgstr ""
+
+#: blueqat.pauli.commutator:1 of
+msgid "Commute expr1 and expr2"
+msgstr ""
+
+#: blueqat.pauli.pauli_from_char:1 of
+msgid "\"X\" => X, \"Y\" => Y, \"Z\" => Z, \"I\" => I"
+msgstr ""
+
+#: blueqat.pauli.to_expr:1 of
+msgid "Convert to Expr from Term or Pauli operator"
+msgstr ""
+
+#: blueqat.pauli.to_term:1 of
+msgid "Convert to Term from Pauli operator"
+msgstr ""
+
+#: ../../source/api/blueqat.rst:32
+msgid "blueqat.vqe module"
+msgstr ""
+
+#: blueqat.vqe.AnsatzBase.get_circuit:1 blueqat.vqe.QaoaAnsatz.get_circuit:1 of
+msgid "Make a circuit from parameters."
+msgstr ""
+
+#: blueqat.vqe.AnsatzBase.get_energy:1 of
+msgid "Calculate energy from circuit and sampler."
+msgstr ""
+
+#: blueqat.vqe.AnsatzBase.get_objective:1 of
+msgid "Get an objective function to be optimized."
+msgstr ""
+
+#: blueqat.vqe.QaoaAnsatz:1 of
+msgid "Bases: :class:`blueqat.vqe.AnsatzBase`"
+msgstr ""
+
+#: blueqat.vqe.QaoaAnsatz.check_hamiltonian:1 of
+msgid "Check hamiltonian is commutable. This condition is required for QaoaAnsatz"
+msgstr ""
+
+#: blueqat.vqe.Vqe.result:1 of
+msgid "Vqe.result is deprecated. Use `result = Vqe.run()`."
+msgstr ""
+
+#: blueqat.vqe.VqeResult.get_probs:1 of
+msgid "Get probabilities."
+msgstr ""
+
+#: blueqat.vqe.VqeResult.probs:1 of
+msgid "Get probabilities. This property is obsoleted. Use get_probs()."
+msgstr ""
+
+#: blueqat.vqe.expect:1 of
+msgid "For the VQE simulation without sampling."
+msgstr ""
+
+#: blueqat.vqe.get_measurement_sampler:1 of
+msgid ""
+"Returns a function which get the expectations by sampling the measured "
+"circuit"
+msgstr ""
+
+#: blueqat.vqe.get_qiskit_sampler:1 of
+msgid "Returns a function which get the expectation by sampling via Qiskit."
+msgstr ""
+
+#: blueqat.vqe.get_qiskit_sampler:3 of
+msgid "This function requires `qiskit` module."
+msgstr ""
+
+#: blueqat.vqe.get_scipy_minimizer:1 of
+msgid "Get minimizer which uses `scipy.optimize.minimize`"
+msgstr ""
+
+#: blueqat.vqe.get_state_vector_sampler:1 of
+msgid "Returns a function which get the expectations by sampling the state vector"
+msgstr ""
+
+#: blueqat.vqe.non_sampling_sampler:1 of
+msgid "Calculate the expectations without sampling."
+msgstr ""
+
+#: ../../source/api/blueqat.rst:41
+msgid "Module contents"
+msgstr ""
+
+#: ../../source/api/modules.rst:2
+msgid "API Reference"
+msgstr ""
+
+#~ msgid "blueqat"
+#~ msgstr ""
+

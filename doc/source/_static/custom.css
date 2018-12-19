@@ -1,0 +1,34 @@
+#lang-switcher {
+    position: absolute;
+    top: 2em;
+    right: 2em;
+}
+
+#lang-switcher a:visited {
+    color: #2980B9;
+    background: #ffffff;
+}
+
+.round-box {
+    color: #2980B9;
+    background: #ffffff;
+    padding: 0.3em;
+    margin: 0.2em;
+    border: solid 1px #2980B9;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.box-selected {
+    color: #ffffff;
+    background: #2980B9;
+}
+
+.box-selected:hover {
+    color: #ffffff;
+    background: #2980B9;
+}
+
+.fa-github{
+    visibility: hidden;
+}
