@@ -250,19 +250,29 @@ I = I()
 _TermTuple = namedtuple("_TermTuple", "ops coeff")
 
 class Term(_TermTuple):
+    """Multiplication of Pauli matrices with coefficient.
+    Note that this class is immutable.
+
+    Multiplied Pauli matrices are very important for quantum computation
+    because it is an unitary matrix (without coefficient) and also
+    it can be consider the time evolution of the term (with real coefficient)
+    without Suzuki-Trotter expansion.
+    """
     @staticmethod
     def from_paulipair(pauli1, pauli2):
+        """Make new Term from two Pauli operator."""
         return Term(Term.join_ops((pauli1,), (pauli2,)), 1.0)
 
     @staticmethod
     def from_pauli(pauli, coeff=1.0):
-        """From X, Y, Z, I to Term"""
+        """Make new Term from an Pauli operator"""
         if pauli.is_identity or coeff == 0:
             return Term((), coeff)
         return Term((pauli,), coeff)
 
     @staticmethod
     def from_ops_iter(ops, coeff):
+        """For internal use."""
         return Term(tuple(ops), coeff)
 
     @staticmethod
@@ -288,6 +298,7 @@ class Term(_TermTuple):
 
     @staticmethod
     def join_ops(ops1, ops2):
+        """For internal use."""
         i = len(ops1) - 1
         j = 0
         while i >= 0 and j < len(ops2):
@@ -300,6 +311,7 @@ class Term(_TermTuple):
 
     @property
     def is_identity(self):
+        """If `self` is I, returns True, otherwise False."""
         return not self.ops
 
     def __mul__(self, other):
@@ -334,7 +346,8 @@ class Term(_TermTuple):
     def __pow__(self, n):
         if isinstance(n, Integral):
             if n < 0:
-                raise ValueError("`pauli_term ** n` or `pow(pauli_term, n)`: n shall not be negative value.")
+                raise ValueError("`pauli_term ** n` or `pow(pauli_term, n)`: " +
+                                 "n shall not be negative value.")
             if n == 0:
                 return Term.from_pauli(I)
             return Term(self.ops * n, self.coeff ** n)
@@ -371,24 +384,30 @@ class Term(_TermTuple):
     def __eq__(self, other):
         if isinstance(other, _PauliImpl):
             other = other.to_term()
-        return _TermTuple.__eq__(self, other) or _TermTuple.__eq__(self.simplify(), other.simplify())
+        return _TermTuple.__eq__(self, other) or \
+               _TermTuple.__eq__(self.simplify(), other.simplify())
 
     def __ne__(self, other):
         return not self == other
 
     def to_term(self):
+        """Do nothing. This method is prepared to avoid TypeError."""
         return self
 
     def to_expr(self):
+        """Convert to Expr."""
         return Expr.from_term(self)
 
     def commutator(self, other):
+        """Returns commutator."""
         return commutator(self, other)
 
     def is_commutable_with(self, other):
+        """Test whether `self` is commutable with `other`."""
         return is_commutable(self, other)
 
     def simplify(self):
+        """Simplify the Term."""
         def mul(op1, op2):
             if op1 == "I":
                 return 1.0, op2
@@ -427,12 +446,15 @@ class Term(_TermTuple):
         return Term(tuple(new_ops), new_coeff)
 
     def n_iter(self):
+        """Returns an iterator which yields indices for each Pauli matrices in the Term."""
         return (op.n for op in self.ops)
 
     def max_n(self):
+        """Returns the maximum index of Pauli matrices in the Term."""
         return max(self.n_iter())
 
     def append_to_circuit(self, circuit, simplify=True):
+        """Append Pauli gates to `Circuit`."""
         if simplify:
             term = self.simplify()
         else:
@@ -443,6 +465,12 @@ class Term(_TermTuple):
                 getattr(circuit, gate)[op.n]
 
     def get_time_evolution(self):
+        """Get the function to append the time evolution of this term.
+
+        Returns:
+            function(circuit: Circuit, t: float):
+                Add gates for time evolution to `circuit` with time `t`
+        """
         term = self.simplify()
         coeff = term.coeff
         if coeff.imag:
@@ -471,6 +499,7 @@ class Term(_TermTuple):
         return append_to_circuit
 
     def to_matrix(self, n_qubits=-1):
+        """Convert to the matrix."""
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
         mat = I.to_matrix(n_qubits)
@@ -485,6 +514,7 @@ _ExprTuple = namedtuple("_ExprTuple", "terms")
 class Expr(_ExprTuple):
     @staticmethod
     def from_number(num):
+        """Make new Expr from a number"""
         if num:
             return Expr.from_term(Term((), num))
         else:
@@ -492,6 +522,7 @@ class Expr(_ExprTuple):
 
     @staticmethod
     def from_term(term):
+        """Make new Expr from a Term"""
         if term.coeff:
             return Expr((term,))
         else:
@@ -499,21 +530,26 @@ class Expr(_ExprTuple):
 
     @staticmethod
     def from_terms_iter(terms):
+        """For internal use."""
         return Expr(tuple(term for term in terms if term.coeff))
 
     def terms_to_dict(self):
+        """For internal use."""
         return {term[0]: term[1] for term in self.terms if term.coeff}
 
     @staticmethod
     def from_terms_dict(terms_dict):
+        """For internal use."""
         return Expr(tuple(Term(k, v) for k, v in terms_dict.items() if v))
 
     @staticmethod
     def zero():
+        """Returns 0 as Term"""
         return Expr(())
 
     @property
     def is_identity(self):
+        """If `self` is I, returns True, otherwise False."""
         if not self.terms:
             return True
         return len(self.terms) == 1 and not self.terms[0].ops and self.terms[0].coeff == 1.0
@@ -617,7 +653,8 @@ class Expr(_ExprTuple):
     def __pow__(self, n):
         if isinstance(n, Integral):
             if n < 0:
-                raise ValueError("`pauli_expr ** n` or `pow(pauli_expr, n)`: n shall not be negative value.")
+                raise ValueError("`pauli_expr ** n` or `pow(pauli_expr, n)`: " +
+                                 "n shall not be negative value.")
             if n == 0:
                 return Expr.from_number(1.0)
             val = self
@@ -647,35 +684,52 @@ class Expr(_ExprTuple):
         return " ".join(s_terms)
 
     def to_expr(self):
+        """Do nothing. This method is prepared to avoid TypeError."""
         return self
 
     def max_n(self):
+        """Returns the maximum index of Pauli matrices in the Term."""
         return max(term.max_n() for term in self.terms if term.ops)
 
     def coeffs(self):
+        """Generator which yields a coefficent for each Term."""
         for term in self.terms:
             yield term.coeff
 
     def commutator(self, other):
+        """Returns commutator."""
         return commutator(self, other)
 
     def is_commutable_with(self, other):
+        """Test whether `self` is commutable with `other`."""
         return is_commutable(self, other)
 
     def is_all_terms_commutable(self):
+        """Test whether all terms are commutable. This function may very slow."""
         return all(is_commutable(a, b) for a, b in combinations(self.terms, 2))
 
     def simplify(self):
+        """Simplify the Expr."""
         d = defaultdict(float)
         for term in self.terms:
             term = term.simplify()
             d[term.ops] += term.coeff
-        return Expr.from_terms_iter(Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr) if d[k])
+        return Expr.from_terms_iter(
+            Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr) if d[k])
 
     def to_matrix(self, n_qubits=-1):
+        """Convert to the matrix."""
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
         return sum(term.to_matrix(n_qubits) for term in self.terms)
 
 def qubo_bit(n):
+    """Represent QUBO's bit to Pauli operator of Ising model.
+
+    Args:
+        n (int): n-th bit in QUBO
+
+    Returns:
+        Expr: Pauli expression of QUBO bit.
+    """
     return 0.5 - 0.5*Z[n]
