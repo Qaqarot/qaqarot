@@ -4,16 +4,17 @@ This module is internally used.
 """
 
 import math
-import random
-from abc import ABC, abstractmethod
-import numpy as np
+from abc import ABC
 
 class Gate(ABC):
     """Abstract quantum gate class."""
+
+    """Lower name of the gate."""
     lowername = None
 
     @property
     def uppername(self):
+        """Upper name of the gate."""
         return self.lowername.upper()
 
     def __init__(self, targets, **kwargs):
@@ -49,7 +50,6 @@ class Gate(ABC):
         else:
             return f"[{_slice_to_str(self.targets)}]"
 
-
     def __str__(self):
         str_args = self._str_args()
         str_targets = self._str_targets()
@@ -58,6 +58,7 @@ class Gate(ABC):
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
     def target_iter(self, n_qubits):
+        """The generator which yields the target qubits."""
         return slicing(self.targets, n_qubits)
 
     def _make_fallback_for_target_iter(self, n_qubits, fallback):
@@ -69,6 +70,7 @@ class OneQubitGate(Gate):
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
     def control_target_iter(self, n_qubits):
+        """The generator which yields the tuples of (control, target) qubits."""
         return qubit_pairs(self.targets, n_qubits)
 
 class IGate(OneQubitGate):
@@ -185,7 +187,8 @@ class U1Gate(OneQubitGate):
         self.lmbda = lmbda
     lowername = "u1"
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lmbda)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lmbda)])
 
 class U2Gate(OneQubitGate):
     """U2 gate"""
@@ -195,7 +198,8 @@ class U2Gate(OneQubitGate):
         self.lmbda = lmbda
     lowername = "u2"
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lmbda)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lmbda)])
 
 class U3Gate(OneQubitGate):
     """U3 gate"""

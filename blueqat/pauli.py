@@ -1,4 +1,6 @@
-from collections import Counter, defaultdict, namedtuple
+"""The module for calculate Pauli matrices."""
+
+from collections import defaultdict, namedtuple
 from functools import reduce
 from itertools import combinations, product
 from numbers import Number, Integral
@@ -10,7 +12,18 @@ _PauliTuple = namedtuple("_PauliTuple", "n")
 half_pi = pi / 2
 
 def pauli_from_char(ch, n=0):
-    """"X" => X, "Y" => Y, "Z" => Z, "I" => I"""
+    """Make Pauli matrix from an character.
+
+    Args:
+        ch (str): "X" or "Y" or "Z" or "I".
+        n (int, optional): Make Pauli matrix as n-th qubits.
+
+    Returns:
+        If ch is "X" => X, "Y" => Y, "Z" => Z, "I" => I
+
+    Raises:
+        ValueError: When ch is not "X", "Y", "Z" nor "I".
+    """
     ch = ch.upper()
     if ch == "I":
         return I
@@ -23,24 +36,68 @@ def pauli_from_char(ch, n=0):
     raise ValueError("ch shall be X, Y, Z or I")
 
 def term_from_chars(chars):
-    """"XZIY" => X(0) * Z(1) * Y(3)"""
+    """Make Pauli's Term from chars which is written by "X", "Y", "Z" or "I".
+    e.g. "XZIY" => X(0) * Z(1) * Y(3)
+
+    Args:
+        chars (str): Written in "X", "Y", "Z" or "I".
+
+    Returns:
+        Term: A `Term` object.
+
+    Raises:
+        ValueError: When chars conteins the character which is "X", "Y", "Z" nor "I".
+    """
     return Term.from_chars(chars)
 
 def to_term(pauli):
-    """Convert to Term from Pauli operator"""
+    """Convert to Term from Pauli operator (X, Y, Z, I).
+
+    Args:
+        pauli (X, Y, Z or I): A Pauli operator
+
+    Returns:
+        Term: A `Term` object.
+    """
     return pauli.to_term()
 
 def to_expr(term):
-    """Convert to Expr from Term or Pauli operator"""
+    """Convert to Expr from Term or Pauli operator (X, Y, Z, I).
+
+    Args:
+        term: (Term, X, Y, Z or I): A Term or Pauli operator.
+
+    Returns:
+        Expr: An `Expr` object.
+    """
     return term.to_expr()
 
 def commutator(expr1, expr2):
-    """Commute expr1 and expr2"""
+    """Returns [expr1, expr2] = expr1 * expr2 - expr2 * expr1.
+
+    Args:
+        expr1 (Expr, Term or Pauli operator): Pauli's expression.
+        expr2 (Expr, Term or Pauli operator): Pauli's expression.
+
+    Returns:
+        Expr: expr1 * expr2 - expr2 * expr1.
+    """
     expr1 = expr1.to_expr().simplify()
     expr2 = expr2.to_expr().simplify()
     return (expr1 * expr2 - expr2 * expr1).simplify()
 
 def is_commutable(expr1, expr2, eps=0.00000001):
+    """Test whether expr1 and expr2 are commutable.
+
+    Args:
+        expr1 (Expr, Term or Pauli operator): Pauli's expression.
+        expr2 (Expr, Term or Pauli operator): Pauli's expression.
+        eps (float, optional): Machine epsilon.
+            If |[expr1, expr2]| < eps, consider it is commutable.
+
+    Returns:
+        bool: if expr1 and expr2 are commutable, returns True, otherwise False.
+    """
     return sum((x * x.conjugate()).real for x in commutator(expr1, expr2).coeffs()) < eps
 
 # To avoid pylint error
@@ -58,6 +115,7 @@ class _PauliImpl:
 
     @property
     def is_identity(self):
+        """If `self` is I, returns True, otherwise False."""
         return self.op == "I"
 
     def __hash__(self):
@@ -139,9 +197,11 @@ class _PauliImpl:
 
     @property
     def matrix(self):
+        """Matrix reprentation of this operator."""
         return self._matrix[self.op].copy()
 
     def to_matrix(self, n_qubits=-1):
+        """Convert to the matrix."""
         if self.is_identity:
             if n_qubits == -1:
                 return self.matrix
@@ -160,15 +220,12 @@ class _PauliImpl:
 
 class X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
-    pass
 
 class Y(_PauliImpl, _PauliTuple):
     """Pauli's Y operator"""
-    pass
 
 class Z(_PauliImpl, _PauliTuple):
     """Pauli's Z operator"""
-    pass
 
 class _PauliCtor:
     def __init__(self, ty):
@@ -210,7 +267,18 @@ class Term(_TermTuple):
 
     @staticmethod
     def from_chars(chars):
-        """"XZIY" => X(0) * Z(1) * Y(3)"""
+        """Make Pauli's Term from chars which is written by "X", "Y", "Z" or "I".
+        e.g. "XZIY" => X(0) * Z(1) * Y(3)
+
+        Args:
+            chars (str): Written in "X", "Y", "Z" or "I".
+
+        Returns:
+            Term: A `Term` object.
+
+        Raises:
+            ValueError: When chars conteins the character which is "X", "Y", "Z" nor "I".
+        """
         paulis = [pauli_from_char(c, n) for n, c in enumerate(chars) if c != "I"]
         if not paulis:
             return 1.0 * I
