@@ -1,40 +1,35 @@
-.. image:: https://raw.githubusercontent.com/mdrft/Blueqat/master/MDR_Blueqat_color.png
-    :target: https://github.com/mdrft/Blueqat
-    :alt: Blueqat
+===============
+Getting Started
+===============
 
-=======
-blueqat
-=======
+Prerequisites
+=============
 
-A quantum gate simulator
-
-Version
-=======
-.. image:: https://badge.fury.io/py/blueqat.svg
-    :target: https://badge.fury.io/py/blueqat
-
-Build info
-==========
-.. image:: https://circleci.com/gh/mdrft/Blueqat.svg?style=svg
-    :target: https://circleci.com/gh/mdrft/Blueqat
+- Python3
+- numpy
+- scipy
 
 Install
 =======
 
-.. code-block:: sh
+.. code-block:: bash
 
-    git clone https://github.com/mdrft/blueqat
-    cd blueqat
-    pip3 install -e .
+    $ git clone https://github.com/mdrft/blueqat
+    $ cd blueqat
+    $ pip3 install -e .
 
 or
 
-.. code-block:: sh
+.. code-block:: bash
 
-    pip3 install blueqat
+    $ pip3 install blueqat
+
+
+Basics
+======
 
 Circuit
-=======
+-------
 
 .. code-block:: python
 
@@ -48,7 +43,7 @@ Circuit
     c = Circuit(3) #3qubits
 
 Method Chain
-============
+------------
 
 .. code-block:: python
 
@@ -60,7 +55,7 @@ Method Chain
     c.x[0].z[0]
 
 Slice
-=====
+-----
 
 .. code-block:: python
 
@@ -70,28 +65,28 @@ Slice
     Circuit().x[1, 2] # 1qubit gate with comma
 
 Rotation Gate
-=============
+-------------
 
 .. code-block:: python
 
     Circuit().rz(math.pi / 4)[0]
 
 Measurement
-===========
+-----------
 
 .. code-block:: python
 
     Circuit().m[0]
 
 Run()
-=====
+-----
 
 .. code-block:: python
 
     Circuit().h[0].cx[0,1].run()
 
 Run(shots=n)
-============
+------------
 
 .. code-block:: python
 
@@ -99,7 +94,7 @@ Run(shots=n)
     c.run(shots=100) # => Counter({'00': 48, '11': 52}) (random value.)
 
 Hamiltonian
-===========
+-----------
 
 .. code-block:: python
 
@@ -118,7 +113,7 @@ simplify the hamiltonian
     print(hamiltonian)
 
 VQE
-===
+---
 
 .. code-block:: python
 
@@ -138,7 +133,7 @@ If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the
     hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
 
 Blueqat to Qiskit
-=================
+-----------------
 
 .. code-block:: python
 
@@ -147,7 +142,7 @@ Blueqat to Qiskit
     result = blueqat.vqe.Vqe(QaoaAnsatz(...), sampler=sampler).run(verbose=True)
 
 Blueqat to QASM
-===============
+---------------
 
 .. code-block:: python
 
@@ -169,7 +164,8 @@ Example
 
     from blueqat import Circuit
     c = Circuit().h[:2].cz[0,1].h[:].x[:].cz[0,1].x[:].h[:].m[:]
-    print(c.run(shots=1))
+    c.run()
+    print(c.last_result()) # => (1, 1)
 
 Maxcut QAOA
 -----------
@@ -186,15 +182,3 @@ Maxcut QAOA
      {0}---{3}
      | x |
      {1}---{2}""".format(*result.most_common()[0][0]))
-
-Tutorial
-========
-`Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
-
-Author
-======
-Takumi Kato (MDR),Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
-
-Disclaimer
-==========
-Copyright 2018 The Blueqat Developers.
