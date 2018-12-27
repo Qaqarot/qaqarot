@@ -1,6 +1,3 @@
-import math
-import random
-import numpy as np
 from ..gate import *
 from .backendbase import Backend
 from .qasm_output_backend import QasmOutputBackend
@@ -22,4 +19,17 @@ class QasmParsableBackend(Backend):
         return self.qasm_runner(qasm, *args, **kwargs)
 
 def generate_backend(qasm_runner):
+    """Generate a wrapper of QasmParsableBackend from qasm_runner.
+
+    Due to Blueqat's backend specifications, normally, cannot give arguments to
+    QasmParsableBackend's constructor.
+    This function wrap the class for specify `qasm_runner` to QasmParsableBackend's constructor.
+
+    Args:
+        qasm_runner (function (qasm: str, *args, **kwargs) -> Result):
+            An function which receives OpenQASM and some arguments and returns a result.
+
+    Returns:
+        function () -> QasmParsableBackend(qasm_runner)
+    """
     return lambda: QasmParsableBackend(qasm_runner)
