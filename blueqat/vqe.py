@@ -247,6 +247,8 @@ print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts
 
     def sampling(circuit, meas):
         meas = tuple(meas)
+        if not meas:
+            return {}
         circuit.measure[meas]
         qasm = circuit.to_qasm()
         qk_circuit = qiskit.load_qasm_string(qasm)
