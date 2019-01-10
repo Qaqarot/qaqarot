@@ -219,6 +219,29 @@ def get_qiskit_sampler(backend, **execute_kwargs):
         execute_kwargs['shots'] = shots = 1024
 
     def reduce_bits(bits, meas):
+        # In Qiskit 0.6.1, For example
+        # Aer backend returns bit string and IBMQ backend returns hex string.
+        # Sample code:
+        """
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, execute, Aer, IBMQ
+IBMQ.load_accounts()
+q, c = QuantumRegister(4, 'q'), ClassicalRegister(4, 'c')
+circ = QuantumCircuit(q, c)
+circ.x(q[1])
+for i in range(4):
+    circ.measure(q[i], c[i])
+print("Aer qasm_simulator_py")
+print(execute(circ, Aer.get_backend('qasm_simulator_py')).result().get_counts())
+print("IBMQ ibmq_qasm_simulator")
+print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts())
+        """
+        # The result is,
+        # Aer: {'0010': 1024}
+        # IBMQ: {'0x2': 1024}
+        # This is workaround for this IBM's specifications.
+        if bits.startswith("0x"):
+            bits = int(bits, base=16)
+            bits = "0"*100 + format(bits, "b")
         bits = [int(x) for x in bits[::-1]]
         return tuple(bits[m] for m in meas)
 
