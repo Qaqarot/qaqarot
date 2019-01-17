@@ -18,9 +18,10 @@ class Gate(ABC):
         """Upper name of the gate."""
         return self.lowername.upper()
 
-    def __init__(self, targets, **kwargs):
+    def __init__(self, targets, params=(), **kwargs):
         if self.lowername is None:
             raise ValueError(f"{self.__class__.__name__}.lowername is not defined.")
+        self.params = params
         self.kwargs = kwargs
         self.targets = targets
 
@@ -122,7 +123,7 @@ class RXGate(OneQubitGate):
     lowername = "rx"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -134,7 +135,7 @@ class RYGate(OneQubitGate):
     lowername = "ry"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -146,7 +147,7 @@ class RZGate(OneQubitGate):
     lowername = "rz"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -213,7 +214,7 @@ class ToffoliGate(Gate):
 class U1Gate(OneQubitGate):
     """U1 gate"""
     def __init__(self, targets, lmbda, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (lmbda,), **kwargs)
         self.lmbda = lmbda
 
     lowername = "u1"
@@ -225,7 +226,7 @@ class U1Gate(OneQubitGate):
 class U2Gate(OneQubitGate):
     """U2 gate"""
     def __init__(self, targets, phi, lmbda, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (phi, lmbda), **kwargs)
         self.phi = phi
         self.lmbda = lmbda
 
@@ -238,7 +239,7 @@ class U2Gate(OneQubitGate):
 class U3Gate(OneQubitGate):
     """U3 gate"""
     def __init__(self, targets, theta, phi, lmbda, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta, phi, lmbda), **kwargs)
         self.theta = theta
         self.phi = phi
         self.lmbda = lmbda
