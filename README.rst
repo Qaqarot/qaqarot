@@ -192,6 +192,12 @@ Tutorial
 
 https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
 
+Document
+========
+日本語
+
+https://blueqat.readthedocs.io/ja/latest/
+
 Author
 ======
 Takumi Kato (MDR),Yuichiro Minato (MDR), Satoshi Takezawa (TerraSky)
