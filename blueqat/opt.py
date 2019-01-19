@@ -1,4 +1,5 @@
 import numpy as np
+import sympy
 
 def pauli(qubo):
 	"""
@@ -13,7 +14,35 @@ def pauli(qubo):
 		for j in range(i + 1, len(qubo)):
 			h += qubo_bit(i)*qubo_bit(j) * (qubo[i][j] + qubo[j][i])
 	return h
-  
+
+def optx(quboh): 
+	optx_E = sympy.expand(quboh)
+	symbol_list = list(optx_E.free_symbols)
+	sympy.var(' '.join(map(str,symbol_list)),positive=True)
+	for i in range(len(symbol_list)):
+		optx_E = optx_E.subs(symbol_list[i]*symbol_list[i],symbol_list[i])
+	return optx_E
+
+def optm(quboh,numM): 
+	optm_E = sympy.expand(quboh) 
+	symbol_list = ["q"+str(i) for i in range(numM)] 
+	sympy.var(' '.join(symbol_list),positive=True) 
+
+	symbol_list_proto = list(optm_E.free_symbols) 
+	for i in range(len(symbol_list_proto)): 
+		optm_E = optm_E.subs(symbol_list_proto[i]*symbol_list_proto[i],symbol_list_proto[i]) 
+
+	optm_M = np.zeros((numM,numM)) 
+
+	for i in range(numM): 
+		for j in range(i+1,numM): 
+			optm_M[i][j] = optm_E.coeff(symbol_list[i]+"*"+symbol_list[j]) 
+
+		temp1 = sympy.poly(optm_E.coeff(symbol_list[i])) 
+		optm_M[i][i] = sympy.poly(optm_E.coeff(symbol_list[i])).coeff_monomial(1) 
+
+	return optm_M
+
 def Ei(q3,j3):
 	EE = 0
 	for i in range(len(q3)):
