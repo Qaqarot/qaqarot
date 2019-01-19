@@ -1,5 +1,4 @@
 import numpy as np
-import sympy
 
 def pauli(qubo):
 	"""
@@ -16,6 +15,11 @@ def pauli(qubo):
 	return h
 
 def optx(quboh): 
+	try:
+		import sympy
+	except ImportError:
+		raise ImportError("optx() requires sympy. Please install before call this function.")
+
 	optx_E = sympy.expand(quboh)
 	symbol_list = list(optx_E.free_symbols)
 	sympy.var(' '.join(map(str,symbol_list)),positive=True)
@@ -23,7 +27,11 @@ def optx(quboh):
 		optx_E = optx_E.subs(symbol_list[i]*symbol_list[i],symbol_list[i])
 	return optx_E
 
-def optm(quboh,numM): 
+def optm(quboh,numM):
+	try:
+		import sympy
+	except ImportError:
+		raise ImportError("optm() requires sympy. Please install before call this function.") 
 	optm_E = sympy.expand(quboh) 
 	symbol_list = ["q"+str(i) for i in range(numM)] 
 	sympy.var(' '.join(symbol_list),positive=True) 
