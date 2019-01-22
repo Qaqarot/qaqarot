@@ -133,6 +133,53 @@ def nbody_separation(expr, qs):
         logging.debug(f"new_expr: {new_expr}")
     return new_expr, constraints, mapping
 
+def qn_to_qubo(expr):
+    """Convert Sympy's expr to QUBO.
+    
+    Args:
+        expr: Sympy's quadratic expression with variable `q0`, `q1`, ...
+    Returns:
+        [[float]]: Returns QUBO matrix.
+    """
+    try:
+        import sympy
+    except ImportError:
+        raise ImportError("This function requires sympy. Please install it.")
+    assert type(expr) == sympy.Add
+    to_i = lambda s: int(str(s)[1:])
+    max_i = max(map(to_i, expr.free_symbols)) + 1
+    qubo = [[0.] * max_i for _ in range(max_i)]
+    for arg in expr.args:
+        syms = arg.free_symbols
+        assert len(syms) <= 2
+        if len(syms) == 2:
+            assert type(arg) == sympy.Mul
+            i, j = list(map(to_i, syms))
+            if i > j:
+                i, j = j, i
+            if i == j:
+                if len(arg.args) == 2:
+                    qubo[i][i] = float(arg.args[0])
+                elif len(arg.args) == 1:
+                    qubo[i][i] = 1.0
+                else:
+                    raise ValueError(f"Too many args! arg.args = {arg.args}")
+                continue
+            if len(arg.args) == 3:
+                qubo[i][j] = float(arg.args[0])
+            elif len(arg.args) == 2:
+                qubo[i][j]
+        if len(syms) == 1:
+            if len(arg.args) == 2:
+                assert type(arg) == sympy.Mul
+                i = to_i(next(iter(syms)))
+                qubo[i][i] = float(arg.args[0])
+            elif len(arg.args) == 1:
+                qubo[i][i] = 1.0
+            else:
+                raise ValueError(f"Too many args! arg.args = {arg.args}")
+    return qubo
+
 def Ei(q3,j3):
 	EE = 0
 	for i in range(len(q3)):
