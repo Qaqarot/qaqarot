@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 
 def pauli(qubo):
@@ -50,6 +51,87 @@ def optm(quboh,numM):
 		optm_M[i][i] = sympy.poly(optm_E.coeff(symbol_list[i])).coeff_monomial(1) 
 
 	return optm_M
+
+def make_qs(n, m=None):
+    """Make sympy symbols q0, q1, ...
+    
+    Args:
+        n(int), m(int, optional):
+            If specified both n and m, returns [qn, q(n+1), ..., qm],
+            Only n is specified, returns[q0, q1, ..., qn].
+
+    Return:
+        tuple(Symbol): Tuple of sympy symbols.
+    """
+    try:
+        import sympy
+    except ImportError:
+        raise ImportError("This function requires sympy. Please install it.")
+    if m is None:
+        syms = sympy.symbols(" ".join(f"q{i}" for i in range(n)))
+        if isinstance(syms, tuple):
+            return syms
+        else:
+            return (syms,)
+    syms = sympy.symbols(" ".join(f"q{i}" for i in range(n, m)))
+    if isinstance(syms, tuple):
+        return syms
+    else:
+        return (syms,)
+
+def nbody_separation(expr, qs):
+    """Convert n-body problem to 2-body problem.
+    
+    Args:
+        expr: sympy expressions to be separated.
+        qs: sympy's symbols to be used as supplementary variable.
+
+    Return:
+        new_expr(sympy expr), constraints(sympy expr), mapping(dict(str, str -> Symbol)):
+            `new_expr` is converted problem, `constraints` is constraints for supplementary variable.
+            You may use `expr = new_expr + delta * constraints`, delta is floating point variable.
+            mapping is supplementary variable's mapping.
+    """
+    try:
+        import sympy
+    except ImportError:
+        raise ImportError("This function requires sympy. Please install it.")
+    logging.debug(expr)
+    free_symbols = expr.free_symbols
+    logging.debug(free_symbols)
+    assert type(expr) == sympy.Add
+    logging.debug(expr.args)
+    mapping = {}
+    new_expr = sympy.expand(0)
+    constraints = sympy.expand(0)
+    i_var = 0
+    for arg in expr.args:
+        if isinstance(arg, sympy.Symbol):
+            new_expr += arg
+            continue
+        if not arg.free_symbols:
+            new_expr += arg
+            continue
+        assert type(arg) == sympy.Mul
+        syms = arg.free_symbols.copy()
+        while len(syms) > 2:
+            it = iter(syms)
+            for v1, v2 in zip(it, it):
+                if (str(v1), str(v2)) in mapping:
+                    v = mapping[str(v1), str(v2)]
+                    logging.debug(f"{v1}*{v2} -> {v} (Existed variable)")
+                else:
+                    v = qs[i_var]
+                    i_var += 1
+                    mapping[(str(v1), str(v2))] = v
+                    logging.debug(f"{v1}*{v2} -> {v} (New variable)")
+                    constraints += 3*v + v1*v2 - 2*v1*v - 2*v2*v
+                    logging.debug(f"constraints: {constraints}")
+                arg = arg.subs(v1*v2, v)
+            syms = arg.free_symbols.copy()
+        new_expr += arg
+        logging.debug(f"new_expr: {new_expr}")
+    return new_expr, constraints, mapping
 
 def Ei(q3,j3):
 	EE = 0
