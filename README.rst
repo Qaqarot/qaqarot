@@ -191,6 +191,12 @@ Tutorial
 ========
 `Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
 
+Document
+========
+日本語
+
+https://blueqat.readthedocs.io/ja/latest/
+
 Author
 ======
 Takumi Kato (MDR),Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
