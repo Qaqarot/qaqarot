@@ -67,41 +67,49 @@ class SympyBackend(Backend):
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
 
+    def _create_control_gate_of_matrix(self, type_of_gate, control, target):
+        unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
+        unit_of_lower_triangular_matrix = Matrix([[0, 0], [0, 1]])
+
+        control_gates = [unit_of_upper_triangular_matrix, eye(2)]
+        target_gates = [unit_of_lower_triangular_matrix, self.SYMPY_GATE['TAEGET_%s' % type_of_gate]]
+        number_between_of_qubits = abs(target - control) - 1
+        if number_between_of_qubits != 0:
+            between_unit_gate = eye(2 ** number_between_of_qubits)
+            control_gates.insert(1, between_unit_gate)
+            target_gates.insert(1, between_unit_gate)
+
+        control_gate_of_matrix = reduce(TensorProduct, control_gates) + reduce(TensorProduct, target_gates)
+        if control < target or type_of_gate == 'CZ':
+            return control_gate_of_matrix
+        else:
+            gates = [self.SYMPY_GATE['H'], self.SYMPY_GATE['H']]
+            if number_between_of_qubits != 0:
+                gates.insert(1, eye(2 ** number_between_of_qubits))
+            transformation_of_matrix = reduce(TensorProduct, gates)
+            return transformation_of_matrix * control_gate_of_matrix * transformation_of_matrix
+
+    def _embedded_control_gate(self, n_qubits, upper_qubit, lower_qubit, control_gate):
+        gates = [control_gate]
+        if upper_qubit > 0:
+            gates.append(eye(2**upper_qubit))
+
+        number_of_lower_qubits = n_qubits - lower_qubit - 1
+        if number_of_lower_qubits > 0:
+            gates.insert(0, eye(2**number_of_lower_qubits))
+
+        return reduce(TensorProduct, gates)
+
     def _two_qubit_gate_noargs(self, gate, ctx):
         for control, target in gate.control_target_iter(ctx.n_qubits):
             control_gate_of_matrix = self._create_control_gate_of_matrix(gate.uppername, control, target)
             if ctx.n_qubits == abs(target - control) + 1:
                 ctx.matrix_of_circuit = control_gate_of_matrix * ctx.matrix_of_circuit
+            elif control > target:
+                ctx.matrix_of_circuit = self._embedded_control_gate(ctx.n_qubits, target, control, control_gate_of_matrix) * ctx.matrix_of_circuit
             else:
-                matrix = control_gate_of_matrix
-                number_of_upper_qubits = control
-                if number_of_upper_qubits > 0:
-                    matrix = TensorProduct(matrix, eye(2 ** number_of_upper_qubits))
-                number_of_lower_qubits = ctx.n_qubits - target - 1
-                if number_of_lower_qubits > 0:
-                    matrix = TensorProduct(eye(2 ** number_of_lower_qubits), control_gate_of_matrix)
-                ctx.matrix_of_circuit = matrix * ctx.matrix_of_circuit
+                ctx.matrix_of_circuit = self._embedded_control_gate(ctx.n_qubits, control, target, control_gate_of_matrix) * ctx.matrix_of_circuit
         return ctx
-
-    def _create_control_gate_of_matrix(self, type_of_gate, control, target):
-        number_between_of_qubits = abs(target - control) - 1
-        unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
-        control_of_matrix = eye(2 ** (number_between_of_qubits + 1))
-        unit_of_lower_triangular_matrix = Matrix([[0, 0], [0, 1]])
-        target_of_matrix = self.SYMPY_GATE['TAEGET_%s' % type_of_gate]
-
-        if number_between_of_qubits != 0:
-            target_of_matrix = TensorProduct(eye(2 ** number_between_of_qubits), target_of_matrix)
-
-        control_gate_of_matrix = TensorProduct(unit_of_upper_triangular_matrix, control_of_matrix) + TensorProduct(unit_of_lower_triangular_matrix, target_of_matrix)
-        if control < target or type_of_gate == 'CZ':
-            return control_gate_of_matrix
-        else:
-            transformation_of_matrix = self.SYMPY_GATE['H']
-            if number_between_of_qubits != 0:
-                transformation_of_matrix = TensorProduct(eye(2 ** number_between_of_qubits), transformation_of_matrix)
-            transformation_of_matrix = TensorProduct(transformation_of_matrix, transformation_of_matrix)
-            return transformation_of_matrix * control_gate_of_matrix * transformation_of_matrix
 
     gate_cx = _two_qubit_gate_noargs
     gate_cz = _two_qubit_gate_noargs
