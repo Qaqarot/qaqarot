@@ -79,6 +79,12 @@ class TwoQubitGate(Gate):
         """The generator which yields the tuples of (control, target) qubits."""
         return qubit_pairs(self.targets, n_qubits)
 
+    def _make_fallback_for_control_target_iter(self, n_qubits, fallback):
+        gates = []
+        for c, t in self.control_target_iter(n_qubits):
+            gates += fallback(c, t)
+        return gates
+
 
 class IGate(OneQubitGate):
     """Identity Gate"""
@@ -186,6 +192,16 @@ class SDagGate(OneQubitGate):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
 
 
+class SwapGate(TwoQubitGate):
+    """Swap gate"""
+    lowername = "swap"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [CXGate((c, t)), CXGate((t, c)), CXGate((c, t))])
+
+
 class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
@@ -246,6 +262,59 @@ class U3Gate(OneQubitGate):
         self.lmbda = lmbda
 
     lowername = "u3"
+
+
+class CU1Gate(TwoQubitGate):
+    """Controlled U1 gate"""
+    def __init__(self, targets, lmbda, **kwargs):
+        super().__init__(targets, (lmbda,), **kwargs)
+        self.lmbda = lmbda
+
+    lowername = "cu1"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t: [
+                U1Gate(t, self.lmbda / 2),
+                CXGate((c, t)),
+                U1Gate(t, -self.lmbda / 2),
+                CXGate((c, t)),
+                U1Gate(c, self.lmbda / 2),
+            ])
+
+
+class CU2Gate(TwoQubitGate):
+    """Controlled U2 gate"""
+    def __init__(self, targets, phi, lmbda, **kwargs):
+        super().__init__(targets, (phi, lmbda), **kwargs)
+        self.phi = phi
+        self.lmbda = lmbda
+
+    lowername = "cu2"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lmbda)])
+
+class CU3Gate(TwoQubitGate):
+    """Controlled U3 gate"""
+    def __init__(self, targets, theta, phi, lmbda, **kwargs):
+        super().__init__(targets, (theta, phi, lmbda), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lmbda = lmbda
+
+    lowername = "u3"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t: [
+                U1Gate(t, (self.lmbda - self.phi) / 2),
+                CXGate((c, t)),
+                U3Gate(t, -self.theta / 2, 0, -(self.phi + self.lmbda) / 2),
+                CXGate((c, t)),
+                U3Gate(t, self.theta / 2, self.phi, 0),
+            ])
 
 
 class Measurement(OneQubitGate):
