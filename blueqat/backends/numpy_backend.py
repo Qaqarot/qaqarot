@@ -8,8 +8,10 @@ from .backendbase import Backend
 
 DEFAULT_DTYPE = np.complex128
 
+
 class _NumPyBackendContext:
     """This class is internally used in NumPyBackend"""
+
     def __init__(self, n_qubits):
         self.n_qubits = n_qubits
         self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
@@ -34,6 +36,7 @@ class _NumPyBackendContext:
             return ''.join(str(b) for b in cregs)
         key = to_str(self.cregs)
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
+
 
 class NumPyBackend(Backend):
     """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
@@ -270,6 +273,7 @@ class NumPyBackend(Backend):
                 ctx.cregs[target] = 1
         ctx.save_cache = False
         return ctx
+
 
 def _ignore_globals(qubits):
     for q in qubits:

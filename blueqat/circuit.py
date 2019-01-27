@@ -4,6 +4,7 @@ from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
 from .backends.mqc_backend import MQCBackend
+from .backends.sympy_backend import SympyBackend
 
 GATE_SET = {
     "i": gate.IGate,
@@ -35,6 +36,7 @@ BACKENDS = {
     "numpy": NumPyBackend,
     "mqc": MQCBackend,
     "qasm_output": QasmOutputBackend,
+    "sympy_unitary": SympyBackend,
 }
 DEFAULT_BACKEND_NAME = "numpy"
 
