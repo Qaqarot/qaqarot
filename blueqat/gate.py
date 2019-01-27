@@ -229,89 +229,89 @@ class ToffoliGate(Gate):
 
 class U1Gate(OneQubitGate):
     """U1 gate"""
-    def __init__(self, targets, lmbda, **kwargs):
-        super().__init__(targets, (lmbda,), **kwargs)
-        self.lmbda = lmbda
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd,), **kwargs)
+        self.lambd = lambd
 
     lowername = "u1"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lmbda)])
+            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
 
 
 class U2Gate(OneQubitGate):
     """U2 gate"""
-    def __init__(self, targets, phi, lmbda, **kwargs):
-        super().__init__(targets, (phi, lmbda), **kwargs)
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
         self.phi = phi
-        self.lmbda = lmbda
+        self.lambd = lambd
 
     lowername = "u2"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lmbda)])
+            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
 
 class U3Gate(OneQubitGate):
     """U3 gate"""
-    def __init__(self, targets, theta, phi, lmbda, **kwargs):
-        super().__init__(targets, (theta, phi, lmbda), **kwargs)
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
         self.theta = theta
         self.phi = phi
-        self.lmbda = lmbda
+        self.lambd = lambd
 
     lowername = "u3"
 
 
 class CU1Gate(TwoQubitGate):
     """Controlled U1 gate"""
-    def __init__(self, targets, lmbda, **kwargs):
-        super().__init__(targets, (lmbda,), **kwargs)
-        self.lmbda = lmbda
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd,), **kwargs)
+        self.lambd = lambd
 
     lowername = "cu1"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits, lambda c, t: [
-                U1Gate(t, self.lmbda / 2),
+                U1Gate(t, self.lambd / 2),
                 CXGate((c, t)),
-                U1Gate(t, -self.lmbda / 2),
+                U1Gate(t, -self.lambd / 2),
                 CXGate((c, t)),
-                U1Gate(c, self.lmbda / 2),
+                U1Gate(c, self.lambd / 2),
             ])
 
 
 class CU2Gate(TwoQubitGate):
     """Controlled U2 gate"""
-    def __init__(self, targets, phi, lmbda, **kwargs):
-        super().__init__(targets, (phi, lmbda), **kwargs)
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
         self.phi = phi
-        self.lmbda = lmbda
+        self.lambd = lambd
 
     lowername = "cu2"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lmbda)])
+            n_qubits, lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
 
 class CU3Gate(TwoQubitGate):
     """Controlled U3 gate"""
-    def __init__(self, targets, theta, phi, lmbda, **kwargs):
-        super().__init__(targets, (theta, phi, lmbda), **kwargs)
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
         self.theta = theta
         self.phi = phi
-        self.lmbda = lmbda
+        self.lambd = lambd
 
     lowername = "u3"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits, lambda c, t: [
-                U1Gate(t, (self.lmbda - self.phi) / 2),
+                U1Gate(t, (self.lambd - self.phi) / 2),
                 CXGate((c, t)),
-                U3Gate(t, -self.theta / 2, 0, -(self.phi + self.lmbda) / 2),
+                U3Gate(t, -self.theta / 2, 0, -(self.phi + self.lambd) / 2),
                 CXGate((c, t)),
                 U3Gate(t, self.theta / 2, self.phi, 0),
             ])
