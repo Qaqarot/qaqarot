@@ -304,7 +304,7 @@ class CU3Gate(TwoQubitGate):
         self.phi = phi
         self.lambd = lambd
 
-    lowername = "u3"
+    lowername = "cu3"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
