@@ -3,7 +3,7 @@
 This module is internally used.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 import copy
 
 class Backend(ABC):

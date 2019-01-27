@@ -4,7 +4,7 @@ import numpy as np
 from blueqat import Circuit, BlueqatGlobalSetting
 from collections import Counter
 from functools import reduce
-from sympy import eye, symbols, sin, cos, exp, pi, I, Matrix
+from sympy import eye, zeros, symbols, simplify, sin, cos, exp, pi, I, Matrix
 from sympy.physics.quantum import gate, TensorProduct
 
 
@@ -349,3 +349,81 @@ def test_sympy_backend_for_two_qubit_gate():
     actual_8 = Circuit().cz[3, 1].x[4].run(backend="sympy_unitary")
     control_gate_8 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, Z])
     assert actual_8 == reduce(TensorProduct, [X, control_gate_8, E])
+
+
+def test_u1():
+    lambd = symbols("lambd")
+
+    actual_1 = Circuit().u1(lambd)[0].run(backend="sympy_unitary")
+    expected_1 = Circuit().rz(lambd)[0].run_with_sympy_unitary()
+    assert simplify(actual_1 - expected_1) == zeros(2)
+
+
+def test_u1_realvalue():
+    lambd = pi / 11
+
+    actual_1 = Circuit().u1(lambd)[0].run(backend="sympy_unitary")
+    assert actual_1[0, 0] != 0
+    expected_1 = Circuit().rz(lambd)[0].run_with_sympy_unitary()
+    assert expected_1[0, 0] != 0
+    assert actual_1 == expected_1
+
+    actual_2 = Circuit().u1(lambd.evalf())[0].run_with_numpy()
+    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
+    # ignore global phase
+    for i in range(len(actual_2)):
+        if actual_2[i] != 0:
+            actual_2 *= expected_2[i] / actual_2[i]
+            break
+    assert is_vec_same(actual_2, expected_2)
+
+    actual_3 = Circuit().x[0].u1(lambd.evalf())[0].run_with_numpy()
+    expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
+    # ignore global phase
+    for i in range(len(actual_3)):
+        if actual_3[i] != 0:
+            actual_3 *= expected_3[i] / actual_3[i]
+            break
+    assert is_vec_same(actual_3, expected_3)
+
+
+def test_u2():
+    phi, lambd = symbols("phi lambd")
+
+    actual_1 = Circuit().u2(phi, lambd)[0].run(backend="sympy_unitary")
+    expected_1 = Circuit().rz(lambd)[0].ry(pi / 2)[0].rz(phi)[0].run_with_sympy_unitary()
+    assert simplify(actual_1 - expected_1) == zeros(2)
+
+
+def test_u3():
+    theta, phi, lambd = symbols("theta phi lambd")
+
+    actual_1 = Circuit().u3(theta, phi, lambd)[0].run(backend="sympy_unitary")
+    assert actual_1[0, 0] != 0
+    expected_1 = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
+    assert expected_1[0, 0] != 0
+    assert simplify(actual_1 - expected_1) == zeros(2)
+
+
+def test_u3_realvalue():
+    theta = pi * 7 / 11
+    phi = pi * 5 / 13
+    lambd = pi * 8 / 17
+
+    actual_1 = Circuit().u3(theta, phi, lambd)[0].run(backend="sympy_unitary")
+    assert actual_1[0, 0] != 0
+    expected_1 = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
+    assert expected_1[0, 0] != 0
+    assert actual_1 == expected_1
+
+    actual_2 = Circuit().u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
+    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
+    # ignore global phase
+    actual_2 *= expected_2[0] / actual_2[0]
+    assert is_vec_same(actual_2, expected_2)
+
+    actual_3 = Circuit().x[0].u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
+    expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
+    # ignore global phase
+    actual_3 *= expected_3[0] / actual_3[0]
+    assert is_vec_same(actual_3, expected_3)

@@ -28,6 +28,7 @@ GATE_SET = {
     "u1": gate.U1Gate,
     "u2": gate.U2Gate,
     "u3": gate.U3Gate,
+    "swap": gate.SwapGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
     "t": gate.TGate,

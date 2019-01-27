@@ -257,9 +257,9 @@ class NumPyBackend(Backend):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
-        lmbda = gate.lmbda
+        lambd = gate.lambd
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= complex(math.cos(lmbda), math.sin(lmbda))
+            qubits[(i & (1 << target)) != 0] *= complex(math.cos(lambd), math.sin(lambd))
         return ctx
 
     def gate_u3(self, gate, ctx):
@@ -269,11 +269,11 @@ class NumPyBackend(Backend):
         i = ctx.indices
         theta = gate.theta
         phi = gate.phi
-        lmbda = gate.lmbda
+        lambd = gate.lambd
         a00 = math.cos(theta / 2)
-        a11 = a00 * complex(math.cos(phi + lmbda), math.sin(phi + lmbda))
+        a11 = a00 * complex(math.cos(phi + lambd), math.sin(phi + lambd))
         a01 = a10 = math.sin(theta / 2)
-        a01 *= complex(math.cos(lmbda), math.sin(lmbda))
+        a01 *= complex(math.cos(lambd), math.sin(lambd))
         a10 *= complex(math.cos(phi), math.sin(phi))
         for target in gate.target_iter(n_qubits):
             np.copyto(newq, qubits)
