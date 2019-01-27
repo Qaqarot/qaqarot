@@ -240,6 +240,7 @@ def test_switch_backend1():
 
 
 def test_sympy_backend():
-    c = Circuit().cx[2, 1].run(backend="sympy_unitary")
+    # c = Circuit().cz[1, 0].run(backend="sympy_unitary")
+    c = Circuit().cx[1, 0].run(backend="sympy_unitary")
     # print(c)
-    # assert False
+    assert False

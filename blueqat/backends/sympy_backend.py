@@ -95,11 +95,17 @@ class SympyBackend(Backend):
         target_of_matrix = self.SYMPY_GATE['TAEGET_%s' % type_of_gate]
 
         if number_between_of_qubits != 0:
-            target_of_matrix = TensorProduct(eye(2 ** number_between_of_qubits), self.SYMPY_GATE['X'])
-        if control < target:
-            return TensorProduct(unit_of_upper_triangular_matrix, control_of_matrix) + TensorProduct(unit_of_lower_triangular_matrix, target_of_matrix)
+            target_of_matrix = TensorProduct(eye(2 ** number_between_of_qubits), target_of_matrix)
+
+        control_gate_of_matrix = TensorProduct(unit_of_upper_triangular_matrix, control_of_matrix) + TensorProduct(unit_of_lower_triangular_matrix, target_of_matrix)
+        if control < target or type_of_gate == 'CZ':
+            return control_gate_of_matrix
         else:
-            return TensorProduct(unit_of_upper_triangular_matrix, target_of_matrix) + TensorProduct(unit_of_lower_triangular_matrix, control_of_matrix)
+            transformation_of_matrix = self.SYMPY_GATE['H']
+            if number_between_of_qubits != 0:
+                transformation_of_matrix = TensorProduct(eye(2 ** number_between_of_qubits), transformation_of_matrix)
+            transformation_of_matrix = TensorProduct(transformation_of_matrix, transformation_of_matrix)
+            return transformation_of_matrix * control_gate_of_matrix * transformation_of_matrix
 
     gate_cx = _two_qubit_gate_noargs
     gate_cz = _two_qubit_gate_noargs
