@@ -22,8 +22,10 @@ class SympyBackend(Backend):
     def __init__(self):
         if not is_import:
             raise ImportError('sympy_unitary requires sympy. Please install before call this option.')
-        theta = symbols('theta')
+        theta, phi, lambd = symbols('theta phi lambd')
         self.theta = theta
+        self.phi = phi
+        self.lambd = lambd
         self.SYMPY_GATE = {
             'X': sympy_gate.X(0).get_target_matrix(),
             'Y': sympy_gate.Y(0).get_target_matrix(),
@@ -36,6 +38,10 @@ class SympyBackend(Backend):
             'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
             'TAEGET_CX': sympy_gate.X(0).get_target_matrix(),
             'TAEGET_CZ': sympy_gate.Z(0).get_target_matrix(),
+            'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
+            'U3': Matrix([
+                [exp(-I * (phi + lambd) / 2) * cos(theta / 2), -exp(-I * (phi - lambd)) / 2 * sin(theta / 2)],
+                [exp(I * (phi - lambd) / 2) * sin(theta / 2), exp(I * (phi + lambd) / 2) * cos(theta / 2)]]),
         }
 
     def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx, matrix_of_gate):
@@ -66,6 +72,15 @@ class SympyBackend(Backend):
     gate_rx = _one_qubit_gate_args_theta
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
+
+    def _one_qubit_gate_ugate(self, gate, ctx):
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.lambd, gate.lambd)
+        try:
+            matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, gate.theta)
+            matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.phi, gate.phi)
+        except AttributeError: # Case of U3 gate
+            pass
+        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     def _create_control_gate_of_matrix(self, type_of_gate, control, target):
         unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
