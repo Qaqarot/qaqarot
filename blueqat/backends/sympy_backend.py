@@ -1,4 +1,5 @@
 import numpy as np
+from functools import reduce
 from .backendbase import Backend
 
 
@@ -37,29 +38,24 @@ class SympyBackend(Backend):
             'TAEGET_CZ': sympy_gate.Z(0).get_target_matrix(),
         }
 
-    def _one_qubit_gate_noargs(self, gate, ctx):
-        matrix = eye(2)
-        targets = [i for i in gate.target_iter(ctx.n_qubits)]
+    def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx, matrix_of_gate):
+        targets = [idx for idx in gate.target_iter(ctx.n_qubits)]
+        gates = []
         for idx in range(ctx.n_qubits):
             if idx in targets:
-                matrix_of_gate = self.SYMPY_GATE[gate.uppername]
-                matrix = matrix_of_gate if idx == 0 else TensorProduct(matrix_of_gate, matrix)
-            elif not idx == 0:
-                matrix = TensorProduct(eye(2), matrix)
-        ctx.matrix_of_circuit = matrix * ctx.matrix_of_circuit
+                gates.append(matrix_of_gate)
+            else:
+                gates.append(eye(2))
+        ctx.matrix_of_circuit = reduce(TensorProduct, reversed(gates)) * ctx.matrix_of_circuit
         return ctx
 
+    def _one_qubit_gate_noargs(self, gate, ctx):
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername]
+        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
+
     def _one_qubit_gate_args_theta(self, gate, ctx):
-        matrix = eye(2)
-        targets = [i for i in gate.target_iter(ctx.n_qubits)]
-        for idx in range(ctx.n_qubits):
-            if idx in targets:
-                matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, gate.theta)
-                matrix = matrix_of_gate if idx == 0 else TensorProduct(matrix_of_gate, matrix)
-            elif not idx == 0:
-                matrix = TensorProduct(eye(2), matrix)
-        ctx.matrix_of_circuit = matrix * ctx.matrix_of_circuit
-        return ctx
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, gate.theta)
+        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     gate_x = _one_qubit_gate_noargs
     gate_y = _one_qubit_gate_noargs

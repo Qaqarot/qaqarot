@@ -1,7 +1,10 @@
-from blueqat import Circuit, BlueqatGlobalSetting
 import numpy as np
-import sys
+from blueqat import Circuit, BlueqatGlobalSetting
 from collections import Counter
+from functools import reduce
+from sympy import eye, symbols, sin, cos, exp, pi, I, Matrix
+from sympy.physics.quantum import gate, TensorProduct
+
 
 EPS = 1e-16
 
@@ -239,8 +242,32 @@ def test_switch_backend1():
     assert c.run(shots=5) == c.run_with_numpy(shots=5)
 
 
-def test_sympy_backend():
-    # c = Circuit().cz[1, 0].run(backend="sympy_unitary")
-    c = Circuit().cx[1, 0].run(backend="sympy_unitary")
-    # print(c)
-    assert False
+def test_sympy_backend_for_one_qubit_gate():
+    E = eye(2)
+    X = gate.X(0).get_target_matrix()
+    Y = gate.Y(0).get_target_matrix()
+    Z = gate.Z(0).get_target_matrix()
+    H = gate.H(0).get_target_matrix()
+    T = gate.T(0).get_target_matrix()
+    S = gate.S(0).get_target_matrix()
+
+    x, y, z = symbols('x, y, z')
+    RX = Matrix([[cos(x / 2), -I * sin(x / 2)], [-I * sin(x / 2), cos(x / 2)]])
+    RY = Matrix([[cos(y / 2), -sin(y / 2)], [sin(y / 2), cos(y / 2)]])
+    RZ = Matrix([[exp(-I * z / 2), 0], [0, exp(I * z / 2)]])
+
+    actual_1 = Circuit().x[0, 1].y[1].z[2].run(backend="sympy_unitary")
+    expected_1 = reduce(TensorProduct, [Z, Y * X, X])
+    assert actual_1 == expected_1
+
+    actual_2 = Circuit().y[0].z[3].run(backend="sympy_unitary")
+    expected_2 = reduce(TensorProduct, [Z, E, E, Y])
+    assert actual_2 == expected_2
+
+    actual_3 = Circuit().x[0].z[3].h[:].t[1].s[2].run(backend="sympy_unitary")
+    expected_3 = reduce(TensorProduct, [H * Z, S * H, T * H, H * X])
+    assert actual_3 == expected_3
+
+    actual_4 = Circuit().rx(-pi / 2)[0].rz(pi / 2)[1].ry(pi)[2].run(backend="sympy_unitary")
+    expected_4 = reduce(TensorProduct, [RY, RZ, RX]).subs([[x, -pi / 2], [y, pi], [z, pi / 2]])
+    assert actual_4 == expected_4
