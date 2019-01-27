@@ -349,3 +349,45 @@ def test_sympy_backend_for_two_qubit_gate():
     actual_8 = Circuit().cz[3, 1].x[4].run(backend="sympy_unitary")
     control_gate_8 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, Z])
     assert actual_8 == reduce(TensorProduct, [X, control_gate_8, E])
+
+
+def test_u3():
+    theta = pi * 7 / 11
+    phi = pi * 5 / 13
+    lambd = pi * 8 / 17
+
+    actual_1 = Circuit().u3(theta, phi, lambd)[0].run(backend="sympy_unitary")
+    assert actual_1[0, 0] != 0
+    expected_1 = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
+    assert expected_1[0, 0] != 0
+    assert actual_1 == expected_1
+
+    actual_2 = Circuit().u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
+    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
+    # ignore global phase
+    actual_2 *= expected_2[0] / actual_2[0]
+    assert is_vec_same(actual_2, expected_2)
+
+def test_cu3():
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
+    theta = pi * 7 / 11
+    phi = pi * 5 / 13
+    lambd = pi * 8 / 17
+    U = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
+
+    actual_1 = Circuit().cu3(theta, phi, lambd)[0, 1].run(backend="sympy_unitary")
+    #actual_1 /= actual_1[0, 0]
+    expected_1 = reduce(TensorProduct, [UPPER, E]) + reduce(TensorProduct, [LOWER, U])
+    print("actual")
+    print(actual_1)
+    print("expect")
+    print(expected_1)
+    assert actual_1 == expected_1
+
+    actual_2 = Circuit().cu3(theta.evalf(), phi.evalf(), lambd.evalf())[0, 1].run_with_numpy()
+    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
+    # ignore global phase
+    actual_2 *= expected_2[0] / actual_2[0]
+    assert is_vec_same(actual_2, expected_2)

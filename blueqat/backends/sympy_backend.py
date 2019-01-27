@@ -5,7 +5,7 @@ from .backendbase import Backend
 
 is_import = True
 try:
-    from sympy import eye, symbols, sin, cos, exp, I, Matrix
+    from sympy import eye, symbols, sin, cos, exp, pi, I, Matrix
     from sympy.physics.quantum import gate as sympy_gate, TensorProduct
 except ImportError:
     is_import = False
@@ -40,7 +40,7 @@ class SympyBackend(Backend):
             'TAEGET_CZ': sympy_gate.Z(0).get_target_matrix(),
             'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
             'U3': Matrix([
-                [exp(-I * (phi + lambd) / 2) * cos(theta / 2), -exp(-I * (phi - lambd)) / 2 * sin(theta / 2)],
+                [exp(-I * (phi + lambd) / 2) * cos(theta / 2), -exp(-I * (phi - lambd) / 2) * sin(theta / 2)],
                 [exp(I * (phi - lambd) / 2) * sin(theta / 2), exp(I * (phi + lambd) / 2) * cos(theta / 2)]]),
         }
 
@@ -75,12 +75,21 @@ class SympyBackend(Backend):
 
     def _one_qubit_gate_ugate(self, gate, ctx):
         matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.lambd, gate.lambd)
-        try:
-            matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, gate.theta)
-            matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.phi, gate.phi)
-        except AttributeError: # Case of U3 gate
-            pass
+        if len(gate.params) == 3:
+            phi = gate.phi
+            theta = gate.theta
+        elif len(gate.params) == 2:
+            phi = gate.phi
+            theta = pi / 2
+        else:
+            phi = theta = 0
+        matrix_of_gate = matrix_of_gate.subs(self.phi, phi)
+        matrix_of_gate = matrix_of_gate.subs(self.theta, theta)
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
+
+    gate_u1 = _one_qubit_gate_ugate
+    gate_u2 = _one_qubit_gate_ugate
+    gate_u3 = _one_qubit_gate_ugate
 
     def _create_control_gate_of_matrix(self, type_of_gate, control, target):
         unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
