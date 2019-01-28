@@ -1,2 +1,2 @@
-qiskit~=0.5.7
+qiskit~=0.7.0
 sympy==1.3.0
