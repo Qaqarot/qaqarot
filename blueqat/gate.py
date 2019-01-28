@@ -4,22 +4,24 @@ This module is internally used.
 """
 
 import math
-import random
-from abc import ABC, abstractmethod
-import numpy as np
+from abc import ABC
 
 
 class Gate(ABC):
     """Abstract quantum gate class."""
+
+    """Lower name of the gate."""
     lowername = None
 
     @property
     def uppername(self):
+        """Upper name of the gate."""
         return self.lowername.upper()
 
-    def __init__(self, targets, **kwargs):
+    def __init__(self, targets, params=(), **kwargs):
         if self.lowername is None:
             raise ValueError(f"{self.__class__.__name__}.lowername is not defined.")
+        self.params = params
         self.kwargs = kwargs
         self.targets = targets
 
@@ -60,6 +62,7 @@ class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
 
     def target_iter(self, n_qubits):
+        """The generator which yields the target qubits."""
         return slicing(self.targets, n_qubits)
 
     def _make_fallback_for_target_iter(self, n_qubits, fallback):
@@ -73,7 +76,14 @@ class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
 
     def control_target_iter(self, n_qubits):
+        """The generator which yields the tuples of (control, target) qubits."""
         return qubit_pairs(self.targets, n_qubits)
+
+    def _make_fallback_for_control_target_iter(self, n_qubits, fallback):
+        gates = []
+        for c, t in self.control_target_iter(n_qubits):
+            gates += fallback(c, t)
+        return gates
 
 
 class IGate(OneQubitGate):
@@ -119,7 +129,7 @@ class RXGate(OneQubitGate):
     lowername = "rx"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -131,7 +141,7 @@ class RYGate(OneQubitGate):
     lowername = "ry"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -143,7 +153,7 @@ class RZGate(OneQubitGate):
     lowername = "rz"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, **kwargs)
+        super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
     def _str_args(self):
@@ -182,6 +192,16 @@ class SDagGate(OneQubitGate):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
 
 
+class SwapGate(TwoQubitGate):
+    """Swap gate"""
+    lowername = "swap"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [CXGate((c, t)), CXGate((t, c)), CXGate((c, t))])
+
+
 class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
@@ -205,6 +225,43 @@ class ToffoliGate(Gate):
             TDagGate(c2),
             CXGate((c1, c2)),
         ]
+
+
+class U1Gate(OneQubitGate):
+    """U1 gate"""
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd,), **kwargs)
+        self.lambd = lambd
+
+    lowername = "u1"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
+
+class U2Gate(OneQubitGate):
+    """U2 gate"""
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
+        self.phi = phi
+        self.lambd = lambd
+
+    lowername = "u2"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
+
+
+class U3Gate(OneQubitGate):
+    """U3 gate"""
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lambd = lambd
+
+    lowername = "u3"
 
 
 class Measurement(OneQubitGate):

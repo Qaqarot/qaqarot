@@ -1,4 +1,6 @@
-.. image:: https://github.com/mdrft/Blueqat/blob/master/MDR_Blueqat_color.png
+.. image:: https://raw.githubusercontent.com/mdrft/Blueqat/master/MDR_Blueqat_color.png
+    :target: https://github.com/mdrft/Blueqat
+    :alt: Blueqat
 
 =======
 blueqat
@@ -167,8 +169,7 @@ Example
 
     from blueqat import Circuit
     c = Circuit().h[:2].cz[0,1].h[:].x[:].cz[0,1].x[:].h[:].m[:]
-    c.run()
-    print(c.last_result()) # => (1, 1)
+    print(c.run(shots=1))
 
 Maxcut QAOA
 -----------
@@ -188,9 +189,7 @@ Maxcut QAOA
 
 Tutorial
 ========
-日本語
-
-https://github.com/mdrft/Blueqat/tree/master/tutorial_ja
+`Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
 
 Document
 ========
@@ -200,7 +199,7 @@ https://blueqat.readthedocs.io/ja/latest/
 
 Author
 ======
-Takumi Kato (MDR),Yuichiro Minato (MDR), Satoshi Takezawa (TerraSky)
+Takumi Kato (MDR), Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
 
 Disclaimer
 ==========

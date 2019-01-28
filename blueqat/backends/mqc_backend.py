@@ -113,6 +113,18 @@ class MQCBackend(Backend):
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
 
+    def gate_u1(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append({gate.uppername: [idx, gate.lambd]})
+
+    def gate_u2(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append({gate.uppername: [idx, gate.phi, gate.lambd]})
+
+    def gate_u3(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append({gate.uppername: [idx, gate.theta, gate.phi, gate.lambd]})
+
     def gate_measure(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append({"M": [idx]})

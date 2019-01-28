@@ -1,10 +1,14 @@
+"""
+This module defines Circuit and the setting for circuit.
+"""
+
 import warnings
-import numpy as np
 from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
 from .backends.mqc_backend import MQCBackend
 from .backends.sympy_backend import SympyBackend
+from .backends.ibmq_backend import ibmq_backend
 
 GATE_SET = {
     "i": gate.IGate,
@@ -21,7 +25,10 @@ GATE_SET = {
     "ry": gate.RYGate,
     "rz": gate.RZGate,
     "phase": gate.RZGate,
-    "u1": gate.RZGate,
+    "u1": gate.U1Gate,
+    "u2": gate.U2Gate,
+    "u3": gate.U3Gate,
+    "swap": gate.SwapGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
     "t": gate.TGate,
@@ -37,10 +44,12 @@ BACKENDS = {
     "mqc": MQCBackend,
     "qasm_output": QasmOutputBackend,
     "sympy_unitary": SympyBackend,
+    "ibmq": ibmq_backend,
 }
 DEFAULT_BACKEND_NAME = "numpy"
 
 class Circuit:
+    """Store the gate operations and call the backends."""
     def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
         self._backends = {}
@@ -90,7 +99,8 @@ class Circuit:
         self.n_qubits = max(self.n_qubits, other.n_qubits)
         return self
 
-    def copy(self, copy_backends=True, copy_default_backend=True, copy_cache=None, copy_history=None):
+    def copy(self, copy_backends=True, copy_default_backend=True,
+             copy_cache=None, copy_history=None):
         """Copy the circuit.
 
         :params
@@ -105,13 +115,36 @@ class Circuit:
 
         # Warn for deprecated options
         if copy_cache is not None:
-            warnings.warn("copy_cache is deprecated. Use copy_backends instead.", DeprecationWarning)
+            warnings.warn("copy_cache is deprecated. Use copy_backends instead.",
+                          DeprecationWarning)
         if copy_history is not None:
             warnings.warn("copy_history is deprecated.", DeprecationWarning)
 
         return copied
 
     def run(self, *args, backend=None, **kwargs):
+        """Run the circuit.
+
+        `Circuit` have several backends. When `backend` parameter is specified,
+        use specified backend, and otherwise, default backend is used.
+        Other parameters are passed to the backend.
+
+        The meaning of parameters are depends on the backend specifications.
+        However, following parameters are commonly used.
+
+        Commonly used args (Depends on backend):
+            shots (int, optional): The number of sampling the circuit.
+            returns (str, optional):  The category of returns value.
+                e.g. "statevector" returns the state vector after run the circuit.
+                     "shots" returns the counter of measured value.
+            token, url (str, optional): The token and URL for cloud resource.
+
+        Returns:
+            Depends on backend.
+
+        Raises:
+            Depends on backend.
+        """
         if backend is None:
             if self._default_backend is None:
                 backend = self.__get_backend(DEFAULT_BACKEND_NAME)
@@ -133,6 +166,7 @@ class Circuit:
         return self.__get_backend(backend).make_cache(self.ops, self.n_qubits)
 
     def to_qasm(self, *args, **kwargs):
+        """Returns the OpenQASM output of this circuit."""
         return self.run_with_qasm_output(*args, **kwargs)
 
     def set_default_backend(self, backend_name):
@@ -146,14 +180,23 @@ class Circuit:
         global setting is ignored even if `BlueqatGlobalSetting.set_default_backend()` is called.
         If you want to use global default setting, call this method with backend_name=None.
 
-        :params
-        backend_name: str or None: new default backend name. if None is given, global setting is applied.
+        Args:
+            backend_name (str or None): new default backend name.
+                If None is given, global setting is applied.
+
+        Raises:
+            ValueError: If `backend_name` is not registered backend.
         """
         if backend_name not in BACKENDS:
             raise ValueError(f"Unknown backend '{backend_name}'.")
         self._default_backend = backend_name
 
     def get_default_backend_name(self):
+        """Get the default backend of this circuit or global setting.
+
+        Returns:
+            str: The name of default backend.
+        """
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
 
 class _GateWrapper:
@@ -192,7 +235,18 @@ class BlueqatGlobalSetting:
     """Setting for Blueqat."""
     @staticmethod
     def register_gate(name, gateclass, allow_overwrite=False):
-        """Register new gate to gate set."""
+        """Register new gate to gate set.
+
+        Args:
+            name (str): The name of gate.
+            gateclass (type): The type object of gate.
+            allow_overwrite (bool, optional): If True, allow to overwrite the existing gate.
+                Otherwise, raise the ValueError.
+
+        Raises:
+            ValueError: The name is duplicated with existing gate.
+                When `allow_overwrite=True`, this error is not raised.
+        """
         if hasattr(Circuit, name):
             if allow_overwrite:
                 warnings.warn(f"Circuit has attribute `{name}`.")
@@ -210,14 +264,32 @@ class BlueqatGlobalSetting:
 
     @staticmethod
     def unregister_gate(name):
-        """Unregister a gate from gate set"""
+        """Unregister a gate from gate set
+
+        Args:
+            name (str): The name of the gate to be unregistered.
+
+        Raises:
+            ValueError: Specified gate is not registered.
+        """
         if name not in GATE_SET:
             raise ValueError(f"Gate '{name}' is not registered.")
         del GATE_SET[name]
 
     @staticmethod
     def register_backend(name, backend, allow_overwrite=False):
-        """Register new backend."""
+        """Register new backend.
+
+        Args:
+            name (str): The name of backend.
+            gateclass (type): The type object of backend
+            allow_overwrite (bool, optional): If True, allow to overwrite the existing backend.
+                Otherwise, raise the ValueError.
+
+        Raises:
+            ValueError: The name is duplicated with existing backend.
+                When `allow_overwrite=True`, this error is not raised.
+        """
         if hasattr(Circuit, "run_with_" + name):
             if allow_overwrite:
                 warnings.warn(f"Circuit has attribute `run_with_{name}`.")
@@ -229,14 +301,35 @@ class BlueqatGlobalSetting:
         BACKENDS[name] = backend
 
     @staticmethod
-    def remove_backend(name):
-        """Unregister a backend."""
+    def unregister_backend(name):
+        """Unregister a backend.
+
+        Args:
+            name (str): The name of the backend to be unregistered.
+
+        Raises:
+            ValueError: Specified backend is not registered.
+        """
         if name not in GATE_SET:
             raise ValueError(f"Backend '{name}' is not registered.")
         del BACKENDS[name]
 
     @staticmethod
+    def remove_backend(name):
+        """This method is deperecated. Use `unregister_backend` method."""
+        warnings.warn("remove_backend is deprecated. `unregister_backend` is recommended.",
+                      DeprecationWarning)
+        BlueqatGlobalSetting.unregister_backend(name)
+
+    @staticmethod
     def set_default_backend(name):
+        """Set the default backend to be used by `Circuit`.
+        Args:
+            name (str): The name of the default backend.
+
+        Raises:
+            ValueError: Specified backend is not registered.
+        """
         if name not in BACKENDS:
             raise ValueError(f"Backend '{name}' is not registered.")
         global DEFAULT_BACKEND_NAME
@@ -244,4 +337,9 @@ class BlueqatGlobalSetting:
 
     @staticmethod
     def get_default_backend_name():
+        """Get the default backend name.
+
+        Returns:
+            str: The name of default backend.
+        """
         return DEFAULT_BACKEND_NAME
