@@ -313,42 +313,38 @@ def test_sympy_backend_for_two_qubit_gate():
     X = gate.X(0).get_target_matrix()
     Z = gate.Z(0).get_target_matrix()
     H = gate.H(0).get_target_matrix()
+    H_3 = reduce(TensorProduct, [H, E, H])
+    H_4 = reduce(TensorProduct, [H, E, E, H])
+    CX_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [X, E, LOWER])
+    CZ_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [Z, E, LOWER])
+    CX_4 = reduce(TensorProduct, [E, E, E, UPPER]) + reduce(TensorProduct, [X, E, E, LOWER])
+    CZ_4 = reduce(TensorProduct, [E, E, E, UPPER]) + reduce(TensorProduct, [Z, E, E, LOWER])
 
     actual_1 = Circuit().cx[0, 3].run(backend="sympy_unitary")
-    expected_1 = reduce(TensorProduct, [UPPER, E, E, E]) + reduce(TensorProduct, [LOWER, E, E, X])
-    assert actual_1 == expected_1
+    assert actual_1 == CX_4
 
     actual_2 = Circuit().cx[1, 3].x[4].run(backend="sympy_unitary")
-    control_gate_2 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, X])
-    expected_2 = reduce(TensorProduct, [X, control_gate_2, E])
+    expected_2 = reduce(TensorProduct, [X, CX_3, E])
     assert actual_2 == expected_2
 
     actual_3 = Circuit().cz[0, 3].run(backend="sympy_unitary")
-    expected_3 = reduce(TensorProduct, [UPPER, E, E, E]) + reduce(TensorProduct, [LOWER, E, E, Z])
-    assert actual_3 == expected_3
+    assert actual_3 == CZ_4
 
     actual_4 = Circuit().cz[1, 3].x[4].run(backend="sympy_unitary")
-    control_gate_4 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, Z])
-    expected_4 = reduce(TensorProduct, [X, control_gate_4, E])
+    expected_4 = reduce(TensorProduct, [X, CZ_3, E])
     assert actual_4 == expected_4
 
     actual_5 = Circuit().cx[3, 0].run(backend="sympy_unitary")
-    control_gate_5 = reduce(TensorProduct, [UPPER, E, E, E]) + reduce(TensorProduct, [LOWER, E, E, X])
-    h_gate_5 = reduce(TensorProduct, [H, E, E, H])
-    assert actual_5 == h_gate_5 * control_gate_5 * h_gate_5
+    assert actual_5 == H_4 * CX_4 * H_4
 
     actual_6 = Circuit().cx[3, 1].x[4].run(backend="sympy_unitary")
-    control_gate_6 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, X])
-    h_gate_6 = reduce(TensorProduct, [H, E, H])
-    assert actual_6 == reduce(TensorProduct, [X, h_gate_6 * control_gate_6 * h_gate_6, E])
+    assert actual_6 == reduce(TensorProduct, [X, H_3 * CX_3 * H_3, E])
 
     actual_7 = Circuit().cz[3, 0].run(backend="sympy_unitary")
-    expected_7 = reduce(TensorProduct, [UPPER, E, E, E]) + reduce(TensorProduct, [LOWER, E, E, Z])
-    assert actual_7 == expected_7
+    assert actual_7 == CZ_4
 
     actual_8 = Circuit().cz[3, 1].x[4].run(backend="sympy_unitary")
-    control_gate_8 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, Z])
-    assert actual_8 == reduce(TensorProduct, [X, control_gate_8, E])
+    assert actual_8 == reduce(TensorProduct, [X, CZ_3, E])
 
 
 def test_u1():
