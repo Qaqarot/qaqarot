@@ -347,6 +347,11 @@ def test_sympy_backend_for_two_qubit_gate():
     assert actual_8 == reduce(TensorProduct, [X, CZ_3, E])
 
 
+def test_sympy_cx_cz():
+    assert Circuit().cx[1, 2].run(backend="sympy_unitary") == Circuit().h[2].cz[2, 1].h[2].run(backend="sympy_unitary")
+    assert Circuit().cx[2, 1].run(backend="sympy_unitary") == Circuit().h[1].cz[2, 1].h[1].run(backend="sympy_unitary")
+
+
 def test_u1():
     lambd = symbols("lambd")
 
