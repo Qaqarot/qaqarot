@@ -95,8 +95,8 @@ class SympyBackend(Backend):
         unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
         unit_of_lower_triangular_matrix = Matrix([[0, 0], [0, 1]])
 
-        control_gates = [unit_of_upper_triangular_matrix, eye(2)]
-        target_gates = [unit_of_lower_triangular_matrix, self.SYMPY_GATE['TAEGET_%s' % type_of_gate]]
+        control_gates = [eye(2), unit_of_upper_triangular_matrix]
+        target_gates = [self.SYMPY_GATE['TAEGET_%s' % type_of_gate], unit_of_lower_triangular_matrix]
         number_between_of_qubits = abs(target - control) - 1
         if number_between_of_qubits != 0:
             between_unit_gate = eye(2 ** number_between_of_qubits)
