@@ -5,7 +5,7 @@ from .backendbase import Backend
 
 is_import = True
 try:
-    from sympy import eye, symbols, sin, cos, exp, pi, I, Matrix
+    from sympy import eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix
     from sympy.physics.quantum import gate as sympy_gate, TensorProduct
 except ImportError:
     is_import = False
@@ -39,6 +39,9 @@ class SympyBackend(Backend):
             'TAEGET_CX': sympy_gate.X(0).get_target_matrix(),
             'TAEGET_CZ': sympy_gate.Z(0).get_target_matrix(),
             'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
+            'U2': Matrix([
+                [exp(-I * (phi + lambd) / 2) / sqrt(2), -exp(-I * (phi - lambd) / 2) / sqrt(2)],
+                [exp(I * (phi - lambd) / 2) / sqrt(2), exp(I * (phi + lambd) / 2) / sqrt(2)]]),
             'U3': Matrix([
                 [exp(-I * (phi + lambd) / 2) * cos(theta / 2), -exp(-I * (phi - lambd) / 2) * sin(theta / 2)],
                 [exp(I * (phi - lambd) / 2) * sin(theta / 2), exp(I * (phi + lambd) / 2) * cos(theta / 2)]]),
@@ -74,7 +77,6 @@ class SympyBackend(Backend):
     gate_rz = _one_qubit_gate_args_theta
 
     def _one_qubit_gate_ugate(self, gate, ctx):
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.lambd, gate.lambd)
         if len(gate.params) == 3:
             phi = gate.phi
             theta = gate.theta
@@ -83,8 +85,10 @@ class SympyBackend(Backend):
             theta = pi / 2
         else:
             phi = theta = 0
-        matrix_of_gate = matrix_of_gate.subs(self.phi, phi)
-        matrix_of_gate = matrix_of_gate.subs(self.theta, theta)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs([
+            (self.lambd, gate.lambd),
+            (self.phi, phi),
+            (self.theta, theta)], simultaneous=True)
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     gate_u1 = _one_qubit_gate_ugate

@@ -275,11 +275,11 @@ class CU1Gate(TwoQubitGate):
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits, lambda c, t: [
-                U1Gate(t, self.lambd / 2),
+                U1Gate(c, self.lambd / 2),
                 CXGate((c, t)),
                 U1Gate(t, -self.lambd / 2),
                 CXGate((c, t)),
-                U1Gate(c, self.lambd / 2),
+                U1Gate(t, self.lambd / 2),
             ])
 
 
