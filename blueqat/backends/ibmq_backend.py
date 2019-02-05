@@ -17,12 +17,15 @@ Returns:
     The result of run.
 """
 
+import warnings
 from collections import Counter
 from .qasm_parser_backend_generator import generate_backend
 
 _import_error = None
 try:
-    from qiskit import load_qasm_string, execute
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from qiskit import load_qasm_string, execute
 except Exception as e:
     _import_error = e
 

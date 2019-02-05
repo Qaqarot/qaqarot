@@ -253,6 +253,7 @@ class U2Gate(OneQubitGate):
         return self._make_fallback_for_target_iter(
             n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
 
+
 class U3Gate(OneQubitGate):
     """U3 gate"""
     def __init__(self, targets, theta, phi, lambd, **kwargs):

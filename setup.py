@@ -6,6 +6,9 @@ with open("README.rst", "r", encoding="utf-8") as f:
 with open("blueqat/_version.py", "r", encoding="utf-8") as f:
     exec(f.read())
 
+with open("requirements.txt", "r", encoding="utf-8") as f:
+    install_requirements = list(map(str.strip, f))
+
 setuptools.setup(
     name = "blueqat",
     version=__version__,
@@ -16,6 +19,7 @@ setuptools.setup(
     url="https://github.com/mdrft/blueqat",
     license="Apache 2",
     packages=setuptools.find_packages(),
+    install_requirements=install_requirements,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

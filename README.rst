@@ -199,7 +199,7 @@ https://blueqat.readthedocs.io/ja/latest/
 
 Author
 ======
-Takumi Kato (MDR),Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
+Takumi Kato (MDR), Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
 
 Disclaimer
 ==========
