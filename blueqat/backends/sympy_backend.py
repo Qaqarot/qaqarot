@@ -36,8 +36,8 @@ class SympyBackend(Backend):
             'RX': Matrix([[cos(theta / 2), -I * sin(theta / 2)], [-I * sin(theta / 2), cos(theta / 2)]]),
             'RY': Matrix([[cos(theta / 2), -sin(theta / 2)], [sin(theta / 2), cos(theta / 2)]]),
             'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
-            'TAEGET_CX': sympy_gate.X(0).get_target_matrix(),
-            'TAEGET_CZ': sympy_gate.Z(0).get_target_matrix(),
+            'TARGET_CX': sympy_gate.X(0).get_target_matrix(),
+            'TARGET_CZ': sympy_gate.Z(0).get_target_matrix(),
             'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
             'U2': Matrix([
                 [exp(-I * (phi + lambd) / 2) / sqrt(2), -exp(-I * (phi - lambd) / 2) / sqrt(2)],
@@ -77,7 +77,6 @@ class SympyBackend(Backend):
     gate_rz = _one_qubit_gate_args_theta
 
     def _one_qubit_gate_ugate(self, gate, ctx):
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.lambd, gate.lambd)
         if len(gate.params) == 3:
             phi = gate.phi
             theta = gate.theta
@@ -86,8 +85,10 @@ class SympyBackend(Backend):
             theta = pi / 2
         else:
             phi = theta = 0
-        matrix_of_gate = matrix_of_gate.subs(self.phi, phi)
-        matrix_of_gate = matrix_of_gate.subs(self.theta, theta)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs([
+            (self.lambd, gate.lambd),
+            (self.phi, phi),
+            (self.theta, theta)], simultaneous=True)
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     gate_u1 = _one_qubit_gate_ugate
@@ -99,7 +100,7 @@ class SympyBackend(Backend):
         unit_of_lower_triangular_matrix = Matrix([[0, 0], [0, 1]])
 
         control_gates = [eye(2), unit_of_upper_triangular_matrix]
-        target_gates = [self.SYMPY_GATE['TAEGET_%s' % type_of_gate], unit_of_lower_triangular_matrix]
+        target_gates = [self.SYMPY_GATE['TARGET_%s' % type_of_gate], unit_of_lower_triangular_matrix]
         number_between_of_qubits = abs(target - control) - 1
         if number_between_of_qubits != 0:
             between_unit_gate = eye(2 ** number_between_of_qubits)

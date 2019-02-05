@@ -1,11 +1,12 @@
-from blueqat import Circuit, BlueqatGlobalSetting
 import pytest
 import numpy as np
-from blueqat import Circuit, BlueqatGlobalSetting
+import pytest
+import numpy as np
 from collections import Counter
 from functools import reduce
 from sympy import eye, zeros, symbols, simplify, sin, cos, exp, pi, I, Matrix
 from sympy.physics.quantum import gate, TensorProduct
+from blueqat import Circuit, BlueqatGlobalSetting
 
 
 EPS = 1e-16
@@ -95,6 +96,7 @@ def test_toffoli_gate(bin):
     c.ccx[0, 1, 2].m[2]
     expected_meas = "001" if bin[0] and bin[1] else "000"
     assert c.run(shots=1) == Counter([expected_meas])
+
 
 def test_u3_gate():
     assert is_vec_same(Circuit().u3(1.23, 4.56, -5.43)[1].run(), Circuit().rz(-5.43)[1].ry(1.23)[1].rz(4.56)[1].run())
@@ -428,3 +430,82 @@ def test_u3_realvalue():
     # ignore global phase
     actual_3 *= expected_3[0] / actual_3[0]
     assert is_vec_same(actual_3, expected_3)
+
+
+def test_cu1():
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
+    lambd = symbols("lambd")
+    U = Circuit().rz(lambd)[0].run_with_sympy_unitary()
+    U /= U[0, 0]
+
+    actual_1 = Circuit().cu1(lambd)[0, 1].run(backend="sympy_unitary")
+    actual_1 /= actual_1[0, 0]
+    expected_1 = reduce(TensorProduct, [UPPER, E]) + reduce(TensorProduct, [LOWER, U])
+    assert simplify(actual_1 - expected_1) == zeros(4)
+
+
+def test_cu1_realvalue():
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
+    lambd = pi * 8 / 17
+    U = Circuit().rz(lambd)[0].run_with_sympy_unitary()
+    U /= U[0, 0]
+
+    actual_1 = Circuit().cu1(lambd)[0, 1].run(backend="sympy_unitary")
+    actual_1 /= actual_1[0, 0] # Ignore global phase
+    expected_1 = reduce(TensorProduct, [E, UPPER]) + reduce(TensorProduct, [U, LOWER])
+    assert actual_1 == expected_1
+
+    for i in range(4):
+        c = Circuit()
+        if i % 2 == 1:
+            c.x[0]
+        if (i // 2) % 2 == 1:
+            c.x[1]
+        actual_2i = c.cu1(lambd.evalf())[0, 1].run_with_numpy()
+        expected_2i = np.array(expected_1.col(i)).astype(complex).reshape(-1)
+        assert 0.99999 < np.abs(np.dot(actual_2i.conj(), expected_2i)) < 1.00001
+
+
+def test_cu3():
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
+    theta, phi, lambd = symbols("theta phi lambd")
+    U = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
+
+    actual_1 = Circuit().cu3(theta, phi, lambd)[0, 1].run(backend="sympy_unitary")
+    expected_1 = reduce(TensorProduct, [E, UPPER]) + reduce(TensorProduct, [U, LOWER])
+    print("actual")
+    print(simplify(actual_1))
+    print("expected")
+    print(simplify(expected_1))
+    print("diff")
+    print(simplify(actual_1 - expected_1))
+    assert simplify(actual_1 - expected_1) == zeros(4)
+
+
+def test_cu3_realvalue():
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
+    theta = pi * 7 / 11
+    phi = pi * 5 / 13
+    lambd = pi * 8 / 17
+    U = Circuit().u3(theta, phi, lambd)[0].run_with_sympy_unitary()
+    expected_1 = reduce(TensorProduct, [E, UPPER]) + reduce(TensorProduct, [U, LOWER])
+    print(expected_1)
+
+    for i in range(4):
+        c = Circuit()
+        if i % 2 == 1:
+            c.x[0]
+        if (i // 2) % 2 == 1:
+            c.x[1]
+        actual_i = c.cu3(theta.evalf(), phi.evalf(), lambd.evalf())[0, 1].run_with_numpy()
+        actual_i = np.array(actual_i).astype(complex).reshape(-1)
+        expected_i = np.array(expected_1.col(i)).astype(complex).reshape(-1)
+        assert 0.99999 < np.abs(np.dot(actual_i.conj(), expected_i)) < 1.00001

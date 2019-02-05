@@ -7,6 +7,7 @@ from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
 from .backends.mqc_backend import MQCBackend
+from .backends.ibmq_backend import ibmq_backend
 from .backends.sympy_backend import SympyBackend
 from .backends.ibmq_backend import ibmq_backend
 
@@ -28,6 +29,9 @@ GATE_SET = {
     "u1": gate.U1Gate,
     "u2": gate.U2Gate,
     "u3": gate.U3Gate,
+    "cu1": gate.CU1Gate,
+    "cu2": gate.CU2Gate,
+    "cu3": gate.CU3Gate,
     "swap": gate.SwapGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
@@ -43,6 +47,7 @@ BACKENDS = {
     "numpy": NumPyBackend,
     "mqc": MQCBackend,
     "qasm_output": QasmOutputBackend,
+    "ibmq": ibmq_backend,
     "sympy_unitary": SympyBackend,
     "ibmq": ibmq_backend,
 }
