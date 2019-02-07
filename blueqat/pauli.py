@@ -484,7 +484,7 @@ class Term(_TermTuple):
                 if op.op == "X":
                     circuit.h[n]
                 elif op.op == "Y":
-                    circuit.rx(-half_pi)[n]
+                    circuit.rx(half_pi)[n]
             for i in range(1, len(ops)):
                 circuit.cx[ops[i-1].n, ops[i].n]
             circuit.rz(-2 * coeff * t)[ops[-1].n]
@@ -495,7 +495,7 @@ class Term(_TermTuple):
                 if op.op == "X":
                     circuit.h[n]
                 elif op.op == "Y":
-                    circuit.rx(half_pi)[n]
+                    circuit.rx(-half_pi)[n]
         return append_to_circuit
 
     def to_matrix(self, n_qubits=-1):
