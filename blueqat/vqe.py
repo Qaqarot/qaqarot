@@ -28,7 +28,7 @@ class AnsatzBase:
                 if op.op == "X":
                     c.h[op.n]
                 elif op.op == "Y":
-                    c.rx(-np.pi / 2)[op.n]
+                    c.rx(np.pi / 2)[op.n]
             measured = sampler(c, meas.n_iter())
             for bits, prob in measured.items():
                 if sum(bits) % 2:
