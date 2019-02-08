@@ -21,23 +21,25 @@ import warnings
 from collections import Counter
 from .qasm_parser_backend_generator import generate_backend
 
-_import_error = None
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from qiskit import load_qasm_string, execute
-except Exception as e:
-    _import_error = e
 
 def _qasm_runner_qiskit(qasm, qiskit_backend, shots=None, returns=None, **kwargs):
     if returns is None:
         returns = "shots"
     elif returns not in ("shots", "_exception", "qiskit_result"):
         raise ValueError("`returns` shall be None, 'shots', 'qiskit_result' or '_exception'")
-    if _import_error:
+
+    import_error = None
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from qiskit import load_qasm_string, execute
+    except Exception as e:
+        import_error = e
+
+    if import_error:
         if returns == "_exception":
             return e
-        if isinstance(_import_error, ImportError):
+        if isinstance(import_error, ImportError):
             raise ImportError("Cannot import qiskit. To use this backend, please install qiskit." +
                               " `pip install qiskit`.")
         else:
