@@ -6,28 +6,16 @@ Blueqat日本語チュートリアル
 
 目次
 --------------------
-1.<a href="tutorial001_basic_circuit.ipynb">基本的操作</a>  
-2.<a href="tutorial003_basic_gates.ipynb">基本的なゲートの応用</a>  
-3.<a href="tutorial003_vqe.ipynb">ハミルトニアンと組合せ最適化問題</a>    
-4.<a href="tutorial004_K_from_Nqubit.ipynb">組みあわせ最適化問題でN量子ビットからK量子ビットを選ぶ</a>  
-5.<a href="tutorial005_QUBO_to_Pauli.ipynb">QUBOを量子ゲートモデルシミュレータに自動変換</a>  
-6.<a href="tutorial006_grover.ipynb">Grover（グローバー）の検索アルゴリズム</a>  
-7.<a href="tutorial007_qft.ipynb">量子フーリエ変換アルゴリズム</a>  
-8.<a href="tutorial008_phase_estimation.ipynb">位相推定アルゴリズム</a>  
-9.<a href="tutorial009_teleportation.ipynb">量子テレポーテーション</a>  
-
-新規目次（今後実装が進み、今のチュートリアルと入れ替わります）
---------------------
-001.	１量子ビットの基本の操作を覚える<!--_basic_one_qubit-->
-002.	２量子ビットの基本の操作を覚える<!--_basic_two_qubits-->
-003.	量子重ね合わせと測定	<!--_basic_superposition-->
-004.	量子のもつれ	<!--_basic_entanglement-->
-005.	トフォリゲート	<!--_basic_toffoli-->
-006.	swapゲート	<!--_basic_swap-->
-007.	制御ゲート	<!--_basic_control-->
-008.	汎用計算の基礎	<!--_basic_general-->
-009.	重ね合わせを使った足し算	<!--_basic_adder_hadamard-->
-010.	乗算回路	<!--_basic_multi-->
+001.<a href="001_basic_one_qubit.ipynb">１量子ビットの基本の操作を覚える</a>
+002.<a href="002_basic_two_qubits.ipynb">２量子ビットの基本の操作を覚える</a>
+003.<a href="003_basic_superposition.ipynb">量子重ね合わせと測定</a>
+004.<a href="004_basic_entanglement.ipynb">量子のもつれ</a>
+005.<a href="005_basic_toffoli.ipynb">トフォリゲート</a>
+006.<a href="006_basic_swap.ipynb">swapゲート</a>
+007.<a href="007_basic_control.ipynb">制御ゲート</a>
+008.<a href="008_basic_general.ipynb">汎用計算の基礎</a>
+009.<a href="009_basic_adder_hadamard.ipynb">重ね合わせを使った足し算</a>
+010.<a href="010_basic_multi.ipynb">乗算回路</a>
 011.	GHZ状態。３量子ビットの量子もつれ	<!--_basic_ghz-->
 012.	量子テレポーテーション	<!--_algo_teleportation-->
 013.	量子フーリエ変換	<!--_algo_qft-->
