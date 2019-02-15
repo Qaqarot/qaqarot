@@ -3,12 +3,10 @@ from functools import reduce
 from .backendbase import Backend
 
 
-is_import = True
-try:
+def lazy_import():
+    global eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix, sympy_gate, TensorProduct
     from sympy import eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix
     from sympy.physics.quantum import gate as sympy_gate, TensorProduct
-except ImportError:
-    is_import = False
 
 
 class _SympyBackendContext:
@@ -20,7 +18,9 @@ class _SympyBackendContext:
 class SympyBackend(Backend):
 
     def __init__(self):
-        if not is_import:
+        try:
+            lazy_import()
+        except ImportError:
             raise ImportError('sympy_unitary requires sympy. Please install before call this option.')
         theta, phi, lambd = symbols('theta phi lambd')
         self.theta = theta
