@@ -186,7 +186,20 @@ Maxcut QAOA
      {0}---{3}
      | x |
      {1}---{2}""".format(*result.most_common()[0][0]))
+     
+Annealing
+-----------
 
+.. code-block:: python
+
+    from blueqat import opt
+    a = opt.opt()
+    a.qubo = opt.sel(3,1) #creating QUBO matrix
+    result = a.sa(shots=100,sampler="fast")
+    opt.counter(result)
+    
+    Counter({'010': 29, '100': 34, '001': 37})
+    
 Tutorial
 ========
 `Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
