@@ -27,9 +27,9 @@ Blueqat日本語チュートリアル
 019.	Simonのアルゴリズム	<!--_algo_simon-->  
 020.	位相推定	<!--_algo_pea-->  
 021. <a href="021_algo_vqe.ipynb">VQE</a>  
-022.	QAOA	<!--_algo_qaoa-->  
-023.	Jij	<!--_anneal_jij-->  
-024.	QUBO	<!--_anneal_qubo-->  
+022. <a href="022_algo_qaoa.ipynb">QAOA</a>  
+023. <a href="023_anneal_jij.ipynb">Jij</a>  
+024. <a href="024_anneal_qubo.ipynb">QUBO</a>  
 025.	maxcut	<!--_app_maxcut-->  
 026.	1+1	<!--_app_one_one-->  
 027.	自然数分割問題	<!--_app_number_partitioning-->  
