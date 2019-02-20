@@ -487,3 +487,130 @@ class opt:
 
 		return computation.samples[0][:len(harr)]
 
+
+class Opt:
+	def __init__(self):
+		#: Initial temperature [SA]
+		self.Ts = 5
+		#: Final temperature [SA]
+		self.Tf = 0.02
+
+		#: Descreasing rate of temperature [SA]
+		self.R = 0.95
+		#: Iterations [SA]
+		self.ite = 1000
+		#: QUBO
+		self.qubo = []
+		self.J = []
+
+		self.ep = 0
+		#: List of energies
+		self.E = []
+
+	def reJ(self):
+		return np.triu(self.J) + np.triu(self.J, k=1).T
+
+	def qi(self):
+		nn = len(self.qubo)
+		self.J = [np.random.choice([1.,1.],nn) for j in range(nn)]
+		for i in range(nn):
+			for j in range(i+1,nn):
+				self.J[i][j] = self.qubo[i][j]/4
+
+		self.J = np.triu(self.J)+np.triu(self.J,k=1).T
+
+		for i in range(nn):
+			sum = 0
+			for j in range(nn):
+				if i == j:
+					sum += self.qubo[i][i]*0.5
+				else:
+					sum += self.J[i][j]
+			self.J[i][i] = sum
+
+		self.ep = 0
+
+		for i in range(nn):
+			self.ep += self.J[i][i]
+			for j in range(i+1,nn):
+				self.ep -= self.J[i][j]
+
+		self.J = np.triu(self.J)
+
+	def optm(quboh,numM):
+		try:
+			import sympy
+		except ImportError:
+			raise ImportError("optm() requires sympy. Please install before call this function.") 
+		optm_E = sympy.expand(quboh) 
+		symbol_list = ["q"+str(i) for i in range(numM)] 
+		sympy.var(' '.join(symbol_list),positive=True) 
+
+		symbol_list_proto = list(optm_E.free_symbols) 
+		for i in range(len(symbol_list_proto)): 
+			optm_E = optm_E.subs(symbol_list_proto[i]*symbol_list_proto[i],symbol_list_proto[i]) 
+
+		optm_M = np.zeros((numM,numM)) 
+
+		for i in range(numM): 
+			for j in range(i+1,numM): 
+				optm_M[i][j] = optm_E.coeff(symbol_list[i]+"*"+symbol_list[j]) 
+
+			temp1 = sympy.poly(optm_E.coeff(symbol_list[i])) 
+			optm_M[i][i] = sympy.poly(optm_E.coeff(symbol_list[i])).coeff_monomial(1) 
+
+		return optm_M
+
+	def set(self,qubo,M=1,N=1):
+		len1 = len(self.qubo)
+		if(isinstance(qubo,str)):
+			qubo = optm(qubo,N)
+		len2 = len(qubo)
+		if(len1==len2):
+				self.qubo += M*np.array(qubo)
+		elif(self.qubo ==[]):
+			self.qubo = M*np.array(qubo)
+		return self
+
+	def run(self,shots=1,targetT=0.02,verbose=False):
+		"""
+		Run SA with provided QUBO. 
+		Set qubo attribute in advance of calling this method.
+		"""
+		if self.qubo != []:
+			self.qi()
+		J = self.reJ()
+		N = len(J)
+
+		itetemp = 100
+		Rtemp = 0.75
+
+		self.E = []
+		qq = []
+		for i in range(shots):
+			T = self.Ts
+			q = np.random.choice([-1,1],N)
+			EE = []
+			EE.append(Ei(q,self.J)+self.ep)
+			while T>targetT:
+				x_list = np.random.randint(0, N, itetemp)
+				for x in x_list:
+					q2 = np.ones(N)*q[x]
+					q2[x] = 1
+					dE = -2*sum(q*q2*J[:,x])
+
+					if dE < 0 or np.exp(-dE/T) > np.random.random_sample():
+						q[x] *= -1
+				EE.append(Ei(q,self.J)+self.ep)
+				T *= Rtemp
+			self.E.append(EE)
+			qtemp = (np.asarray(q,int)+1)/2
+			qq.append([int(s) for s in qtemp])
+			if verbose == True:
+				print(i,':',[int(s) for s in qtemp])
+			if shots == 1:
+				qq = qq[0]
+		if shots == 1:
+			self.E = self.E[0]
+		return qq
+
