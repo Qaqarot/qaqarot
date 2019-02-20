@@ -567,7 +567,7 @@ class Opt:
 			qubo = optm(qubo,N)
 		len2 = len(qubo)
 		if(len1==len2):
-				self.qubo += M*np.array(qubo)
+				self.qubo = np.array(self.qubo)+M*np.array(qubo)
 		elif(self.qubo ==[]):
 			self.qubo = M*np.array(qubo)
 		return self
