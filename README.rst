@@ -187,15 +187,24 @@ Maxcut QAOA
      | x |
      {1}---{2}""".format(*result.most_common()[0][0]))
 
-Annealing-1(recommended)
+Optimization(recommended)
 -----------
 
 .. code-block:: python
 
     from blueqat.opt import Opt
-    Opt().set([[1,1],[1,1]]).set("(q0+q1)^2",N=2).run()
+    c = Opt().add([[1,1],[1,1]]).add("(q0+q1)^2",N=2)
+
+    #qaoa
+    print(c.qaoa().most_common(5))
+    #=>(((0, 0), 0.7639901896866), ((1, 0), 0.10321404014639714), ((0, 1), 0.10321404014639707), ((1, 1), 0.029581730020605202))
+
+    #annealing
+    print(c.run())
+    [0, 0]
+
     
-Annealing-2
+Annealing-2（old）
 -----------
 
 .. code-block:: python
