@@ -188,11 +188,8 @@ def Ei(q3,j3):
 	return EE
 
 def Ei_sqa(q, J, T, P, G):
-	E = 0
-	for p in range(P):
-		E += Ei(q[p], J) / P
-		E += T / 2 * np.log(1 / np.tanh(G / T / P)) * np.sum(q[p,:] * q[(p+1+P) % P, :])
-	return E
+	print("Ei_sqa() function is deprecated. please use the older version to use this function")
+
 
 def sel(selN,selK,selarr=[]):
 	"""
@@ -424,44 +421,18 @@ class opt:
 		return qq
 
 	def sqa(self):
-		"""
-		Run SQA with provided QUBO.
-		Set qubo attribute in advance of calling this method.
-		"""
-		G = self.Gs
-		if self.qubo != []:
-			self.qi()
-		J = self.reJ()
-		N = len(J)
-		q = np.random.choice([-1,1], self.tro*N).reshape(self.tro, N)
-		self.E.append(Ei_sqa(q, J, self.Tf, self.tro, G) + self.ep)
-		while G>self.Gf:
-			for _ in range(self.ite):
-				x = np.random.randint(N)
-				y = np.random.randint(self.tro)
-				dE = 0
-
-				for j in range(N):
-					if j == x:
-						dE += -2*q[y][x]*J[x][x] / self.tro
-					else:
-						dE += -2*q[y][j]*q[y][x]*J[j][x] / self.tro
-
-				dE += q[y][x]*(q[(self.tro+y-1)%self.tro][x]+q[(y+1)%self.tro][x])*np.log(1/np.tanh(G/self.Tf/self.tro))*self.Tf
-
-				if dE < 0 or np.exp(-dE/self.Tf) > np.random.random_sample():
-					q[y][x] *= -1
-			self.E.append(Ei_sqa(q, J, self.Tf, self.tro, G)+self.ep)
-			G *= self.R
-		#qq = [int((i+1)/2) for i in q]
-		return q
+		print("sqa() function is deprecated. please use the older version to use this function")
 
 	def dw(self):
+		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
+		self.dwavetoken = ''
+		self.dwavesolver = 'DW_2000Q_2_1'
+
 		try:
 			from dwave.cloud import Client
 		except ImportError:
 			raise ImportError("dw() requires dwave-cloud-client. Please install before call this function.")
-		solver = Client.from_config(endpoint= self.dwaveendpoint, token=self.dwavetoken, solver=self.dwavesolver).get_solver()
+		solver = Client.from_config(endpoint=self.dwaveendpoint, token=self.dwavetoken, solver=self.dwavesolver).get_solver()
 
 		if self.qubo != []:
 			self.qi()
@@ -561,17 +532,6 @@ class Opt:
 
 		return optm_M
 
-	def set(self,qubo,M=1,N=1):
-		len1 = len(self.qubo)
-		if(isinstance(qubo,str)):
-			qubo = optm(qubo,N)
-		len2 = len(qubo)
-		if(len1==len2):
-				self.qubo = np.array(self.qubo)+M*np.array(qubo)
-		elif(self.qubo ==[]):
-			self.qubo = M*np.array(qubo)
-		return self
-
 	def add(self,qubo,M=1,N=1):
 		len1 = len(self.qubo)
 		if(isinstance(qubo,str)):
@@ -628,3 +588,38 @@ class Opt:
 	def qaoa(self,shots=1,step=2,verbose=False):
 		from blueqat import vqe
 		return vqe.Vqe(vqe.QaoaAnsatz(pauli(self.qubo),step)).run()
+
+	def dw(self):
+		try:
+			from dwave.cloud import Client
+		except ImportError:
+			raise ImportError("dw() requires dwave-cloud-client. Please install before call this function.")
+
+		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
+		self.dwavetoken = ''
+		self.dwavesolver = 'DW_2000Q_2_1'
+		solver = Client.from_config(endpoint= self.dwaveendpoint, token=self.dwavetoken, solver=self.dwavesolver).get_solver()
+
+		if self.qubo != []:
+			self.qi()
+
+		# for hi
+		harr = np.diag(self.J)
+		larr = []
+		for i in solver.nodes:
+			if i < len(harr):
+				larr.append(harr[i])
+		linear = {index: larr[index] for index in range(len(larr))}
+
+		# for jij
+		qarr = []
+		qarrv = []
+		for i in solver.undirected_edges:
+			if i[0] < len(harr) and i[1] < len(harr):
+				qarr.append(i)
+				qarrv.append(self.J[i[0]][i[1]])
+
+		quad = {key: j for key,j in zip(qarr,qarrv)}
+		computation = solver.sample_ising(linear, quad, num_reads=1)
+
+		return  list(map(lambda s:int((s+1)/2),computation.samples[0][:len(harr)]))
