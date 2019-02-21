@@ -614,3 +614,6 @@ class Opt:
 			self.E = self.E[0]
 		return qq
 
+	def qaoa(self,shots=1,step=2,verbose=False):
+		from blueqat import vqe
+		return vqe.Vqe(vqe.QaoaAnsatz(pauli(self.qubo),step)).run()
