@@ -193,7 +193,17 @@ Annealing-1(recommended)
 .. code-block:: python
 
     from blueqat.opt import Opt
-    Opt().set([[1,1],[1,1]]).set("(q0+q1)^2",N=2).run()
+    Opt().add([[1,1],[1,1]]).add("(q0+q1)^2",N=2).run()
+
+
+qaoa(recommended)
+-----------
+
+.. code-block:: python
+
+    from blueqat.opt import Opt
+    result = Opt().add([[1,1],[1,1]]).add("(q0+q1)^2",N=2).qaoa()
+    print(result.most_common(5))
     
 Annealing-2
 -----------
