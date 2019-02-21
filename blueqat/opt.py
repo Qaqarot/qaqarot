@@ -572,6 +572,17 @@ class Opt:
 			self.qubo = M*np.array(qubo)
 		return self
 
+	def add(self,qubo,M=1,N=1):
+		len1 = len(self.qubo)
+		if(isinstance(qubo,str)):
+			qubo = optm(qubo,N)
+		len2 = len(qubo)
+		if(len1==len2):
+				self.qubo = np.array(self.qubo)+M*np.array(qubo)
+		elif(self.qubo ==[]):
+			self.qubo = M*np.array(qubo)
+		return self
+
 	def run(self,shots=1,targetT=0.02,verbose=False):
 		"""
 		Run SA with provided QUBO. 
