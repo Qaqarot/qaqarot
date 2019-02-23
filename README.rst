@@ -15,16 +15,16 @@ Version
 
 Build info
 ==========
-.. image:: https://circleci.com/gh/mdrft/Blueqat.svg?style=svg
-    :target: https://circleci.com/gh/mdrft/Blueqat
+.. image:: https://circleci.com/gh/Blueqat/Blueqat.svg?style=svg
+    :target: https://circleci.com/gh/Blueqat/Blueqat
 
 Install
 =======
 
 .. code-block:: sh
 
-    git clone https://github.com/mdrft/blueqat
-    cd blueqat
+    git clone https://github.com/Blueqat/Blueqat
+    cd Blueqat
     pip3 install -e .
 
 or
