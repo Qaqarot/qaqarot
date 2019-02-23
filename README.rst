@@ -219,13 +219,12 @@ Annealing-2（old）
     
 Tutorial
 ========
-`Japanese (日本語) <https://github.com/mdrft/Blueqat/tree/master/tutorial_ja>`_
+https://github.com/mdrft/Blueqat/tree/master/tutorial
 
 Document
 ========
-日本語
 
-https://blueqat.readthedocs.io/ja/latest/
+https://blueqat.readthedocs.io/en/latest/
 
 Author
 ======
