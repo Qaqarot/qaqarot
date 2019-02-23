@@ -232,4 +232,4 @@ Takumi Kato (MDR), Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Sat
 
 Disclaimer
 ==========
-Copyright 2018 The Blueqat Developers.
+Copyright 2019 The Blueqat Developers.
