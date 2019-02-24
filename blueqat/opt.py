@@ -281,23 +281,6 @@ def rands(rands_ele):
 	"""
 	return np.triu(np.random.rand(rands_ele,rands_ele))
 
-def dbms(dbms_arr,weight_init=0):
-	dbmN = np.sum(dbms_arr)
-	if weight_init == 0:
-		dbms_mat = np.diag(np.random.rand(dbmN))	
-	else:
-		dbms_mat = np.diag([0.5 for i in range(dbmN)])
-	cc = 0
-	for k in range(len(dbms_arr)-1):
-		for i in range(cc,cc+dbms_arr[k]):
-			for j in range(cc+dbms_arr[k],cc+dbms_arr[k]+dbms_arr[k+1]):
-				if weight_init == 0:
-					dbms_mat[i][j] = np.random.rand()
-				else:
-					dbms_mat[i][j] = weight_init
-		cc = cc + dbms_arr[k]
-	return dbms_mat
-
 class opt:
 	"""
 	Optimizer for SA/SQA.
@@ -508,34 +491,45 @@ class Opt:
 
 		self.J = np.triu(self.J)
 
-	def optm(quboh,numM):
+	def qubo_to_matrix(self,qubo):
 		try:
 			import sympy
 		except ImportError:
 			raise ImportError("optm() requires sympy. Please install before call this function.") 
-		optm_E = sympy.expand(quboh) 
-		symbol_list = ["q"+str(i) for i in range(numM)] 
-		sympy.var(' '.join(symbol_list),positive=True) 
 
-		symbol_list_proto = list(optm_E.free_symbols) 
-		for i in range(len(symbol_list_proto)): 
-			optm_E = optm_E.subs(symbol_list_proto[i]*symbol_list_proto[i],symbol_list_proto[i]) 
+		qubo = self.expand_qubo(qubo)
+		numN = len(qubo.free_symbols)
+		optm = np.zeros((numN,numN)) 
 
-		optm_M = np.zeros((numM,numM)) 
+		for i in qubo.free_symbols: 
+			for j in qubo.free_symbols: 
+				if(i!=j):
+					optm[int(repr(i)[1:])][int(repr(j)[1:])] = qubo.coeff(i*j)
+				else:
+					f2 =sympy.re(qubo.coeff(i))
+					for k in qubo.free_symbols:
+						f2 = f2.subs(k,0)
+					optm[int(repr(i)[1:])][int(repr(i)[1:])] = f2
 
-		for i in range(numM): 
-			for j in range(i+1,numM): 
-				optm_M[i][j] = optm_E.coeff(symbol_list[i]+"*"+symbol_list[j]) 
+		return np.triu(optm)
 
-			temp1 = sympy.poly(optm_E.coeff(symbol_list[i])) 
-			optm_M[i][i] = sympy.poly(optm_E.coeff(symbol_list[i])).coeff_monomial(1) 
+	def expand_qubo(self,qubo):
+		try:
+			import sympy
+		except ImportError:
+			raise ImportError("optm() requires sympy. Please install before call this function.")
+		f = sympy.expand(qubo)
+		deg = sympy.poly(f).degree()
 
-		return optm_M
+		for i in range(deg):
+			for j in f.free_symbols:
+				f = f.subs(j**(deg-i),j)
+		return f
 
-	def add(self,qubo,M=1,N=1):
+	def add(self,qubo,M=1):
 		len1 = len(self.qubo)
 		if(isinstance(qubo,str)):
-			qubo = optm(qubo,N)
+			qubo = self.qubo_to_matrix(self.expand_qubo(qubo))
 		len2 = len(qubo)
 		if(len1==len2):
 				self.qubo = np.array(self.qubo)+M*np.array(qubo)
