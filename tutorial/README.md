@@ -1,13 +1,13 @@
 Blueqat English Tutorial
 --------
-Here we provide tutorials on ipython. It is easy to learn universal gate model circuit by checking code on python.
+Here we provide tutorials on ipython. It is easy to learn quantum computing by checking code on python.
 
 
 NEW MENU
 --------------------
-001. <a href="tutorial001_basic_circuit.ipynb">basic 1qubit operation</a><!--_basic_one_qubit-->
-002.  basic 2qubits operations<!--_basic_two_qubits-->
-003.	superposition and observation	<!--_basic_superposition-->
+001. <a href="001_basic_circuit.ipynb">basic 1qubit operation</a>
+002. <a href="002_basic_two_qubits.ipynb">basic 2qubits operations</a>
+003. <a href="003_basic_superposition.ipynb">superposition and observation</a>
 004.	entanglement	<!--_basic_entanglement-->
 005.	toffoli gate	<!--_basic_toffoli-->
 006.	swap gate	<!--_basic_swap-->
