@@ -6,7 +6,7 @@
 blueqat
 =======
 
-A quantum gate simulator
+A quantum computing SDK
 
 Version
 =======
@@ -17,6 +17,10 @@ Build info
 ==========
 .. image:: https://circleci.com/gh/Blueqat/Blueqat.svg?style=svg
     :target: https://circleci.com/gh/Blueqat/Blueqat
+
+Tutorial
+========
+https://github.com/mdrft/Blueqat/tree/master/tutorial
 
 Install
 =======
@@ -216,10 +220,7 @@ Annealing-2（old）
     opt.counter(result)
     
     Counter({'010': 29, '100': 34, '001': 37})
-    
-Tutorial
-========
-https://github.com/mdrft/Blueqat/tree/master/tutorial
+
 
 Document
 ========
