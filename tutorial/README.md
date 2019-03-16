@@ -8,9 +8,9 @@ NEW MENU
 001. <a href="001_basic_circuit.ipynb">basic 1qubit operation</a>
 002. <a href="002_basic_two_qubits.ipynb">basic 2qubits operations</a>
 003. <a href="003_basic_superposition.ipynb">superposition and observation</a>
-004.	entanglement	<!--_basic_entanglement-->
-005.	toffoli gate	<!--_basic_toffoli-->
-006.	swap gate	<!--_basic_swap-->
+004. <a href="004_basic_entanglement.ipynb">entanglement</a>
+005. <a href="005_basic_toffoli.ipynb">toffoli gate</a>
+006. <a href="006_basic_swap.ipynb">swap gate</a>
 007.	controlled gate	<!--_basic_control-->
 008.	basic universal computing	<!--_basic_general-->
 009.	adder with hadamard	<!--_basic_adder_hadamard-->
