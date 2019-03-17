@@ -11,14 +11,14 @@ NEW MENU
 004. <a href="004_basic_entanglement.ipynb">entanglement</a>
 005. <a href="005_basic_toffoli.ipynb">toffoli gate</a>
 006. <a href="006_basic_swap.ipynb">swap gate</a>
-007.	controlled gate	<!--_basic_control-->
-008.	basic universal computing	<!--_basic_general-->
-009.	adder with hadamard	<!--_basic_adder_hadamard-->
+007. <a href="007_basic_control.ipynb">controlled gate</a>
+008. <a href="008_basic_general.ipynb">basic universal computing</a>
+009. <a href="009_basic_adder_hadamard.ipynb">adder with hadamard</a>
 010.	multiplier	<!--_basic_multi-->
-011.	GHZ	<!--_basic_ghz-->
+011. <a href="011_basic_ghz.ipynb">GHZ</a>
 012.	quantum teleportation	<!--_algo_teleportation-->
 013.	quantum fourier transform	<!--_algo_qft-->
-014.	grover's algorithm	<!--_algo_grover-->
+014. <a href="014_algo_grover.ipynb">grover's algorithm</a>
 015.	simple phase estimation	<!--_algo_pea_simple-->
 016.	Deutsch's algorithm	<!--_algo_deutsch-->
 017.	Deutsch-Jozsa's algorithm	<!--_algo_deutsch-->
@@ -26,7 +26,7 @@ NEW MENU
 019.	Simon's algorithm	<!--_algo_simon-->
 020.	Phase Estimation Algorithm	<!--_algo_pea-->
 021.	Variational Quantum Eigensolver VQE	<!--_algo_vqe-->
-022.	QAOA	<!--_algo_qaoa-->
+022. <a href="022_algo_qaoa.ipynb">QAOA</a>
 023.	Jij	<!--_anneal_jij-->
 024.	QUBO	<!--_anneal_qubo-->
 025.	maxcut	<!--_app_maxcut-->
