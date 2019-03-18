@@ -1,11 +1,9 @@
-Blueqat English Tutorial
---------
+Blueqat Tutorial
+--------------------
 Here we provide tutorials on ipython. It is easy to learn quantum computing by checking code on python.
 
-
-MENU
---------------------
 step1. basic operation of quantum logic gate
+--------------------
 
 001. <a href="001_basic_circuit.ipynb">basic 1qubit operation</a>
 002. <a href="002_basic_two_qubits.ipynb">basic 2qubits operations</a>
@@ -13,6 +11,7 @@ step1. basic operation of quantum logic gate
 004. <a href="004_basic_entanglement.ipynb">entanglement</a>
 
 step2. advanced operation of quantum logic gate
+--------------------
 
 005. <a href="005_basic_toffoli.ipynb">toffoli gate</a>
 006. <a href="006_basic_swap.ipynb">swap gate</a>
@@ -23,11 +22,12 @@ step2. advanced operation of quantum logic gate
 011. <a href="011_basic_ghz.ipynb">GHZ</a>
 
 step3. basic quantum algorithm
+--------------------
 
 012. <a href="012_algo_teleportation.ipynb">quantum teleportation</a>
 013. <a href="013_algo_qft.ipynb">quantum fourier transform</a>
 014. <a href="014_algo_grover.ipynb">grover's algorithm</a>
-015.	simple phase estimation	<!--_algo_pea_simple-->
+015. <a href="015_algo_pea_simple.ipynb">simple phase estimation</a>
 016.	Deutsch's algorithm	<!--_algo_deutsch-->
 017.	Deutsch-Jozsa's algorithm	<!--_algo_deutsch-->
 018.	Bernstein-Vazirani's algorithm	<!--_algo_bernstein_vazirani-->
@@ -35,11 +35,13 @@ step3. basic quantum algorithm
 020.	Phase Estimation Algorithm	<!--_algo_pea-->
 
 step4. basic NISQ algorithm
+--------------------
 
-021.	Variational Quantum Eigensolver VQE	<!--_algo_vqe-->
+021. <a href="021_algo_vqe.ipynb">Variational Quantum Eigensolver VQE</a>	<!--_algo_vqe-->
 022. <a href="022_algo_qaoa.ipynb">QAOA</a>
 
 step5. basic optimization algorithm
+--------------------
 
 023.	Jij	<!--_anneal_jij-->
 024.	QUBO	<!--_anneal_qubo-->
