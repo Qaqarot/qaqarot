@@ -4,9 +4,19 @@ from .backendbase import Backend
 
 
 def lazy_import():
-    global eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix, sympy_gate, TensorProduct
+    global eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix, sympy_gate, TensorProduct, sympy
     from sympy import eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix
     from sympy.physics.quantum import gate as sympy_gate, TensorProduct
+    import sympy
+
+
+def _angle_simplify(ang):
+    if isinstance(ang, float):
+        nsimp = sympy.nsimplify(ang / np.pi)
+        numer, denom = nsimp.as_numer_denom()
+        if denom < 1e12:
+            return pi * numer / denom
+    return ang
 
 
 class _SympyBackendContext:
@@ -63,7 +73,8 @@ class SympyBackend(Backend):
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     def _one_qubit_gate_args_theta(self, gate, ctx):
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, gate.theta)
+        theta = _angle_simplify(gate.theta)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, theta)
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
 
     gate_x = _one_qubit_gate_noargs
@@ -78,15 +89,16 @@ class SympyBackend(Backend):
 
     def _one_qubit_gate_ugate(self, gate, ctx):
         if len(gate.params) == 3:
-            phi = gate.phi
-            theta = gate.theta
+            phi = _angle_simplify(gate.phi)
+            theta = _angle_simplify(gate.theta)
         elif len(gate.params) == 2:
-            phi = gate.phi
+            phi = _angle_simplify(gate.phi)
             theta = pi / 2
         else:
             phi = theta = 0
+        lambd = _angle_simplify(gate.lambd)
         matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs([
-            (self.lambd, gate.lambd),
+            (self.lambd, lambd),
             (self.phi, phi),
             (self.theta, theta)], simultaneous=True)
         return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
