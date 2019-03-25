@@ -192,7 +192,7 @@ Maxcut QAOA
      {1}---{2}""".format(*result.most_common()[0][0]))
 
 Optimization(recommended)
------------
+-------------------------
 
 .. code-block:: python
 
