@@ -12,11 +12,11 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
 setuptools.setup(
     name = "blueqat",
     version=__version__,
-    author="MDR Inc.",
+    author="The Blueqat Developers",
     author_email="kato@mdrft.com",
     description="Quantum gate simulator",
     long_description=long_description,
-    url="https://github.com/mdrft/blueqat",
+    url="https://github.com/Blueqat/Blueqat",
     license="Apache 2",
     packages=setuptools.find_packages(),
     install_requires=install_requires,
