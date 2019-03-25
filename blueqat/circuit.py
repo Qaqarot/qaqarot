@@ -3,6 +3,8 @@ This module defines Circuit and the setting for circuit.
 """
 
 import warnings
+from functools import partial
+from typing import Callable
 from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.qasm_output_backend import QasmOutputBackend
@@ -42,6 +44,8 @@ GATE_SET = {
     "measure": gate.Measurement,
     "m": gate.Measurement,
 }
+
+GLOBAL_MACROS = {}
 
 BACKENDS = {
     "numpy": NumPyBackend,
@@ -83,6 +87,8 @@ class Circuit:
     def __getattr__(self, name):
         if name in GATE_SET:
             return _GateWrapper(self, name, GATE_SET[name])
+        if name in GLOBAL_MACROS:
+            return partial(GLOBAL_MACROS[name], self)
         if name.startswith("run_with_"):
             backend_name = name[9:]
             if backend_name in BACKENDS:
@@ -110,7 +116,7 @@ class Circuit:
 
         :params
         copy_backends :bool copy backends if True.
-        copy_default_backend :bool copy default_backend if True
+        copy_default_backend :bool copy default_backend if True.
         """
         copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_backends:
@@ -204,6 +210,7 @@ class Circuit:
         """
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
 
+
 class _GateWrapper:
     def __init__(self, circuit, name, gate):
         self.circuit = circuit
@@ -239,6 +246,51 @@ class _GateWrapper:
 class BlueqatGlobalSetting:
     """Setting for Blueqat."""
     @staticmethod
+    def register_macro(name: str, func: Callable, allow_overwrite: bool = False) -> None:
+        """Register new macro to Circuit.
+
+        Args:
+            name (str): The name of macro.
+            func (callable): The function to be called.
+            allow_overwrite (bool, optional): If True, allow to overwrite the existing macro.
+                Otherwise, raise the ValueError.
+
+        Raises:
+            ValueError: The name is duplicated with existing macro, gate or method.
+                When `allow_overwrite=True`, this error is not raised.
+        """
+        if hasattr(Circuit, name):
+            if allow_overwrite:
+                warnings.warn(f"Circuit has attribute `{name}`.")
+            else:
+                raise ValueError(f"Circuit has attribute `{name}`.")
+        if name.startswith("run_with_"):
+            if allow_overwrite:
+                warnings.warn(f"Gate name `{name}` may conflict with run of backend.")
+            else:
+                raise ValueError(f"Gate name `{name}` shall not start with 'run_with_'.")
+        if not allow_overwrite:
+            if name in GATE_SET:
+                raise ValueError(f"Gate '{name}' is already exists in gate set.")
+            if name in GLOBAL_MACROS:
+                raise ValueError(f"Macro '{name}' is already exists.")
+        GLOBAL_MACROS[name] = func
+
+    @staticmethod
+    def unregister_macro(name):
+        """Unregister a macro.
+
+        Args:
+            name (str): The name of the macro to be unregistered.
+
+        Raises:
+            ValueError: Specified gate is not registered.
+        """
+        if name not in GLOBAL_MACROS:
+            raise ValueError(f"Macro '{name}' is not registered.")
+        del GLOBAL_MACROS[name]
+
+    @staticmethod
     def register_gate(name, gateclass, allow_overwrite=False):
         """Register new gate to gate set.
 
@@ -265,6 +317,8 @@ class BlueqatGlobalSetting:
         if not allow_overwrite:
             if name in GATE_SET:
                 raise ValueError(f"Gate '{name}' is already exists in gate set.")
+            if name in GLOBAL_MACROS:
+                raise ValueError(f"Macro '{name}' is already exists.")
         GATE_SET[name] = gateclass
 
     @staticmethod

@@ -509,3 +509,13 @@ def test_cu3_realvalue():
         actual_i = np.array(actual_i).astype(complex).reshape(-1)
         expected_i = np.array(expected_1.col(i)).astype(complex).reshape(-1)
         assert 0.99999 < np.abs(np.dot(actual_i.conj(), expected_i)) < 1.00001
+
+
+def test_macro():
+    def macro(c, i):
+        return c.h[i]
+    BlueqatGlobalSetting.register_macro('foo', macro)
+    try:
+        assert is_vec_same(Circuit().foo(1).run(), Circuit().h[1].run())
+    finally:
+        BlueqatGlobalSetting.unregister_macro('foo')
