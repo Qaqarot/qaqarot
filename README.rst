@@ -208,8 +208,8 @@ Optimization(recommended)
     [0, 0]
 
     
-Annealing-2（old）
------------
+Annealing-2 (old)
+-----------------
 
 .. code-block:: python
 
