@@ -180,6 +180,10 @@ class Circuit:
         """Returns the OpenQASM output of this circuit."""
         return self.run_with_qasm_output(*args, **kwargs)
 
+    def to_unitary(self, *args, **kwargs):
+        """Returns sympy unitary matrix of this circuit."""
+        return self.run_with_sympy_unitary(*args, **kwargs)
+
     def set_default_backend(self, backend_name):
         """Set the default backend of this circuit.
 
