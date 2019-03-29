@@ -227,6 +227,11 @@ class ToffoliGate(Gate):
         ]
 
 
+class CCZGate(Gate):
+    """2-Controlled Z gate"""
+    lowername = "ccz"
+
+
 class U1Gate(OneQubitGate):
     """U1 gate"""
     def __init__(self, targets, lambd, **kwargs):
