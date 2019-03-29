@@ -162,7 +162,7 @@ class NumPyBackend(Backend):
             t1 = (i & (1 << target)) != 0
             newq[t0] = qubits[t0] + qubits[t1]
             newq[t1] = qubits[t0] - qubits[t1]
-            newq /= np.sqrt(2)
+            newq *= 1 / np.sqrt(2)
             qubits, newq = newq, qubits
         ctx.qubits = qubits
         ctx.qubits_buf = newq
