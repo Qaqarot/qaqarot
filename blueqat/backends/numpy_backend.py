@@ -160,13 +160,12 @@ class NumPyBackend(Backend):
         for target in gate.target_iter(n_qubits):
             t0 = (i & (1 << target)) == 0
             t1 = (i & (1 << target)) != 0
-            qubits[t0] += qubits[t1]
-            qubits[t1] *= -2
-            qubits[t1] += qubits[t0]
-            qubits *= 1 / np.sqrt(2)
-            #qubits, newq = newq, qubits
-        #ctx.qubits = qubits
-        #ctx.qubits_buf = newq
+            newq[t0] = qubits[t0] + qubits[t1]
+            newq[t1] = qubits[t0] - qubits[t1]
+            newq *= 1 / np.sqrt(2)
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
         return ctx
 
     def gate_cz(self, gate, ctx):
