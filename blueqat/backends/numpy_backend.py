@@ -253,6 +253,24 @@ class NumPyBackend(Backend):
             qubits[(i & (1 << target)) != 0] *= 1.j
         return ctx
 
+    def gate_ccz(self, gate, ctx):
+        c1, c2, t = gate.targets
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        indices = (i & (1 << c1)) != 0
+        indices &= (i & (1 << c2)) != 0
+        indices &= (i & (1 << t)) != 0
+        qubits[indices] *= -1
+        return ctx
+
+    def gate_ccx(self, gate, ctx):
+        c1, c2, t = gate.targets
+        ctx = self.gate_h(HGate(t), ctx)
+        ctx = self.gate_ccz(CCZGate(gate.targets), ctx)
+        ctx = self.gate_h(HGate(t), ctx)
+        return ctx
+
     def gate_u1(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
