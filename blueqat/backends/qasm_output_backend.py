@@ -58,6 +58,9 @@ class QasmOutputBackend(Backend):
 
     gate_cz = _two_qubit_gate_noargs
     gate_cx = _two_qubit_gate_noargs
+    gate_cy = _two_qubit_gate_noargs
+    gate_ch = _two_qubit_gate_noargs
+    gate_swap = _two_qubit_gate_noargs
 
     def _one_qubit_gate_args_theta(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
@@ -67,6 +70,11 @@ class QasmOutputBackend(Backend):
     gate_rx = _one_qubit_gate_args_theta
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
+
+    def gate_i(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append(f"id q[{idx}];")
+        return ctx
 
     def gate_u1(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
@@ -97,6 +105,14 @@ class QasmOutputBackend(Backend):
         for c, t in gate.control_target_iter(ctx[1]):
             ctx[0].append(f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{c}],q[{t}];")
         return ctx
+
+    def _three_qubit_gate_noargs(self, gate, ctx):
+        c0, c1, t = gate.targets
+        ctx[0].append(f"{gate.lowername} q[{c0}],q[{c1}],q[{t}];")
+        return ctx
+
+    gate_ccx = _three_qubit_gate_noargs
+    gate_cswap = _three_qubit_gate_noargs
 
     def gate_measure(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
