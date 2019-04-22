@@ -34,9 +34,10 @@ def _angle_simplify(ang):
 
 
 class _SympyBackendContext:
-    def __init__(self, n_qubits):
+    def __init__(self, n_qubits, ignore_global):
         self.n_qubits = n_qubits
         self.matrix_of_circuit = eye(2 ** n_qubits)
+        self.ignore_global = ignore_global
 
 
 class SympyBackend(Backend):
@@ -172,7 +173,13 @@ class SympyBackend(Backend):
         return ctx
 
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
-        return gates, _SympyBackendContext(n_qubits)
+        kwargs.setdefault('ignore_global', False)
+        return gates, _SympyBackendContext(n_qubits, kwargs['ignore_global'])
 
     def _postprocess_run(self, ctx):
+        if ctx.ignore_global:
+            mat = ctx.matrix_of_circuit
+            for i in range(2 ** ctx.n_qubits):
+                if mat[i, i] != 0:
+                    return mat / mat[i, i]
         return ctx.matrix_of_circuit
