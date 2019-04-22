@@ -511,6 +511,18 @@ def test_cu3_realvalue():
         assert 0.99999 < np.abs(np.dot(actual_i.conj(), expected_i)) < 1.00001
 
 
+def test_toffoli_sympy():
+    assert simplify(Circuit().ccx[2, 1, 0].to_unitary(ignore_global=True)) == Matrix([
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 1, 0]])
+
+
 def test_macro():
     def macro(c, i):
         return c.h[i]
