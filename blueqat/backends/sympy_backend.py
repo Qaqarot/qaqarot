@@ -181,5 +181,5 @@ class SympyBackend(Backend):
             mat = ctx.matrix_of_circuit
             for i in range(2 ** ctx.n_qubits):
                 if mat[i, i] != 0:
-                    return mat / mat[i, i]
+                    return mat * (abs(mat[i, i]) / mat[i, i])
         return ctx.matrix_of_circuit
