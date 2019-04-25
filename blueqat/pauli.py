@@ -697,6 +697,9 @@ class Expr(_ExprTuple):
                 s_terms.append(s)
         return " ".join(s_terms)
 
+    def __getnewargs__(self):
+        return (self.terms,)
+
     def to_expr(self):
         """Do nothing. This method is prepared to avoid TypeError."""
         return self
@@ -736,6 +739,7 @@ class Expr(_ExprTuple):
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
         return sum(term.to_matrix(n_qubits) for term in self.terms)
+
 
 def qubo_bit(n):
     """Represent QUBO's bit to Pauli operator of Ising model.
