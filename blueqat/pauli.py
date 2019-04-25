@@ -125,7 +125,7 @@ class _PauliImpl:
     @property
     def op(self):
         """Return operator type (X, Y, Z, I)"""
-        return self.__class__.__name__
+        return self.__class__.__name__[1]
 
     @property
     def is_identity(self):
@@ -232,13 +232,13 @@ class _PauliImpl:
             mat = reduce(np.kron, [I.matrix for _ in range(n_qubits - _n(self) - 1)], mat)
         return mat
 
-class X(_PauliImpl, _PauliTuple):
+class _X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
 
-class Y(_PauliImpl, _PauliTuple):
+class _Y(_PauliImpl, _PauliTuple):
     """Pauli's Y operator"""
 
-class Z(_PauliImpl, _PauliTuple):
+class _Z(_PauliImpl, _PauliTuple):
     """Pauli's Z operator"""
 
 class _PauliCtor:
@@ -251,16 +251,16 @@ class _PauliCtor:
     def __getitem__(self, n):
         return self.ty(n)
 
-X = _PauliCtor(X)
-Y = _PauliCtor(Y)
-Z = _PauliCtor(Z)
+X = _PauliCtor(_X)
+Y = _PauliCtor(_Y)
+Z = _PauliCtor(_Z)
 
-class I(_PauliImpl, namedtuple("_I", "")):
+class _I(_PauliImpl, namedtuple("_I", "")):
     """Identity operator"""
     def __call__(self):
         return self
 
-I = I()
+I = _I()
 _TermTuple = namedtuple("_TermTuple", "ops coeff")
 
 class Term(_TermTuple):
