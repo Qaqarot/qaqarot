@@ -39,7 +39,7 @@ step4. basic NISQ algorithm
 
 021. <a href="021_algo_vqe.ipynb">Variational Quantum Eigensolver VQE</a>	<!--_algo_vqe-->
 022. <a href="022_algo_qaoa.ipynb">QAOA</a>
-023. <a href="">H2 on VQE</a>
+023. <a href="023_h2_on_vqe.ipynb">H2 on VQE</a>
 
 step5. basic optimization algorithm
 --------------------
