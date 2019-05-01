@@ -46,8 +46,8 @@ step5. basic optimization algorithm
 
 024.	Jij	<!--_anneal_jij-->
 025.	QUBO	<!--_anneal_qubo-->
-026.	maxcut	<!--_app_maxcut-->
-027.	1+1	<!--_app_one_one-->
+026.	<a href="026_maxcut.ipynb">maxcut</a>
+027.	<a href="027_one_plus_one.ipynb">1+1</a>
 028.	number partitioning	<!--_app_number_partitioning-->
 029.	BIL	<!--_app_bil-->
 030.	clique cover	<!--_app_clique_cover-->
