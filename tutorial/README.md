@@ -37,15 +37,15 @@ step3. basic quantum algorithm
 step4. basic NISQ algorithm
 --------------------
 
-021. <a href="021_algo_vqe.ipynb">Variational Quantum Eigensolver VQE</a>	<!--_algo_vqe-->
+021. <a href="021_algo_vqe.ipynb">Variational Quantum Eigensolver VQE</a>
 022. <a href="022_algo_qaoa.ipynb">QAOA</a>
 023. <a href="023_h2_on_vqe.ipynb">H2 on VQE</a>
 
 step5. basic optimization algorithm
 --------------------
 
-024.	Jij	<!--_anneal_jij-->
-025.	QUBO	<!--_anneal_qubo-->
+024.	<a href="024_jij.ipynb">Jij</a>
+025.	<a href="025_qubo.ipynb">QUBO</a>
 026.	<a href="026_maxcut.ipynb">maxcut</a>
 027.	<a href="027_one_plus_one.ipynb">1+1</a>
 028.	number partitioning	<!--_app_number_partitioning-->
