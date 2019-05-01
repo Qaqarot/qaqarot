@@ -1,5 +1,5 @@
-.. image:: https://raw.githubusercontent.com/mdrft/Blueqat/master/MDR_Blueqat_color.png
-    :target: https://github.com/mdrft/Blueqat
+.. image:: https://raw.githubusercontent.com/Blueqat/Blueqat/master/MDR_Blueqat_color.png
+    :target: https://github.com/Blueqat/Blueqat
     :alt: Blueqat
 
 =======
@@ -20,7 +20,7 @@ Build info
 
 Tutorial
 ========
-https://github.com/mdrft/Blueqat/tree/master/tutorial
+https://github.com/Blueqat/Blueqat/tree/master/tutorial
 
 Install
 =======
