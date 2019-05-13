@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Blueqat \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-19 16:11+0900\n"
+"POT-Creation-Date: 2019-05-13 12:02+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,7 +29,7 @@ msgid "English"
 msgstr "英語 (English)"
 
 #: ../../source/tutorial.rst:8
-msgid "https://github.com/mdrft/Blueqat/blob/master/tutorial_en/README.md"
+msgid "https://github.com/Blueqat/Blueqat-tutorials"
 msgstr ""
 
 #: ../../source/tutorial.rst:10
@@ -37,6 +37,12 @@ msgid "Japanese"
 msgstr "日本語"
 
 #: ../../source/tutorial.rst:12
-msgid "https://github.com/mdrft/Blueqat/blob/master/tutorial_ja/README.md"
+msgid "https://github.com/mdrft/Blueqat_tutorials_ja"
 msgstr ""
+
+#~ msgid "https://github.com/mdrft/Blueqat/blob/master/tutorial_en/README.md"
+#~ msgstr ""
+
+#~ msgid "https://github.com/mdrft/Blueqat/blob/master/tutorial_ja/README.md"
+#~ msgstr ""
 

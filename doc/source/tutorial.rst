@@ -5,8 +5,8 @@ Engligh and Japanese tutorials are available.
 
 English
 
-https://github.com/mdrft/Blueqat/blob/master/tutorial_en/README.md
+https://github.com/Blueqat/Blueqat-tutorials
 
 Japanese
 
-https://github.com/mdrft/Blueqat/blob/master/tutorial_ja/README.md
+https://github.com/mdrft/Blueqat_tutorials_ja

@@ -20,7 +20,7 @@ Build info
 
 Tutorial
 ========
-https://github.com/Blueqat/Blueqat/tree/master/tutorial
+https://github.com/Blueqat/Blueqat-tutorials
 
 Install
 =======

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Blueqat \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-19 16:11+0900\n"
+"POT-Creation-Date: 2019-05-13 12:02+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,6 +28,10 @@ msgstr ""
 msgid "blueqat.circuit module"
 msgstr ""
 
+#: blueqat.circuit:1 of
+msgid "This module defines Circuit and the setting for circuit."
+msgstr ""
+
 #: blueqat.BlueqatGlobalSetting:1 blueqat.Circuit:1
 #: blueqat.circuit.BlueqatGlobalSetting:1 blueqat.circuit.Circuit:1
 #: blueqat.vqe.AnsatzBase:1 blueqat.vqe.Vqe:1 blueqat.vqe.VqeResult:1 of
@@ -38,9 +42,107 @@ msgstr ""
 msgid "Setting for Blueqat."
 msgstr ""
 
+#: blueqat.BlueqatGlobalSetting.get_default_backend_name:1
+#: blueqat.circuit.BlueqatGlobalSetting.get_default_backend_name:1 of
+msgid "Get the default backend name."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.get_default_backend_name:3
+#: blueqat.Circuit.get_default_backend_name:3 blueqat.Circuit.run:18
+#: blueqat.circuit.BlueqatGlobalSetting.get_default_backend_name:3
+#: blueqat.circuit.Circuit.get_default_backend_name:3
+#: blueqat.circuit.Circuit.run:18 blueqat.pauli.Term.from_chars:8
+#: blueqat.pauli.Term.get_time_evolution:4 blueqat.pauli.commutator:7
+#: blueqat.pauli.is_commutable:9 blueqat.pauli.pauli_from_char:8
+#: blueqat.pauli.qubo_bit:6 blueqat.pauli.term_from_chars:8
+#: blueqat.pauli.to_expr:6 blueqat.pauli.to_term:6 of
+msgid "Returns:"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.get_default_backend_name:4
+#: blueqat.Circuit.get_default_backend_name:4
+#: blueqat.circuit.BlueqatGlobalSetting.get_default_backend_name:4
+#: blueqat.circuit.Circuit.get_default_backend_name:4 of
+msgid "str: The name of default backend."
+msgstr ""
+
 #: blueqat.BlueqatGlobalSetting.register_backend:1
 #: blueqat.circuit.BlueqatGlobalSetting.register_backend:1 of
 msgid "Register new backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:7
+#: blueqat.BlueqatGlobalSetting.register_gate:7
+#: blueqat.BlueqatGlobalSetting.register_macro:7
+#: blueqat.BlueqatGlobalSetting.unregister_backend:4
+#: blueqat.BlueqatGlobalSetting.unregister_gate:4
+#: blueqat.BlueqatGlobalSetting.unregister_macro:4
+#: blueqat.Circuit.set_default_backend:13
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:7
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:7
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:7
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_backend:4
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:4
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_macro:4
+#: blueqat.circuit.Circuit.set_default_backend:13
+#: blueqat.pauli.Term.from_chars:5 blueqat.pauli.commutator:5
+#: blueqat.pauli.is_commutable:7 blueqat.pauli.pauli_from_char:5
+#: blueqat.pauli.qubo_bit:4 blueqat.pauli.term_from_chars:5
+#: blueqat.pauli.to_expr:4 blueqat.pauli.to_term:4 of
+msgid "Args:"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:4
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:4 of
+msgid ""
+"name (str): The name of backend. gateclass (type): The type object of "
+"backend allow_overwrite (bool, optional): If True, allow to overwrite the"
+" existing backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:7
+#: blueqat.BlueqatGlobalSetting.register_gate:7
+#: blueqat.BlueqatGlobalSetting.register_macro:7
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:7
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:7
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:7 of
+msgid "Otherwise, raise the ValueError."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:10
+#: blueqat.BlueqatGlobalSetting.register_gate:10
+#: blueqat.BlueqatGlobalSetting.register_macro:10
+#: blueqat.BlueqatGlobalSetting.set_default_backend:5
+#: blueqat.BlueqatGlobalSetting.unregister_backend:6
+#: blueqat.BlueqatGlobalSetting.unregister_gate:6
+#: blueqat.BlueqatGlobalSetting.unregister_macro:6 blueqat.Circuit.run:20
+#: blueqat.Circuit.set_default_backend:15
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:10
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:10
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:10
+#: blueqat.circuit.BlueqatGlobalSetting.set_default_backend:5
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_backend:6
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:6
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_macro:6
+#: blueqat.circuit.Circuit.run:20
+#: blueqat.circuit.Circuit.set_default_backend:15
+#: blueqat.pauli.Term.from_chars:10 blueqat.pauli.pauli_from_char:10
+#: blueqat.pauli.term_from_chars:10 of
+msgid "Raises:"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:10
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:10 of
+msgid "ValueError: The name is duplicated with existing backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_backend:11
+#: blueqat.BlueqatGlobalSetting.register_gate:11
+#: blueqat.BlueqatGlobalSetting.register_macro:11
+#: blueqat.circuit.BlueqatGlobalSetting.register_backend:11
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:11
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:11 of
+msgid "When `allow_overwrite=True`, this error is not raised."
 msgstr ""
 
 #: blueqat.BlueqatGlobalSetting.register_gate:1
@@ -48,14 +150,98 @@ msgstr ""
 msgid "Register new gate to gate set."
 msgstr ""
 
+#: blueqat.BlueqatGlobalSetting.register_gate:4
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:4 of
+msgid ""
+"name (str): The name of gate. gateclass (type): The type object of gate. "
+"allow_overwrite (bool, optional): If True, allow to overwrite the "
+"existing gate."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_gate:10
+#: blueqat.circuit.BlueqatGlobalSetting.register_gate:10 of
+msgid "ValueError: The name is duplicated with existing gate."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_macro:1
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:1 of
+msgid "Register new macro to Circuit."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_macro:4
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:4 of
+msgid ""
+"name (str): The name of macro. func (callable): The function to be "
+"called. allow_overwrite (bool, optional): If True, allow to overwrite the"
+" existing macro."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.register_macro:10
+#: blueqat.circuit.BlueqatGlobalSetting.register_macro:10 of
+msgid "ValueError: The name is duplicated with existing macro, gate or method."
+msgstr ""
+
 #: blueqat.BlueqatGlobalSetting.remove_backend:1
 #: blueqat.circuit.BlueqatGlobalSetting.remove_backend:1 of
+msgid "This method is deperecated. Use `unregister_backend` method."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.set_default_backend:1
+#: blueqat.circuit.BlueqatGlobalSetting.set_default_backend:1 of
+msgid "Set the default backend to be used by `Circuit`. Args:"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.set_default_backend:3
+#: blueqat.circuit.BlueqatGlobalSetting.set_default_backend:3 of
+msgid "name (str): The name of the default backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.set_default_backend:6
+#: blueqat.BlueqatGlobalSetting.unregister_backend:7
+#: blueqat.circuit.BlueqatGlobalSetting.set_default_backend:6
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_backend:7 of
+msgid "ValueError: Specified backend is not registered."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_backend:1
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_backend:1 of
 msgid "Unregister a backend."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_backend:4
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_backend:4 of
+msgid "name (str): The name of the backend to be unregistered."
 msgstr ""
 
 #: blueqat.BlueqatGlobalSetting.unregister_gate:1
 #: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:1 of
 msgid "Unregister a gate from gate set"
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_gate:4
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:4 of
+msgid "name (str): The name of the gate to be unregistered."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_gate:7
+#: blueqat.BlueqatGlobalSetting.unregister_macro:7
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_gate:7
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_macro:7 of
+msgid "ValueError: Specified gate is not registered."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_macro:1
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_macro:1 of
+msgid "Unregister a macro."
+msgstr ""
+
+#: blueqat.BlueqatGlobalSetting.unregister_macro:4
+#: blueqat.circuit.BlueqatGlobalSetting.unregister_macro:4 of
+msgid "name (str): The name of the macro to be unregistered."
+msgstr ""
+
+#: blueqat.Circuit:1 blueqat.circuit.Circuit:1 of
+msgid "Store the gate operations and call the backends."
 msgstr ""
 
 #: blueqat.Circuit.copy:1 blueqat.circuit.Circuit.copy:1 of
@@ -65,7 +251,12 @@ msgstr ""
 #: blueqat.Circuit.copy:3 blueqat.circuit.Circuit.copy:3 of
 msgid ""
 ":params copy_backends :bool copy backends if True. copy_default_backend "
-":bool copy default_backend if True"
+":bool copy default_backend if True."
+msgstr ""
+
+#: blueqat.Circuit.get_default_backend_name:1
+#: blueqat.circuit.Circuit.get_default_backend_name:1 of
+msgid "Get the default backend of this circuit or global setting."
 msgstr ""
 
 #: blueqat.Circuit.make_cache:1 blueqat.circuit.Circuit.make_cache:1 of
@@ -74,6 +265,50 @@ msgstr ""
 
 #: blueqat.Circuit.make_cache:3 blueqat.circuit.Circuit.make_cache:3 of
 msgid "This is temporary API. It may changed or deprecated."
+msgstr ""
+
+#: blueqat.Circuit.run:1 blueqat.circuit.Circuit.run:1 of
+msgid "Run the circuit."
+msgstr ""
+
+#: blueqat.Circuit.run:3 blueqat.circuit.Circuit.run:3 of
+msgid ""
+"`Circuit` have several backends. When `backend` parameter is specified, "
+"use specified backend, and otherwise, default backend is used. Other "
+"parameters are passed to the backend."
+msgstr ""
+
+#: blueqat.Circuit.run:7 blueqat.circuit.Circuit.run:7 of
+msgid ""
+"The meaning of parameters are depends on the backend specifications. "
+"However, following parameters are commonly used."
+msgstr ""
+
+#: blueqat.Circuit.run:15 blueqat.circuit.Circuit.run:15 of
+msgid "Commonly used args (Depends on backend):"
+msgstr ""
+
+#: blueqat.Circuit.run:11 blueqat.circuit.Circuit.run:11 of
+msgid ""
+"shots (int, optional): The number of sampling the circuit. returns (str, "
+"optional):  The category of returns value."
+msgstr ""
+
+#: blueqat.Circuit.run:13 blueqat.circuit.Circuit.run:13 of
+msgid "e.g. \"statevector\" returns the state vector after run the circuit."
+msgstr ""
+
+#: blueqat.Circuit.run:14 blueqat.circuit.Circuit.run:14 of
+msgid "\"shots\" returns the counter of measured value."
+msgstr ""
+
+#: blueqat.Circuit.run:15 blueqat.circuit.Circuit.run:15 of
+msgid "token, url (str, optional): The token and URL for cloud resource."
+msgstr ""
+
+#: blueqat.Circuit.run:18 blueqat.Circuit.run:21 blueqat.circuit.Circuit.run:18
+#: blueqat.circuit.Circuit.run:21 of
+msgid "Depends on backend."
 msgstr ""
 
 #: blueqat.Circuit.set_default_backend:1
@@ -98,11 +333,27 @@ msgid ""
 "backend_name=None."
 msgstr ""
 
-#: blueqat.Circuit.set_default_backend:11
-#: blueqat.circuit.Circuit.set_default_backend:11 of
-msgid ""
-":params backend_name: str or None: new default backend name. if None is "
-"given, global setting is applied."
+#: blueqat.Circuit.set_default_backend:13
+#: blueqat.circuit.Circuit.set_default_backend:13 of
+msgid "backend_name (str or None): new default backend name."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:13
+#: blueqat.circuit.Circuit.set_default_backend:13 of
+msgid "If None is given, global setting is applied."
+msgstr ""
+
+#: blueqat.Circuit.set_default_backend:16
+#: blueqat.circuit.Circuit.set_default_backend:16 of
+msgid "ValueError: If `backend_name` is not registered backend."
+msgstr ""
+
+#: blueqat.Circuit.to_qasm:1 blueqat.circuit.Circuit.to_qasm:1 of
+msgid "Returns the OpenQASM output of this circuit."
+msgstr ""
+
+#: blueqat.Circuit.to_unitary:1 blueqat.circuit.Circuit.to_unitary:1 of
+msgid "Returns sympy unitary matrix of this circuit."
 msgstr ""
 
 #: ../../source/api/blueqat.rst:16
@@ -115,8 +366,40 @@ msgid ""
 "internally used."
 msgstr ""
 
-#: blueqat.gate.CXGate:1 blueqat.gate.CZGate:1 of
+#: blueqat.gate.CCZGate:1 blueqat.gate.OneQubitGate:1
+#: blueqat.gate.ToffoliGate:1 blueqat.gate.TwoQubitGate:1 of
+msgid "Bases: :class:`blueqat.gate.Gate`"
+msgstr ""
+
+#: blueqat.gate.CCZGate:1 of
+msgid "2-Controlled Z gate"
+msgstr ""
+
+#: blueqat.gate.CU1Gate:1 blueqat.gate.CU2Gate:1 blueqat.gate.CU3Gate:1
+#: blueqat.gate.CXGate:1 blueqat.gate.CZGate:1 blueqat.gate.SwapGate:1 of
 msgid "Bases: :class:`blueqat.gate.TwoQubitGate`"
+msgstr ""
+
+#: blueqat.gate.CU1Gate:1 of
+msgid "Controlled U1 gate"
+msgstr ""
+
+#: blueqat.gate.CU1Gate.fallback:1 blueqat.gate.CU2Gate.fallback:1
+#: blueqat.gate.CU3Gate.fallback:1 blueqat.gate.Gate.fallback:1
+#: blueqat.gate.IGate.fallback:1 blueqat.gate.SDagGate.fallback:1
+#: blueqat.gate.SGate.fallback:1 blueqat.gate.SwapGate.fallback:1
+#: blueqat.gate.TDagGate.fallback:1 blueqat.gate.TGate.fallback:1
+#: blueqat.gate.ToffoliGate.fallback:1 blueqat.gate.U1Gate.fallback:1
+#: blueqat.gate.U2Gate.fallback:1 of
+msgid "Returns alternative gates to make equivalent circuit."
+msgstr ""
+
+#: blueqat.gate.CU2Gate:1 of
+msgid "Controlled U2 gate"
+msgstr ""
+
+#: blueqat.gate.CU3Gate:1 of
+msgid "Controlled U3 gate"
 msgstr ""
 
 #: blueqat.gate.CXGate:1 of
@@ -135,17 +418,15 @@ msgstr ""
 msgid "Abstract quantum gate class."
 msgstr ""
 
-#: blueqat.gate.Gate.fallback:1 blueqat.gate.IGate.fallback:1
-#: blueqat.gate.SDagGate.fallback:1 blueqat.gate.SGate.fallback:1
-#: blueqat.gate.TDagGate.fallback:1 blueqat.gate.TGate.fallback:1
-#: blueqat.gate.ToffoliGate.fallback:1 of
-msgid "Returns alternative gates to make equivalent circuit."
+#: blueqat.gate.Gate.uppername:1 of
+msgid "Upper name of the gate."
 msgstr ""
 
 #: blueqat.gate.HGate:1 blueqat.gate.IGate:1 blueqat.gate.Measurement:1
 #: blueqat.gate.RXGate:1 blueqat.gate.RYGate:1 blueqat.gate.RZGate:1
 #: blueqat.gate.SDagGate:1 blueqat.gate.SGate:1 blueqat.gate.TDagGate:1
-#: blueqat.gate.TGate:1 blueqat.gate.XGate:1 blueqat.gate.YGate:1
+#: blueqat.gate.TGate:1 blueqat.gate.U1Gate:1 blueqat.gate.U2Gate:1
+#: blueqat.gate.U3Gate:1 blueqat.gate.XGate:1 blueqat.gate.YGate:1
 #: blueqat.gate.ZGate:1 of
 msgid "Bases: :class:`blueqat.gate.OneQubitGate`"
 msgstr ""
@@ -162,13 +443,12 @@ msgstr ""
 msgid "Measurement gate"
 msgstr ""
 
-#: blueqat.gate.OneQubitGate:1 blueqat.gate.ToffoliGate:1
-#: blueqat.gate.TwoQubitGate:1 of
-msgid "Bases: :class:`blueqat.gate.Gate`"
-msgstr ""
-
 #: blueqat.gate.OneQubitGate:1 of
 msgid "Abstract quantum gate class for 1 qubit gate."
+msgstr ""
+
+#: blueqat.gate.OneQubitGate.target_iter:1 of
+msgid "The generator which yields the target qubits."
 msgstr ""
 
 #: blueqat.gate.RXGate:1 of
@@ -191,6 +471,10 @@ msgstr ""
 msgid "S gate"
 msgstr ""
 
+#: blueqat.gate.SwapGate:1 of
+msgid "Swap gate"
+msgstr ""
+
 #: blueqat.gate.TDagGate:1 of
 msgid "Dagger of T ($\\pi/8$) gate"
 msgstr ""
@@ -205,6 +489,22 @@ msgstr ""
 
 #: blueqat.gate.TwoQubitGate:1 of
 msgid "Abstract quantum gate class for 2 qubits gate."
+msgstr ""
+
+#: blueqat.gate.TwoQubitGate.control_target_iter:1 of
+msgid "The generator which yields the tuples of (control, target) qubits."
+msgstr ""
+
+#: blueqat.gate.U1Gate:1 of
+msgid "U1 gate"
+msgstr ""
+
+#: blueqat.gate.U2Gate:1 of
+msgid "U2 gate"
+msgstr ""
+
+#: blueqat.gate.U3Gate:1 of
+msgid "U3 gate"
 msgstr ""
 
 #: blueqat.gate.XGate:1 of
@@ -232,36 +532,227 @@ msgstr ""
 msgid "blueqat.pauli module"
 msgstr ""
 
+#: blueqat.pauli:1 of
+msgid "The module for calculate Pauli matrices."
+msgstr ""
+
 #: blueqat.pauli.Expr:1 of
 msgid "Bases: :class:`blueqat.pauli._ExprTuple`"
+msgstr ""
+
+#: blueqat.pauli.Expr.coeffs:1 of
+msgid "Generator which yields a coefficent for each Term."
+msgstr ""
+
+#: blueqat.pauli.Expr.commutator:1 blueqat.pauli.Term.commutator:1 of
+msgid "Returns commutator."
+msgstr ""
+
+#: blueqat.pauli.Expr.from_number:1 of
+msgid "Make new Expr from a number"
+msgstr ""
+
+#: blueqat.pauli.Expr.from_term:1 of
+msgid "Make new Expr from a Term"
+msgstr ""
+
+#: blueqat.pauli.Expr.from_terms_dict:1 blueqat.pauli.Expr.from_terms_iter:1
+#: blueqat.pauli.Expr.terms_to_dict:1 blueqat.pauli.Term.from_ops_iter:1
+#: blueqat.pauli.Term.join_ops:1 of
+msgid "For internal use."
+msgstr ""
+
+#: blueqat.pauli.Expr.is_all_terms_commutable:1 of
+msgid "Test whether all terms are commutable. This function may very slow."
+msgstr ""
+
+#: blueqat.pauli.Expr.is_commutable_with:1
+#: blueqat.pauli.Term.is_commutable_with:1 of
+msgid "Test whether `self` is commutable with `other`."
+msgstr ""
+
+#: blueqat.pauli.Expr.max_n:1 blueqat.pauli.Term.max_n:1 of
+msgid "Returns the maximum index of Pauli matrices in the Term."
+msgstr ""
+
+#: blueqat.pauli.Expr.simplify:1 of
+msgid "Simplify the Expr."
+msgstr ""
+
+#: blueqat.pauli.Expr.to_expr:1 blueqat.pauli.Term.to_term:1 of
+msgid "Do nothing. This method is prepared to avoid TypeError."
+msgstr ""
+
+#: blueqat.pauli.Expr.to_matrix:1 blueqat.pauli.Term.to_matrix:1 of
+msgid "Convert to the matrix."
+msgstr ""
+
+#: blueqat.pauli.Expr.zero:1 of
+msgid "Returns 0 as Term"
+msgstr ""
+
+#: blueqat.pauli.Expr.is_identity:1 blueqat.pauli.Term.is_identity:1 of
+msgid "If `self` is I, returns True, otherwise False."
 msgstr ""
 
 #: blueqat.pauli.Term:1 of
 msgid "Bases: :class:`blueqat.pauli._TermTuple`"
 msgstr ""
 
+#: blueqat.pauli.Term:1 of
+msgid ""
+"Multiplication of Pauli matrices with coefficient. Note that this class "
+"is immutable."
+msgstr ""
+
+#: blueqat.pauli.Term:4 of
+msgid ""
+"Multiplied Pauli matrices are very important for quantum computation "
+"because it is an unitary matrix (without coefficient) and also it can be "
+"consider the time evolution of the term (with real coefficient) without "
+"Suzuki-Trotter expansion."
+msgstr ""
+
+#: blueqat.pauli.Term.append_to_circuit:1 of
+msgid "Append Pauli gates to `Circuit`."
+msgstr ""
+
 #: blueqat.pauli.Term.from_chars:1 blueqat.pauli.term_from_chars:1 of
-msgid "\"XZIY\" => X(0) * Z(1) * Y(3)"
+msgid ""
+"Make Pauli's Term from chars which is written by \"X\", \"Y\", \"Z\" or "
+"\"I\". e.g. \"XZIY\" => X(0) * Z(1) * Y(3)"
+msgstr ""
+
+#: blueqat.pauli.Term.from_chars:5 blueqat.pauli.term_from_chars:5 of
+msgid "chars (str): Written in \"X\", \"Y\", \"Z\" or \"I\"."
+msgstr ""
+
+#: blueqat.pauli.Term.from_chars:8 blueqat.pauli.term_from_chars:8
+#: blueqat.pauli.to_term:7 of
+msgid "Term: A `Term` object."
+msgstr ""
+
+#: blueqat.pauli.Term.from_chars:11 blueqat.pauli.term_from_chars:11 of
+msgid ""
+"ValueError: When chars conteins the character which is \"X\", \"Y\", "
+"\"Z\" nor \"I\"."
 msgstr ""
 
 #: blueqat.pauli.Term.from_pauli:1 of
-msgid "From X, Y, Z, I to Term"
+msgid "Make new Term from an Pauli operator"
+msgstr ""
+
+#: blueqat.pauli.Term.from_paulipair:1 of
+msgid "Make new Term from two Pauli operator."
+msgstr ""
+
+#: blueqat.pauli.Term.get_time_evolution:1 of
+msgid "Get the function to append the time evolution of this term."
+msgstr ""
+
+#: blueqat.pauli.Term.get_time_evolution:4 of
+msgid "function(circuit: Circuit, t: float):"
+msgstr ""
+
+#: blueqat.pauli.Term.get_time_evolution:5 of
+msgid "Add gates for time evolution to `circuit` with time `t`"
+msgstr ""
+
+#: blueqat.pauli.Term.n_iter:1 of
+msgid ""
+"Returns an iterator which yields indices for each Pauli matrices in the "
+"Term."
+msgstr ""
+
+#: blueqat.pauli.Term.simplify:1 of
+msgid "Simplify the Term."
+msgstr ""
+
+#: blueqat.pauli.Term.to_expr:1 of
+msgid "Convert to Expr."
 msgstr ""
 
 #: blueqat.pauli.commutator:1 of
-msgid "Commute expr1 and expr2"
+msgid "Returns [expr1, expr2] = expr1 * expr2 - expr2 * expr1."
+msgstr ""
+
+#: blueqat.pauli.commutator:4 of
+msgid ""
+"expr1 (Expr, Term or Pauli operator): Pauli's expression. expr2 (Expr, "
+"Term or Pauli operator): Pauli's expression."
+msgstr ""
+
+#: blueqat.pauli.commutator:8 of
+msgid "Expr: expr1 * expr2 - expr2 * expr1."
+msgstr ""
+
+#: blueqat.pauli.is_commutable:1 of
+msgid "Test whether expr1 and expr2 are commutable."
+msgstr ""
+
+#: blueqat.pauli.is_commutable:4 of
+msgid ""
+"expr1 (Expr, Term or Pauli operator): Pauli's expression. expr2 (Expr, "
+"Term or Pauli operator): Pauli's expression. eps (float, optional): "
+"Machine epsilon."
+msgstr ""
+
+#: blueqat.pauli.is_commutable:7 of
+msgid "If |[expr1, expr2]| < eps, consider it is commutable."
+msgstr ""
+
+#: blueqat.pauli.is_commutable:10 of
+msgid "bool: if expr1 and expr2 are commutable, returns True, otherwise False."
 msgstr ""
 
 #: blueqat.pauli.pauli_from_char:1 of
-msgid "\"X\" => X, \"Y\" => Y, \"Z\" => Z, \"I\" => I"
+msgid "Make Pauli matrix from an character."
+msgstr ""
+
+#: blueqat.pauli.pauli_from_char:4 of
+msgid ""
+"ch (str): \"X\" or \"Y\" or \"Z\" or \"I\". n (int, optional): Make Pauli"
+" matrix as n-th qubits."
+msgstr ""
+
+#: blueqat.pauli.pauli_from_char:8 of
+msgid "If ch is \"X\" => X, \"Y\" => Y, \"Z\" => Z, \"I\" => I"
+msgstr ""
+
+#: blueqat.pauli.pauli_from_char:11 of
+msgid "ValueError: When ch is not \"X\", \"Y\", \"Z\" nor \"I\"."
+msgstr ""
+
+#: blueqat.pauli.qubo_bit:1 of
+msgid "Represent QUBO's bit to Pauli operator of Ising model."
+msgstr ""
+
+#: blueqat.pauli.qubo_bit:4 of
+msgid "n (int): n-th bit in QUBO"
+msgstr ""
+
+#: blueqat.pauli.qubo_bit:7 of
+msgid "Expr: Pauli expression of QUBO bit."
 msgstr ""
 
 #: blueqat.pauli.to_expr:1 of
-msgid "Convert to Expr from Term or Pauli operator"
+msgid "Convert to Expr from Term or Pauli operator (X, Y, Z, I)."
+msgstr ""
+
+#: blueqat.pauli.to_expr:4 of
+msgid "term: (Term, X, Y, Z or I): A Term or Pauli operator."
+msgstr ""
+
+#: blueqat.pauli.to_expr:7 of
+msgid "Expr: An `Expr` object."
 msgstr ""
 
 #: blueqat.pauli.to_term:1 of
-msgid "Convert to Term from Pauli operator"
+msgid "Convert to Term from Pauli operator (X, Y, Z, I)."
+msgstr ""
+
+#: blueqat.pauli.to_term:4 of
+msgid "pauli (X, Y, Z or I): A Pauli operator"
 msgstr ""
 
 #: ../../source/api/blueqat.rst:32
@@ -339,5 +830,35 @@ msgid "API Reference"
 msgstr ""
 
 #~ msgid "blueqat"
+#~ msgstr ""
+
+#~ msgid ""
+#~ ":params copy_backends :bool copy backends "
+#~ "if True. copy_default_backend :bool copy "
+#~ "default_backend if True"
+#~ msgstr ""
+
+#~ msgid ""
+#~ ":params backend_name: str or None: new"
+#~ " default backend name. if None is "
+#~ "given, global setting is applied."
+#~ msgstr ""
+
+#~ msgid "\"XZIY\" => X(0) * Z(1) * Y(3)"
+#~ msgstr ""
+
+#~ msgid "From X, Y, Z, I to Term"
+#~ msgstr ""
+
+#~ msgid "Commute expr1 and expr2"
+#~ msgstr ""
+
+#~ msgid "\"X\" => X, \"Y\" => Y, \"Z\" => Z, \"I\" => I"
+#~ msgstr ""
+
+#~ msgid "Convert to Expr from Term or Pauli operator"
+#~ msgstr ""
+
+#~ msgid "Convert to Term from Pauli operator"
 #~ msgstr ""
 
