@@ -186,7 +186,7 @@ class SGate(OneQubitGate):
 
 class SDagGate(OneQubitGate):
     """Dagger of S gate"""
-    lowername = "s"
+    lowername = "sdg"
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
