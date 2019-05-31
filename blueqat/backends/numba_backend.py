@@ -12,20 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from numba import jit, njit
+from numba import jit, prange, uint64
+import numba
 from collections import Counter
 import math
 import random
 import warnings
-#import numpy as np
-from ..gate import *
-from .backendbase import Backend
+import numpy as np
+#from ..gate import *
+#from .backendbase import Backend
+from backendbase import Backend
 
 DEFAULT_DTYPE = np.complex128
 
-
 class _NumbaBackendContext:
-    """This class is internally used in NumPyBackend"""
+    """This class is internally used in NumbaBackend"""
 
     def __init__(self, n_qubits):
         self.n_qubits = n_qubits
@@ -53,8 +54,52 @@ class _NumbaBackendContext:
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 
+@jit(numba.uint64(numba.uint64, numba.uint64),
+     locals={'lower': numba.uint64, 'higher': numba.uint64},
+     nopython=True, cache=True)
+def _shifted(lower_mask, idx):
+    lower = idx & lower_mask
+    higher = (idx & ~lower_mask) << 1
+    return higher + lower
+
+
+@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+     locals={'lower_mask': numba.uint64},
+     nopython=True, parallel=True, cache=True)
+def _zgate(qubits, n_qubits, target):
+    lower_mask = 1 << target
+    for i in prange(1 << (n_qubits - 1)):
+        qubits[_shifted(lower_mask, i)] *= -1
+
+
+@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+     locals={'lower_mask': numba.uint64},
+     nopython=True, parallel=True, cache=True)
+def _xgate(qubits, n_qubits, target):
+    lower_mask = 1 << target
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        qubits[i0] = qubits[i0 + 1]
+        qubits[i0 + 1] = t
+
+
+@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+     locals={'lower_mask': numba.uint64},
+     nopython=True, parallel=True, cache=True)
+def _hgate(qubits, n_qubits, target):
+    sqrt2_inv = 0.7071067811865475
+    lower_mask = 1 << target
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + 1]
+        qubits[i0] = (t + u) * sqrt2_inv
+        qubits[i0 + 1] = (t - u) * sqrt2_inv
+
+
 class NumbaBackend(Backend):
-    """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
+    """Simulator backend which uses numba."""
     __return_type = {
         "statevector": lambda ctx: _ignore_globals(ctx.qubits),
         "shots": lambda ctx: ctx.shots_result,
@@ -103,7 +148,7 @@ class NumbaBackend(Backend):
         shots, returns = __parse_run_args(*args, **kwargs)
 
         self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
-        ctx = _NumPyBackendContext(n_qubits)
+        ctx = _NumbaBackendContext(n_qubits)
 
         def run_single_gate(gate):
             nonlocal ctx
@@ -131,17 +176,10 @@ class NumbaBackend(Backend):
 
     def gate_x(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = qubits[t1]
-            newq[t1] = qubits[t0]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _xgate(qubits, n_qubits, target)
         return ctx
 
     def gate_y(self, gate, ctx):
@@ -162,25 +200,15 @@ class NumbaBackend(Backend):
     def gate_z(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= -1
+            _zgate(qubits, n_qubits, target)
         return ctx
 
     def gate_h(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = qubits[t0] + qubits[t1]
-            newq[t1] = qubits[t0] - qubits[t1]
-            newq *= 1 / np.sqrt(2)
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _hgate(qubits, n_qubits, target)
         return ctx
 
     def gate_cz(self, gate, ctx):
@@ -347,3 +375,6 @@ def _ignore_globals(qubits):
             qubits *= ang
             break
     return qubits
+
+if __name__ == '__main__':
+    pass

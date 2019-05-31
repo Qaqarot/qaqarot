@@ -21,6 +21,7 @@ from functools import partial
 from typing import Callable
 from . import gate
 from .backends.numpy_backend import NumPyBackend
+from .backends.numba_backend import NumbaBackend
 from .backends.qasm_output_backend import QasmOutputBackend
 from .backends.mqc_backend import MQCBackend
 from .backends.ibmq_backend import ibmq_backend
@@ -63,6 +64,7 @@ GLOBAL_MACROS = {}
 
 BACKENDS = {
     "numpy": NumPyBackend,
+    "numba": NumbaBackend,
     "mqc": MQCBackend,
     "qasm_output": QasmOutputBackend,
     "ibmq": ibmq_backend,
