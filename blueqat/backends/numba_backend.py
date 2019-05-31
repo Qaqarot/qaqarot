@@ -65,7 +65,7 @@ def _shifted(lower_mask, idx):
      locals={'lower_mask': numba.uint64},
      nopython=True, parallel=True)
 def _zgate(qubits, n_qubits, target):
-    lower_mask = 1 << target
+    lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         qubits[_shifted(lower_mask, i)] *= -1
 
@@ -74,11 +74,11 @@ def _zgate(qubits, n_qubits, target):
      locals={'lower_mask': numba.uint64},
      nopython=True, parallel=True)
 def _xgate(qubits, n_qubits, target):
-    lower_mask = 1 << target
+    lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         i0 = _shifted(lower_mask, i)
         t = qubits[i0]
-        qubits[i0] = qubits[i0 + 1]
+        qubits[i0] = qubits[i0 + (1 << target)]
         qubits[i0 + 1] = t
 
 
@@ -86,12 +86,12 @@ def _xgate(qubits, n_qubits, target):
      locals={'lower_mask': numba.uint64},
      nopython=True, parallel=True)
 def _ygate(qubits, n_qubits, target):
-    lower_mask = 1 << target
+    lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         i0 = _shifted(lower_mask, i)
         t = qubits[i0]
         # Global phase is ignored.
-        qubits[i0] = -qubits[i0 + 1]
+        qubits[i0] = -qubits[i0 + (1 << target)]
         qubits[i0 + 1] = t
 
 
@@ -100,11 +100,11 @@ def _ygate(qubits, n_qubits, target):
      nopython=True, parallel=True)
 def _hgate(qubits, n_qubits, target):
     sqrt2_inv = 0.7071067811865475
-    lower_mask = 1 << target
+    lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         i0 = _shifted(lower_mask, i)
         t = qubits[i0]
-        u = qubits[i0 + 1]
+        u = qubits[i0 + (1 << target)]
         qubits[i0] = (t + u) * sqrt2_inv
         qubits[i0 + 1] = (t - u) * sqrt2_inv
 
