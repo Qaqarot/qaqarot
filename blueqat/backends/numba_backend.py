@@ -19,10 +19,10 @@ import math
 import random
 import warnings
 import numpy as np
-#from ..gate import *
-#from .backendbase import Backend
-from backendbase import Backend
+from ..gate import *
+from .backendbase import Backend
 
+# TODO: Use this
 DEFAULT_DTYPE = np.complex128
 
 class _NumbaBackendContext:
@@ -31,8 +31,6 @@ class _NumbaBackendContext:
     def __init__(self, n_qubits):
         self.n_qubits = n_qubits
         self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-        self.qubits_buf = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-        self.indices = np.arange(2**n_qubits, dtype=np.uint32)
         self.save_cache = True
         self.shots_result = Counter()
         self.cregs = None
@@ -65,7 +63,7 @@ def _shifted(lower_mask, idx):
 
 @jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True, cache=True)
+     nopython=True, parallel=True)
 def _zgate(qubits, n_qubits, target):
     lower_mask = 1 << target
     for i in prange(1 << (n_qubits - 1)):
@@ -74,7 +72,7 @@ def _zgate(qubits, n_qubits, target):
 
 @jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True, cache=True)
+     nopython=True, parallel=True)
 def _xgate(qubits, n_qubits, target):
     lower_mask = 1 << target
     for i in prange(1 << (n_qubits - 1)):
@@ -86,7 +84,20 @@ def _xgate(qubits, n_qubits, target):
 
 @jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True, cache=True)
+     nopython=True, parallel=True)
+def _ygate(qubits, n_qubits, target):
+    lower_mask = 1 << target
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        # Global phase is ignored.
+        qubits[i0] = -qubits[i0 + 1]
+        qubits[i0 + 1] = t
+
+
+@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+     locals={'lower_mask': numba.uint64},
+     nopython=True, parallel=True)
 def _hgate(qubits, n_qubits, target):
     sqrt2_inv = 0.7071067811865475
     lower_mask = 1 << target
@@ -177,24 +188,15 @@ class NumbaBackend(Backend):
     def gate_x(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for target in gate.target_iter(n_qubits):
             _xgate(qubits, n_qubits, target)
         return ctx
 
     def gate_y(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = -1.0j * qubits[t1]
-            newq[t1] = 1.0j * qubits[t0]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _ygate(qubits, n_qubits, target)
         return ctx
 
     def gate_z(self, gate, ctx):
@@ -375,6 +377,3 @@ def _ignore_globals(qubits):
             qubits *= ang
             break
     return qubits
-
-if __name__ == '__main__':
-    pass
