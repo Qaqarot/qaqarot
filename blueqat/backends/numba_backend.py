@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from numba import jit, prange, uint64
+from numba import jit, njit, prange
 import numba
 from collections import Counter
+import cmath
 import math
 import random
 import warnings
@@ -52,39 +53,39 @@ class _NumbaBackendContext:
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 
-@jit(numba.uint64(numba.uint64, numba.uint64),
+@njit(numba.uint64(numba.uint64, numba.uint64),
      locals={'lower': numba.uint64, 'higher': numba.uint64},
-     nopython=True, cache=True)
+     cache=True)
 def _shifted(lower_mask, idx):
     lower = idx & lower_mask
     higher = (idx & ~lower_mask) << 1
     return higher + lower
 
 
-@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True)
+     parallel=True)
 def _zgate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         qubits[_shifted(lower_mask, i)] *= -1
 
 
-@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True)
+     parallel=True)
 def _xgate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         i0 = _shifted(lower_mask, i)
         t = qubits[i0]
         qubits[i0] = qubits[i0 + (1 << target)]
-        qubits[i0 + 1] = t
+        qubits[i0 + (1 << target)] = t
 
 
-@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True)
+     parallel=True)
 def _ygate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
@@ -92,12 +93,12 @@ def _ygate(qubits, n_qubits, target):
         t = qubits[i0]
         # Global phase is ignored.
         qubits[i0] = -qubits[i0 + (1 << target)]
-        qubits[i0 + 1] = t
+        qubits[i0 + (1 << target)] = t
 
 
-@jit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
      locals={'lower_mask': numba.uint64},
-     nopython=True, parallel=True)
+     parallel=True)
 def _hgate(qubits, n_qubits, target):
     sqrt2_inv = 0.7071067811865475
     lower_mask = (1 << target) - 1
@@ -106,7 +107,73 @@ def _hgate(qubits, n_qubits, target):
         t = qubits[i0]
         u = qubits[i0 + (1 << target)]
         qubits[i0] = (t + u) * sqrt2_inv
-        qubits[i0 + 1] = (t - u) * sqrt2_inv
+        qubits[i0 + (1 << target)] = (t - u) * sqrt2_inv
+
+
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.complex128),
+     locals={'lower_mask': numba.uint64},
+     parallel=True)
+def _diaggate(qubits, n_qubits, target, factor):
+    lower_mask = (1 << target) - 1
+    for i in prange(1 << (n_qubits - 1)):
+        i1 = _shifted(lower_mask, i) + (1 << target)
+        # Global phase is ignored.
+        qubits[i1] *= factor
+
+
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.float64),
+     locals={'lower_mask': numba.uint64},
+     parallel=True)
+def _rygate(qubits, n_qubits, target, ang):
+    lower_mask = (1 << target) - 1
+    ang *= 0.5
+    cos = math.cos(ang)
+    sin = math.sin(ang)
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + (1 << target)]
+        qubits[i0] = cos * t - sin * u
+        qubits[i0 + (1 << target)] = sin * t + cos * u
+
+
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.float64),
+     locals={'lower_mask': numba.uint64},
+     parallel=True)
+def _rxgate(qubits, n_qubits, target, ang):
+    lower_mask = (1 << target) - 1
+    ang *= 0.5
+    cos = math.cos(ang)
+    nisin = math.sin(ang) * -1.j
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + (1 << target)]
+        qubits[i0] = cos * t + nisin * u
+        qubits[i0 + (1 << target)] = nisin * t + cos * u
+
+
+@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32,
+                 numba.float64, numba.float64, numba.float64),
+      locals={'lower_mask': numba.uint64},
+      parallel=True)
+def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
+    lower_mask = (1 << target) - 1
+    theta *= 0.5
+    cos = math.cos(theta)
+    sin = math.sin(theta)
+    expadd = cmath.exp((phi + lambd) * 0.5j)
+    expsub = cmath.exp((phi - lambd) * 0.5j)
+    a = expadd.conjugate() * cos
+    b = -expsub.conjugate() * sin
+    c = expsub * sin
+    d = expadd * cos
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + (1 << target)]
+        qubits[i0] = a * t + c * u
+        qubits[i0 + (1 << target)] = b * t + d * u
 
 
 class NumbaBackend(Backend):
@@ -240,62 +307,58 @@ class NumbaBackend(Backend):
 
     def gate_rx(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         theta = gate.theta
         for target in gate.target_iter(n_qubits):
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = np.cos(theta / 2) * qubits[t0] + -1.0j * np.sin(theta / 2) * qubits[t1]
-            newq[t1] = -1.0j * np.sin(theta / 2) * qubits[t0] + np.cos(theta / 2) * qubits[t1]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _rxgate(qubits, n_qubits, target, theta)
         return ctx
 
     def gate_ry(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         theta = gate.theta
         for target in gate.target_iter(n_qubits):
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = np.cos(theta / 2) * qubits[t0] + -np.sin(theta / 2) * qubits[t1]
-            newq[t1] = np.sin(theta / 2) * qubits[t0] + np.cos(theta / 2) * qubits[t1]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _rygate(qubits, n_qubits, target, theta)
         return ctx
 
     def gate_rz(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
-        theta = gate.theta
+        factor = cmath.exp(1.j * gate.theta)
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= complex(math.cos(theta), math.sin(theta))
+            _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
     def gate_t(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
-
-        sqrt2_inv = 1 / np.sqrt(2)
-        factor = complex(sqrt2_inv, sqrt2_inv)
+        factor = cmath.exp(0.25j * math.pi)
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= factor
+            _diaggate(qubits, n_qubits, target, factor)
+        return ctx
+
+    def gate_tdg(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        factor = cmath.exp(-0.25j * math.pi)
+        for target in gate.target_iter(n_qubits):
+            _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
     def gate_s(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
+        factor = 1.j
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= 1.j
+            _diaggate(qubits, n_qubits, target, factor)
+        return ctx
+
+    def gate_sdg(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        factor = -1.j
+        for target in gate.target_iter(n_qubits):
+            _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
     def gate_ccz(self, gate, ctx):
@@ -319,36 +382,19 @@ class NumbaBackend(Backend):
     def gate_u1(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
-        lambd = gate.lambd
+        factor = cmath.exp(1.j * gate.lambd)
         for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) != 0] *= complex(math.cos(lambd), math.sin(lambd))
+            _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
     def gate_u3(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         theta = gate.theta
         phi = gate.phi
         lambd = gate.lambd
-        a00 = math.cos(theta / 2)
-        a11 = a00 * complex(math.cos(phi + lambd), math.sin(phi + lambd))
-        a01 = a10 = math.sin(theta / 2)
-        a01 *= complex(math.cos(lambd), math.sin(lambd))
-        a10 *= complex(math.cos(phi), math.sin(phi))
         for target in gate.target_iter(n_qubits):
-            np.copyto(newq, qubits)
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = qubits[t0] * a00
-            newq[t0] -= qubits[t1] * a01
-            newq[t1] = qubits[t0] * a10
-            newq[t1] += qubits[t1] * a11
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _u3gate(qubits, n_qubits, target, theta, phi, lambd)
         return ctx
 
     def gate_measure(self, gate, ctx):
