@@ -12,19 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from numba import jit, njit, prange
-import numba
 from collections import Counter
 import cmath
 import math
 import random
 import warnings
+
 import numpy as np
+from numba import jit, njit, prange
+import numba
+
 from ..gate import *
 from .backendbase import Backend
 
 # TODO: Use this
 DEFAULT_DTYPE = np.complex128
+
+# Typedef
+# Index of Qubit
+_QBIdx = numba.uint32
+# Mask of Quantum State
+_QSMask = numba.uint64
+# Index of Quantum State
+_QSIdx = _QSMask
 
 class _NumbaBackendContext:
     """This class is internally used in NumbaBackend"""
@@ -53,27 +63,63 @@ class _NumbaBackendContext:
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 
-@njit(numba.uint64(numba.uint64, numba.uint64),
-     locals={'lower': numba.uint64, 'higher': numba.uint64},
-     cache=True)
+@njit(_QSIdx(_QSMask, _QBIdx),
+      locals={'lower': _QSMask, 'higher': _QSMask},
+      cache=True)
 def _shifted(lower_mask, idx):
     lower = idx & lower_mask
     higher = (idx & ~lower_mask) << 1
     return higher + lower
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+# Thanks to Morino-san!
+@njit(_QBIdx[:](_QBIdx[:], _QSIdx),
+        locals={'in_pos': _QBIdx, 'i': _QBIdx, 'shift_map': _QBIdx[:]},
+      cache=True)
+def _create_bit_shift_map(poslist, n_qubits):
+    shift_map = np.zeros(n_qubits, dtype=np.uint32)
+    for i, b in enumerate(sorted(poslist)):
+        in_pos = b - i
+        if in_pos < n_qubits:
+            shift_map[in_pos] += 1
+    for i in range(len(poslist) - 1):
+        shift_map[i + 1] += shift_map[i]
+    for i in range(n_qubits):
+        shift_map[i] += i
+    return shift_map
+
+
+@njit(_QSMask(_QBIdx[:]),
+      cache=True)
+def _create_mask_from_shift_map(shift_map):
+    mask = 0
+    for m in shift_map:
+        mask |= 1 << m
+    return mask
+
+
+@njit(_QBIdx(_QSIdx, _QBIdx[:]),
+      cache=True)
+def _create_idx_from_shift_map(noshiftidx, shift_map):
+    idx = 0
+    for m in shift_map:
+        if (1 << m) & noshiftidx:
+            idx |= 1 << m
+    return idx
+
+
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _zgate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
         qubits[_shifted(lower_mask, i)] *= -1
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _xgate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
@@ -83,9 +129,9 @@ def _xgate(qubits, n_qubits, target):
         qubits[i0 + (1 << target)] = t
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _ygate(qubits, n_qubits, target):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
@@ -96,9 +142,9 @@ def _ygate(qubits, n_qubits, target):
         qubits[i0 + (1 << target)] = t
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _hgate(qubits, n_qubits, target):
     sqrt2_inv = 0.7071067811865475
     lower_mask = (1 << target) - 1
@@ -110,9 +156,9 @@ def _hgate(qubits, n_qubits, target):
         qubits[i0 + (1 << target)] = (t - u) * sqrt2_inv
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.complex128),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _diaggate(qubits, n_qubits, target, factor):
     lower_mask = (1 << target) - 1
     for i in prange(1 << (n_qubits - 1)):
@@ -121,9 +167,9 @@ def _diaggate(qubits, n_qubits, target, factor):
         qubits[i1] *= factor
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.float64),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _rygate(qubits, n_qubits, target, ang):
     lower_mask = (1 << target) - 1
     ang *= 0.5
@@ -137,9 +183,9 @@ def _rygate(qubits, n_qubits, target, ang):
         qubits[i0 + (1 << target)] = sin * t + cos * u
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32, numba.float64),
-     locals={'lower_mask': numba.uint64},
-     parallel=True)
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+      locals={'lower_mask': _QSMask},
+      parallel=True)
 def _rxgate(qubits, n_qubits, target, ang):
     lower_mask = (1 << target) - 1
     ang *= 0.5
@@ -153,9 +199,9 @@ def _rxgate(qubits, n_qubits, target, ang):
         qubits[i0 + (1 << target)] = nisin * t + cos * u
 
 
-@njit(numba.void(numba.complex128[:], numba.uint32, numba.uint32,
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx,
                  numba.float64, numba.float64, numba.float64),
-      locals={'lower_mask': numba.uint64},
+      locals={'lower_mask': _QSMask},
       parallel=True)
 def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
     lower_mask = (1 << target) - 1
@@ -174,6 +220,34 @@ def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
         u = qubits[i0 + (1 << target)]
         qubits[i0] = a * t + c * u
         qubits[i0 + (1 << target)] = b * t + d * u
+
+
+@njit(numba.void(numba.complex128[:], _QBIdx[:], _QBIdx),
+      parallel=True)
+def _czgate(qubits, controls_target, n_qubits):
+    target = controls_target[-1]
+    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    print(shift_map)
+    all1 = 0
+    for i in controls_target:
+        all1 |= 1 << i
+    for i in range(1 << (n_qubits - len(controls_target))):
+        i11 = _create_idx_from_shift_map(i, shift_map) | all1
+        qubits[i11] *= -1
+
+
+@njit(numba.void(numba.complex128[:], _QBIdx[:], _QBIdx),
+      parallel=True)
+def _cxgate(qubits, controls_target, n_qubits):
+    control = controls_target[0]
+    target = controls_target[-1]
+    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    for i in range(1 << (n_qubits - len(controls_target))):
+        i10 = _create_idx_from_shift_map(i, shift_map) | (1 << control)
+        i11 = i10 | (1 << target)
+        t = qubits[i10]
+        qubits[i10] = qubits[i11]
+        qubits[i11] = t
 
 
 class NumbaBackend(Backend):
@@ -283,26 +357,15 @@ class NumbaBackend(Backend):
     def gate_cz(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for control, target in gate.control_target_iter(n_qubits):
-            qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
+            _czgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
         return ctx
 
     def gate_cx(self, gate, ctx):
         qubits = ctx.qubits
-        newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for control, target in gate.control_target_iter(n_qubits):
-            np.copyto(newq, qubits)
-            c1 = (i & (1 << control)) != 0
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[c1 & t0] = qubits[c1 & t1]
-            newq[c1 & t1] = qubits[c1 & t0]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
+            _cxgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
         return ctx
 
     def gate_rx(self, gate, ctx):
@@ -416,6 +479,8 @@ class NumbaBackend(Backend):
         return ctx
 
 
+# TODO: Parallel
+@njit
 def _ignore_globals(qubits):
     for q in qubits:
         if abs(q) > 0.0000001:
