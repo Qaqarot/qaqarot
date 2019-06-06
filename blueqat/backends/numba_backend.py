@@ -218,8 +218,8 @@ def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
         i0 = _shifted(lower_mask, i)
         t = qubits[i0]
         u = qubits[i0 + (1 << target)]
-        qubits[i0] = a * t + c * u
-        qubits[i0 + (1 << target)] = b * t + d * u
+        qubits[i0] = a * t + b * u
+        qubits[i0 + (1 << target)] = c * t + d * u
 
 
 @njit(numba.void(numba.complex128[:], _QBIdx[:], _QBIdx),
