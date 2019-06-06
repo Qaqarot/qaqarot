@@ -156,7 +156,7 @@ def _hgate(qubits, n_qubits, target):
         qubits[i0 + (1 << target)] = (t - u) * sqrt2_inv
 
 
-@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.complex128),
       locals={'lower_mask': _QSMask},
       parallel=True)
 def _diaggate(qubits, n_qubits, target, factor):
