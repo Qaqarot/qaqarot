@@ -239,12 +239,14 @@ def _czgate(qubits, controls_target, n_qubits):
 @njit(numba.void(numba.complex128[:], _QBIdx[:], _QBIdx),
       parallel=True)
 def _cxgate(qubits, controls_target, n_qubits):
-    control = controls_target[0]
-    target = controls_target[-1]
+    c_mask = 0
+    for c in controls_target[:-1]:
+        c_mask |= 1 << c
+    t_mask = 1 << controls_target[-1]
     shift_map = _create_bit_shift_map(controls_target, n_qubits)
     for i in range(1 << (n_qubits - len(controls_target))):
-        i10 = _create_idx_from_shift_map(i, shift_map) | (1 << control)
-        i11 = i10 | (1 << target)
+        i10 = _create_idx_from_shift_map(i, shift_map) | c_mask
+        i11 = i10 | t_mask
         t = qubits[i10]
         qubits[i10] = qubits[i11]
         qubits[i11] = t
@@ -354,20 +356,6 @@ class NumbaBackend(Backend):
             _hgate(qubits, n_qubits, target)
         return ctx
 
-    def gate_cz(self, gate, ctx):
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        for control, target in gate.control_target_iter(n_qubits):
-            _czgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
-        return ctx
-
-    def gate_cx(self, gate, ctx):
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        for control, target in gate.control_target_iter(n_qubits):
-            _cxgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
-        return ctx
-
     def gate_rx(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -424,22 +412,30 @@ class NumbaBackend(Backend):
             _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
-    def gate_ccz(self, gate, ctx):
-        c1, c2, t = gate.targets
+    def gate_cz(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
-        indices = (i & (1 << c1)) != 0
-        indices &= (i & (1 << c2)) != 0
-        indices &= (i & (1 << t)) != 0
-        qubits[indices] *= -1
+        for control, target in gate.control_target_iter(n_qubits):
+            _czgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
+        return ctx
+
+    def gate_cx(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        for control, target in gate.control_target_iter(n_qubits):
+            _cxgate(qubits, np.array([control, target], dtype=np.uint32), n_qubits)
+        return ctx
+
+    def gate_ccz(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        _czgate(qubits, np.array(gate.targets, dtype=np.uint32), n_qubits)
         return ctx
 
     def gate_ccx(self, gate, ctx):
-        c1, c2, t = gate.targets
-        ctx = self.gate_h(HGate(t), ctx)
-        ctx = self.gate_ccz(CCZGate(gate.targets), ctx)
-        ctx = self.gate_h(HGate(t), ctx)
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        _cxgate(qubits, np.array(gate.targets, dtype=np.uint32), n_qubits)
         return ctx
 
     def gate_u1(self, gate, ctx):
