@@ -71,7 +71,8 @@ BACKENDS = {
     "sympy_unitary": SympyBackend,
     "ibmq": ibmq_backend,
 }
-DEFAULT_BACKEND_NAME = "numpy"
+#DEFAULT_BACKEND_NAME = "numpy"
+DEFAULT_BACKEND_NAME = "numba"
 
 class Circuit:
     """Store the gate operations and call the backends."""

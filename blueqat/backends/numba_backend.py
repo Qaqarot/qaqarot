@@ -252,6 +252,40 @@ def _cxgate(qubits, controls_target, n_qubits):
         qubits[i11] = t
 
 
+@njit(numba.float64(numba.complex128[:], _QBIdx, _QBIdx),
+        locals={'lower_mask': _QSMask, 'val': numba.complex128},
+      parallel=True, cache=True)
+def _p0calc(qubits, target, n_qubits):
+    p0 = 0.0
+    lower_mask = (1 << target) - 1
+    for i in prange(1 << (n_qubits - 1)):
+        val = qubits[_shifted(lower_mask, i)]
+        p0 += val.real * val.real + val.imag * val.imag
+    return p0
+
+
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+      parallel=True, cache=True)
+def _reduce0(qubits, target, n_qubits, p0):
+    lower_mask = (1 << target) - 1
+    sqrtp_inv = 1.0 / math.sqrt(p0)
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        qubits[i0] *= sqrtp_inv
+        qubits[i0 + (1 << target)] = 0.0
+
+
+@njit(numba.void(numba.complex128[:], _QBIdx, _QBIdx, numba.float64),
+      parallel=True, cache=True)
+def _reduce1(qubits, target, n_qubits, p0):
+    lower_mask = (1 << target) - 1
+    sqrtp_inv = 1.0 / math.sqrt(1.0 - p0)
+    for i in prange(1 << (n_qubits - 1)):
+        i0 = _shifted(lower_mask, i)
+        qubits[i0 + (1 << target)] *= sqrtp_inv
+        qubits[i0] = 0.0
+
+
 class NumbaBackend(Backend):
     """Simulator backend which uses numba."""
     __return_type = {
@@ -459,24 +493,21 @@ class NumbaBackend(Backend):
     def gate_measure(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0]) ** 2
             rand = random.random()
-            if rand < p_zero:
-                qubits[(i & (1 << target)) != 0] = 0.0
-                qubits /= np.sqrt(p_zero)
+            p0 = _p0calc(qubits, target, n_qubits)
+            if rand < p0:
+                _reduce0(qubits, target, n_qubits, p0)
                 ctx.cregs[target] = 0
             else:
-                qubits[(i & (1 << target)) == 0] = 0.0
-                qubits /= np.sqrt(1.0 - p_zero)
+                _reduce1(qubits, target, n_qubits, p0)
                 ctx.cregs[target] = 1
         ctx.save_cache = False
         return ctx
 
 
 # TODO: Parallel
-@njit
+@njit(cache=True)
 def _ignore_globals(qubits):
     for q in qubits:
         if abs(q) > 0.0000001:
