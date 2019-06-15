@@ -26,6 +26,7 @@ from .backends.mqc_backend import MQCBackend
 from .backends.ibmq_backend import ibmq_backend
 from .backends.sympy_backend import SympyBackend
 from .backends.ibmq_backend import ibmq_backend
+from .backends.qgate_backend import QgateBackend
 
 GATE_SET = {
     "i": gate.IGate,
@@ -67,7 +68,7 @@ BACKENDS = {
     "qasm_output": QasmOutputBackend,
     "ibmq": ibmq_backend,
     "sympy_unitary": SympyBackend,
-    "ibmq": ibmq_backend,
+    "qgate": QgateBackend,
 }
 DEFAULT_BACKEND_NAME = "numpy"
 
