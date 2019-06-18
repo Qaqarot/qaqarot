@@ -38,10 +38,10 @@ _QSIdx = _QSMask
 class _NumbaBackendContext:
     """This class is internally used in NumbaBackend"""
 
-    def __init__(self, n_qubits, dtype=DEFAULT_DTYPE):
+    def __init__(self, n_qubits, save_cache, dtype=DEFAULT_DTYPE):
         self.n_qubits = n_qubits
         self.qubits = np.zeros(2**n_qubits, dtype)
-        self.save_cache = True
+        self.save_cache = save_cache
         self.shots_result = Counter()
         self.cregs = None
 
@@ -298,7 +298,8 @@ class NumbaBackend(Backend):
             return
 
     def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, dtype=DEFAULT_DTYPE, **_kwargs):
+        def __parse_run_args(shots=None, returns=None, enable_cache=True,
+                             dtype=DEFAULT_DTYPE, **_kwargs):
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -313,12 +314,15 @@ class NumbaBackend(Backend):
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
                 warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns, dtype
+            return shots, returns, dtype, enable_cache
 
-        shots, returns, dtype = __parse_run_args(*args, **kwargs)
+        shots, returns, dtype, enable_cache = __parse_run_args(*args, **kwargs)
 
-        self.__clear_cache_if_invalid(n_qubits, dtype)
-        ctx = _NumbaBackendContext(n_qubits, dtype)
+        if enable_cache:
+            self.__clear_cache_if_invalid(n_qubits, dtype)
+        else:
+            self.__clear_cache()
+        ctx = _NumbaBackendContext(n_qubits, enable_cache, dtype)
 
         def run_single_gate(gate):
             nonlocal ctx
@@ -331,11 +335,15 @@ class NumbaBackend(Backend):
 
         for _ in range(shots):
             ctx.prepare(self.cache)
-            for gate in gates[self.cache_idx + 1:]:
+            cache_idx = self.cache_idx
+            for gate in gates[cache_idx + 1:]:
                 run_single_gate(gate)
                 if ctx.save_cache:
+                    cache_idx += 1
+            if self.cache_idx != cache_idx:
+                self.cache_idx = cache_idx
+                if ctx.save_cache:
                     self.cache = ctx.qubits.copy()
-                    self.cache_idx += 1
             if ctx.cregs:
                 ctx.store_shot()
 
@@ -473,6 +481,9 @@ class NumbaBackend(Backend):
         return ctx
 
     def gate_measure(self, gate, ctx):
+        if ctx.save_cache:
+            self.cache = ctx.qubits.copy()
+        ctx.save_cache = False
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         for target in gate.target_iter(n_qubits):
@@ -484,7 +495,6 @@ class NumbaBackend(Backend):
             else:
                 _reduce1(qubits, target, n_qubits, p0)
                 ctx.cregs[target] = 1
-        ctx.save_cache = False
         return ctx
 
 
