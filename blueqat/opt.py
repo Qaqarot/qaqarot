@@ -475,6 +475,10 @@ class Opt:
 		#: List of energies
 		self.E = []
 
+		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
+		self.dwavetoken = ''
+		self.dwavesolver = 'DW_2000Q_VFYC_5'
+
 	def reJ(self):
 		return np.triu(self.J) + np.triu(self.J, k=1).T
 
@@ -603,9 +607,6 @@ class Opt:
 		except ImportError:
 			raise ImportError("dw() requires dwave-cloud-client. Please install before call this function.")
 
-		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
-		self.dwavetoken = ''
-		self.dwavesolver = 'DW_2000Q_2_1'
 		solver = Client.from_config(endpoint= self.dwaveendpoint, token=self.dwavetoken, solver=self.dwavesolver).get_solver()
 
 		if self.qubo != []:
