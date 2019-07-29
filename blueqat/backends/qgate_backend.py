@@ -1,3 +1,4 @@
+from collections import Counter
 from .backendbase import Backend
 import blueqat.gate as bqgate
 import numpy as np
@@ -67,11 +68,12 @@ class QgateBackend(Backend) :
         if r == 'statevector' :
             return self.get_state_vector(sim, ops)
         elif r == 'shots' :
-            return self.sample(sim, ops, shots, sampling)
+            return Counter(self.sample(sim, ops, shots, sampling))
         elif r == 'statevector_and_shots' :
             if 1 < shots :
                 raise RuntimeError('shots must be 1 when returns="statevector_and_shots"')
-            return self.get_state_vector_and_sample(sim, ops)
+            vec, shots = self.get_state_vector_and_sample(sim, ops)
+            return vec, Counter(shots)
         else :
             raise RuntimeError('Unkown returns token, {}.'.format(r))
 
