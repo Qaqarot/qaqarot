@@ -23,10 +23,8 @@ from . import gate
 from .backends.numpy_backend import NumPyBackend
 from .backends.numba_backend import numba_backend_lazy
 from .backends.qasm_output_backend import QasmOutputBackend
-from .backends.mqc_backend import MQCBackend
 from .backends.ibmq_backend import ibmq_backend
 from .backends.sympy_backend import SympyBackend
-from .backends.ibmq_backend import ibmq_backend
 from .backends.qgate_backend import QgateBackend
 
 GATE_SET = {
@@ -66,7 +64,6 @@ GLOBAL_MACROS = {}
 BACKENDS = {
     "numpy": NumPyBackend,
     "numba": numba_backend_lazy,
-    "mqc": MQCBackend,
     "qasm_output": QasmOutputBackend,
     "ibmq": ibmq_backend,
     "sympy_unitary": SympyBackend,
