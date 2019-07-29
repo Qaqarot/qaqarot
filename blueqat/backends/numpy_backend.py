@@ -16,8 +16,11 @@ from collections import Counter
 import math
 import random
 import warnings
+
 import numpy as np
+
 from ..gate import *
+from ..utils import ignore_global_phase
 from .backendbase import Backend
 
 DEFAULT_DTYPE = np.complex128
@@ -340,9 +343,4 @@ class NumPyBackend(Backend):
 
 
 def _ignore_globals(qubits):
-    for q in qubits:
-        if abs(q) > 0.0000001:
-            ang = abs(q) / q
-            qubits *= ang
-            break
-    return qubits
+    return ignore_global_phase(qubits)

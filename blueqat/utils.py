@@ -37,3 +37,19 @@ def to_inttuple(bitstr):
     if isinstance(bitstr, dict):
         return {tuple(int(b) for b in k): v for k, v in bitstr.items()}
     raise ValueError("bitstr type shall be `str`, `Counter` or `dict`")
+
+def ignore_global_phase(statevec):
+    """Multiple e^-iθ to `statevec` where θ is a phase of first non-zero element.
+
+    Args:
+        statevec np.array: Statevector.
+
+    Returns:
+        np.array: `statevec` is returned.
+    """
+    for q in statevec:
+        if abs(q) > 0.0000001:
+            ang = abs(q) / q
+            statevec *= ang
+            break
+    return statevec
