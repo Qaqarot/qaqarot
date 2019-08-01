@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 from collections import Counter
 from functools import reduce
 
@@ -163,6 +164,17 @@ def test_crotation(backend):
 def test_crotation2(backend):
     assert is_vec_same(Circuit().crx(1.23)[1, 3].run(backend=backend),
                        Circuit().h[3].crz(1.23)[1, 3].h[3].run(backend=backend))
+
+
+def test_crotation3(backend):
+    p0 = math.acos(math.sqrt(0.3)) * 2
+    p1 = math.acos(math.sqrt(0.4)) * 2
+    # |00> -> 0.3
+    # |10> -> 0.7 * 0.4 = 0.28
+    # |01> -> 0.0
+    # |11> -> 0.7 * 0.6 = 0.42
+    assert is_vec_same(Circuit().ry(p0)[0].cry(p1)[0, 1].run(backend=backend),
+                       np.sqrt(np.array([0.3, 0.28, 0.0, 0.42])))
 
 
 def test_measurement1(backend):

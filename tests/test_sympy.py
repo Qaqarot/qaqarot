@@ -100,14 +100,14 @@ def test_sympy_backend_for_two_qubit_gate():
     CRY_4 = reduce(TensorProduct, [E, UPPER, E, E]) + reduce(TensorProduct, [E, LOWER, RY, E])
     CRZ_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [RZ, E, LOWER])
 
-    actual_9 = Circuit().crx(x)[0, 2].run(backend="sympy_unitary")
-    assert actual_9 == CRX_3
+    actual_9 = Circuit().crx(x)[2, 0].run(backend="sympy_unitary")
+    assert simplify(actual_9) == CRX_3
 
-    actual_10 = Circuit().cry(y)[1, 2].run(backend="sympy_unitary")
-    assert actual_10 == CRY_4
+    actual_10 = Circuit().cry(y)[2, 1].i[3].run(backend="sympy_unitary")
+    assert simplify(actual_10) == CRY_4
 
-    actual_11 = Circuit().crz(z)[2, 0].run(backend="sympy_unitary")
-    assert actual_11 == CRZ_3
+    actual_11 = Circuit().crz(z)[0, 2].run(backend="sympy_unitary")
+    assert simplify(actual_11) == CRZ_3
 
 
 def test_sympy_cx_cz():
