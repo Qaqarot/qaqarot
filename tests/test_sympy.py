@@ -92,6 +92,23 @@ def test_sympy_backend_for_two_qubit_gate():
     actual_8 = Circuit().cz[3, 1].x[4].run(backend="sympy_unitary")
     assert actual_8 == reduce(TensorProduct, [X, CZ_3, E])
 
+    x, y, z = symbols('x, y, z')
+    RX = Matrix([[cos(x / 2), -I * sin(x / 2)], [-I * sin(x / 2), cos(x / 2)]])
+    RY = Matrix([[cos(y / 2), -sin(y / 2)], [sin(y / 2), cos(y / 2)]])
+    RZ = Matrix([[exp(-I * z / 2), 0], [0, exp(I * z / 2)]])
+    CRX_3 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, RX])
+    CRY_4 = reduce(TensorProduct, [E, UPPER, E, E]) + reduce(TensorProduct, [E, LOWER, RY, E])
+    CRZ_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [RZ, E, LOWER])
+
+    actual_9 = Circuit().crx(x)[0, 2].run(backend="sympy_unitary")
+    assert actual_9 == CRX_3
+
+    actual_10 = Circuit().cry(y)[1, 2].run(backend="sympy_unitary")
+    assert actual_10 == CRY_4
+
+    actual_11 = Circuit().crz(z)[2, 0].run(backend="sympy_unitary")
+    assert actual_11 == CRZ_3
+
 
 def test_sympy_cx_cz():
     assert Circuit().cx[1, 2].run(backend="sympy_unitary") == Circuit().h[2].cz[2, 1].h[2].run(backend="sympy_unitary")

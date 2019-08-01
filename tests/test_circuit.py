@@ -155,6 +155,16 @@ def test_rotation1(backend):
     )
 
 
+def test_crotation(backend):
+    assert is_vec_same(Circuit().cu3(1.23, 4.56, -5.43)[3, 1].run(backend=backend),
+                       Circuit().crz(-5.43)[3, 1].cry(1.23)[3, 1].crz(4.56)[3, 1].run(backend=backend))
+
+
+def test_crotation2(backend):
+    assert is_vec_same(Circuit().crx(1.23)[1, 3].run(backend=backend),
+                       Circuit().h[3].crz(1.23)[1, 3].h[3].run(backend=backend))
+
+
 def test_measurement1(backend):
     c = Circuit().m[0]
     cnt = c.run(backend=backend, shots=10000)
