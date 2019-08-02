@@ -52,6 +52,8 @@ class SympyBackend(Backend):
         self.phi = phi
         self.lambd = lambd
         self.SYMPY_GATE = {
+            '_C0': Matrix([[1, 0], [0, 0]]),
+            '_C1': Matrix([[0, 0], [0, 1]]),
             'X': sympy_gate.X(0).get_target_matrix(),
             'Y': sympy_gate.Y(0).get_target_matrix(),
             'Z': sympy_gate.Z(0).get_target_matrix(),
@@ -61,8 +63,6 @@ class SympyBackend(Backend):
             'RX': Matrix([[cos(theta / 2), -I * sin(theta / 2)], [-I * sin(theta / 2), cos(theta / 2)]]),
             'RY': Matrix([[cos(theta / 2), -sin(theta / 2)], [sin(theta / 2), cos(theta / 2)]]),
             'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
-            'TARGET_CX': sympy_gate.X(0).get_target_matrix(),
-            'TARGET_CZ': sympy_gate.Z(0).get_target_matrix(),
             'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
             'U2': Matrix([
                 [exp(-I * (phi + lambd) / 2) / sqrt(2), -exp(-I * (phi - lambd) / 2) / sqrt(2)],
@@ -72,15 +72,20 @@ class SympyBackend(Backend):
                 [exp(I * (phi - lambd) / 2) * sin(theta / 2), exp(I * (phi + lambd) / 2) * cos(theta / 2)]]),
         }
 
-    def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx, matrix_of_gate):
-        targets = [idx for idx in gate.target_iter(ctx.n_qubits)]
+    def _create_matrix_of_one_qubit_gate(self, n_qubits, targets, matrix_of_gate):
+        targets = [idx for idx in targets]
         gates = []
-        for idx in range(ctx.n_qubits):
+        for idx in range(n_qubits):
             if idx in targets:
                 gates.append(matrix_of_gate)
             else:
                 gates.append(eye(2))
-        ctx.matrix_of_circuit = reduce(TensorProduct, reversed(gates)) * ctx.matrix_of_circuit
+        return reduce(TensorProduct, reversed(gates))
+
+    def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx, matrix_of_gate):
+        n_qubits = ctx.n_qubits
+        m = self._create_matrix_of_one_qubit_gate(n_qubits, gate.target_iter(n_qubits), matrix_of_gate)
+        ctx.matrix_of_circuit = m * ctx.matrix_of_circuit
         return ctx
 
     def _one_qubit_gate_noargs(self, gate, ctx):
@@ -122,52 +127,29 @@ class SympyBackend(Backend):
     gate_u2 = _one_qubit_gate_ugate
     gate_u3 = _one_qubit_gate_ugate
 
-    def _create_control_gate_of_matrix(self, type_of_gate, control, target):
-        unit_of_upper_triangular_matrix = Matrix([[1, 0], [0, 0]])
-        unit_of_lower_triangular_matrix = Matrix([[0, 0], [0, 1]])
-
-        control_gates = [eye(2), unit_of_upper_triangular_matrix]
-        target_gates = [self.SYMPY_GATE['TARGET_%s' % type_of_gate], unit_of_lower_triangular_matrix]
-        number_between_of_qubits = abs(target - control) - 1
-        if number_between_of_qubits != 0:
-            between_unit_gate = eye(2 ** number_between_of_qubits)
-            control_gates.insert(1, between_unit_gate)
-            target_gates.insert(1, between_unit_gate)
-
-        control_gate_of_matrix = reduce(TensorProduct, control_gates) + reduce(TensorProduct, target_gates)
-        if control < target or type_of_gate == 'CZ':
-            return control_gate_of_matrix
-        else:
-            gates = [self.SYMPY_GATE['H'], self.SYMPY_GATE['H']]
-            if number_between_of_qubits != 0:
-                gates.insert(1, eye(2 ** number_between_of_qubits))
-            transformation_of_matrix = reduce(TensorProduct, gates)
-            return transformation_of_matrix * control_gate_of_matrix * transformation_of_matrix
-
-    def _embedded_control_gate(self, n_qubits, upper_qubit, lower_qubit, control_gate):
-        gates = [control_gate]
-        if upper_qubit > 0:
-            gates.append(eye(2**upper_qubit))
-
-        number_of_lower_qubits = n_qubits - lower_qubit - 1
-        if number_of_lower_qubits > 0:
-            gates.insert(0, eye(2**number_of_lower_qubits))
-
-        return reduce(TensorProduct, gates)
+    def _create_matrix_of_two_qubit_gate(self, n_qubits, gate, control, target):
+        c0 = self._create_matrix_of_one_qubit_gate(n_qubits, [control], self.SYMPY_GATE['_C0'])
+        c1 = self._create_matrix_of_one_qubit_gate(n_qubits, [control], self.SYMPY_GATE['_C1'])
+        tgt = self._create_matrix_of_one_qubit_gate(n_qubits, [target], self.SYMPY_GATE[gate.uppername[1:]])
+        return c0 + tgt * c1
 
     def _two_qubit_gate_noargs(self, gate, ctx):
-        for control, target in gate.control_target_iter(ctx.n_qubits):
-            control_gate_of_matrix = self._create_control_gate_of_matrix(gate.uppername, control, target)
-            if ctx.n_qubits == abs(target - control) + 1:
-                ctx.matrix_of_circuit = control_gate_of_matrix * ctx.matrix_of_circuit
-            elif control > target:
-                ctx.matrix_of_circuit = self._embedded_control_gate(ctx.n_qubits, target, control, control_gate_of_matrix) * ctx.matrix_of_circuit
-            else:
-                ctx.matrix_of_circuit = self._embedded_control_gate(ctx.n_qubits, control, target, control_gate_of_matrix) * ctx.matrix_of_circuit
+        n_qubits = ctx.n_qubits
+        for control, target in gate.control_target_iter(n_qubits):
+            m = self._create_matrix_of_two_qubit_gate(n_qubits, gate, control, target)
+            ctx.matrix_of_circuit = m * ctx.matrix_of_circuit
         return ctx
 
     gate_cx = _two_qubit_gate_noargs
     gate_cz = _two_qubit_gate_noargs
+
+    def _two_qubit_gate_args_theta(self, gate, ctx):
+        theta = _angle_simplify(gate.theta)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, theta)
+        for control, target in gate.control_target_iter(ctx.n_qubits):
+            control_gate_of_matrix = self._create_matrix_of_two_qubit_gate(gate, ctx, control, target)
+            ctx.matrix_of_circuit = control_gate_of_matrix * ctx.matrix_of_circuit
+        return ctx
 
     def gate_measure(self, gate, ctx):
         return ctx

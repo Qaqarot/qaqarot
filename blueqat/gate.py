@@ -192,6 +192,66 @@ class SDagGate(OneQubitGate):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
 
 
+class CRXGate(TwoQubitGate):
+    """Rotate-X gate"""
+    lowername = "crx"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RXGate(t, self.theta / 2),
+                          CZGate((c, t)),
+                          RXGate(t, -self.theta / 2),
+                          CZGate((c, t))])
+
+
+class CRYGate(TwoQubitGate):
+    """Rotate-Y gate"""
+    lowername = "cry"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RYGate(t, self.theta / 2),
+                          CXGate((c, t)),
+                          RYGate(t, -self.theta / 2),
+                          CXGate((c, t))])
+
+
+class CRZGate(TwoQubitGate):
+    """Rotate-Z gate"""
+    lowername = "crz"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RZGate(t, self.theta / 2),
+                          CXGate((c, t)),
+                          RZGate(t, -self.theta / 2),
+                          CXGate((c, t))])
+
+
 class SwapGate(TwoQubitGate):
     """Swap gate"""
     lowername = "swap"
