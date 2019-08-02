@@ -22,9 +22,12 @@ class QgateBackend(Backend) :
                 'tdg' : (gtype.T, 0, 1), 'sdg' : (gtype.S, 0, 1),
                 # 1-control-bit gate
                 'cz' : (gtype.Z, 1, 1), 'cx' : (gtype.X, 1, 1), 'cnot' : (gtype.X, 1, 1),
-                # rotation, phae gate
+                # rotation, phase gate
                 'rx' : (gtype.RX, 0, 1), 'ry' : (gtype.RY, 0, 1), 'rz' : (gtype.U1, 0, 1),
                 'phase' : (gtype.U1, 0, 1),
+                # controlled rotation gate
+                'crx' : (gtype.RX, 1, 1), 'cry' : (gtype.RY, 1, 1), 'crz' : (gtype.RZ, 1, 1),
+                'cphase' : (gtype.U1, 1, 1),
                 # U gate
                 'u1' : (gtype.U1, 0, 1), # u2 and u3 are converted seperatedly.
                 # controlled U gate

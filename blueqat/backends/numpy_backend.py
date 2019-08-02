@@ -185,31 +185,6 @@ class NumPyBackend(Backend):
         ctx.qubits_buf = newq
         return ctx
 
-    def gate_cz(self, gate, ctx):
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        i = ctx.indices
-        for control, target in gate.control_target_iter(n_qubits):
-            qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
-        return ctx
-
-    def gate_cx(self, gate, ctx):
-        qubits = ctx.qubits
-        newq = ctx.qubits_buf
-        n_qubits = ctx.n_qubits
-        i = ctx.indices
-        for control, target in gate.control_target_iter(n_qubits):
-            np.copyto(newq, qubits)
-            c1 = (i & (1 << control)) != 0
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[c1 & t0] = qubits[c1 & t1]
-            newq[c1 & t1] = qubits[c1 & t0]
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
-        return ctx
-
     def gate_rx(self, gate, ctx):
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -268,6 +243,77 @@ class NumPyBackend(Backend):
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
             qubits[(i & (1 << target)) != 0] *= 1.j
+        return ctx
+
+    def gate_cz(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        for control, target in gate.control_target_iter(n_qubits):
+            qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
+        return ctx
+
+    def gate_cx(self, gate, ctx):
+        qubits = ctx.qubits
+        newq = ctx.qubits_buf
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        for control, target in gate.control_target_iter(n_qubits):
+            np.copyto(newq, qubits)
+            c1 = (i & (1 << control)) != 0
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[c1 & t0] = qubits[c1 & t1]
+            newq[c1 & t1] = qubits[c1 & t0]
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
+        return ctx
+
+    def gate_crx(self, gate, ctx):
+        qubits = ctx.qubits
+        newq = ctx.qubits_buf
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        halftheta = gate.theta / 2
+        for control, target in gate.control_target_iter(n_qubits):
+            np.copyto(newq, qubits)
+            c1 = (i & (1 << control)) != 0
+            c1t0 = ((i & (1 << target)) == 0) & c1
+            c1t1 = ((i & (1 << target)) != 0) & c1
+            newq[c1t0] = np.cos(halftheta) * qubits[c1t0] -1j * np.sin(halftheta) * qubits[c1t1]
+            newq[c1t1] = -1j * np.sin(halftheta) * qubits[c1t0] + np.cos(halftheta) * qubits[c1t1]
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
+        return ctx
+
+    def gate_cry(self, gate, ctx):
+        qubits = ctx.qubits
+        newq = ctx.qubits_buf
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        theta = gate.theta
+        for control, target in gate.control_target_iter(n_qubits):
+            np.copyto(newq, qubits)
+            c1 = (i & (1 << control)) != 0
+            c1t0 = ((i & (1 << target)) == 0) & c1
+            c1t1 = ((i & (1 << target)) != 0) & c1
+            newq[c1t0] = np.cos(theta / 2) * qubits[c1t0] - np.sin(theta / 2) * qubits[c1t1]
+            newq[c1t1] = np.sin(theta / 2) * qubits[c1t0] + np.cos(theta / 2) * qubits[c1t1]
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
+        return ctx
+
+    def gate_crz(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        theta = gate.theta
+        for control, target in gate.control_target_iter(n_qubits):
+            c1t1 = ((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)
+            qubits[c1t1] *= complex(math.cos(theta), math.sin(theta))
         return ctx
 
     def gate_ccz(self, gate, ctx):
