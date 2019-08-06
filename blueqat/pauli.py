@@ -627,7 +627,7 @@ class Expr(_ExprTuple):
         return NotImplemented
 
     def __neg__(self):
-        return Expr(tuple((op, -coeff) for op, coeff in self.terms))
+        return Expr(tuple(Term(op, -coeff) for op, coeff in self.terms))
 
     def __mul__(self, other):
         if isinstance(other, Number):
