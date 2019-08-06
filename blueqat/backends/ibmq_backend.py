@@ -46,7 +46,7 @@ def _qasm_runner_qiskit(qasm, qiskit_backend, shots=None, returns=None, **kwargs
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            from qiskit import load_qasm_string, execute
+            from qiskit import QuantumCircuit, execute
     except Exception as e:
         import_error = e
 
@@ -62,7 +62,7 @@ def _qasm_runner_qiskit(qasm, qiskit_backend, shots=None, returns=None, **kwargs
     else:
         if shots is None:
             shots = 1024
-        qk_circuit = load_qasm_string(qasm)
+        qk_circuit = QuantumCircuit.from_qasm_str(qasm)
         result = execute(qk_circuit, backend=qiskit_backend, shots=shots, **kwargs).result()
         if returns == "qiskit_result":
             return result
