@@ -117,4 +117,7 @@ def test_pickle():
     assert I.to_expr() == pickle.loads(pickle.dumps(I.to_expr()))
 
 def test_expr_neg():
-    assert -(X[0] + 2 * Y[0]) == X[0] * -1 - Y[0] * 2
+    a = -(X[0] + 2 * Y[0])
+    b = X[0] * -1 - Y[0] * 2
+    assert a == b
+    assert isinstance(a, Expr)
