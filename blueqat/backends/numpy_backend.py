@@ -58,9 +58,9 @@ class _NumPyBackendContext:
 class NumPyBackend(Backend):
     """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
     __return_type = {
-        "statevector": lambda ctx: _ignore_globals(ctx.qubits),
+        "statevector": lambda ctx: ctx.qubits,
         "shots": lambda ctx: ctx.shots_result,
-        "statevector_and_shots": lambda ctx: (_ignore_globals(ctx.qubits), ctx.shots_result),
+        "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
         "_inner_ctx": lambda ctx: ctx,
     }
     DEFAULT_SHOTS = 1024
@@ -85,7 +85,7 @@ class NumPyBackend(Backend):
             return
 
     def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, **_kwargs):
+        def __parse_run_args(shots=None, returns=None, ignore_global=True, **_kwargs):
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -100,9 +100,9 @@ class NumPyBackend(Backend):
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
                 warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns
+            return shots, returns, ignore_global
 
-        shots, returns = __parse_run_args(*args, **kwargs)
+        shots, returns, ignore_global = __parse_run_args(*args, **kwargs)
 
         self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
         ctx = _NumPyBackendContext(n_qubits)
@@ -126,6 +126,8 @@ class NumPyBackend(Backend):
             if ctx.cregs:
                 ctx.store_shot()
 
+        if ignore_global:
+            ignore_global_phase(ctx.qubits)
         return self.__return_type[returns](ctx)
 
     def make_cache(self, gates, n_qubits):
@@ -386,7 +388,3 @@ class NumPyBackend(Backend):
                 ctx.cregs[target] = 1
         ctx.save_cache = False
         return ctx
-
-
-def _ignore_globals(qubits):
-    return ignore_global_phase(qubits)

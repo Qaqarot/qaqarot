@@ -326,9 +326,9 @@ def _reduce1(qubits, target, n_qubits, p0):
 class NumbaBackend(Backend):
     """Simulator backend which uses numba."""
     __return_type = {
-        "statevector": lambda ctx: _ignore_globals(ctx.qubits),
+        "statevector": lambda ctx: ctx.qubits,
         "shots": lambda ctx: ctx.shots_result,
-        "statevector_and_shots": lambda ctx: (_ignore_globals(ctx.qubits), ctx.shots_result),
+        "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
         "_inner_ctx": lambda ctx: ctx,
     }
     DEFAULT_SHOTS = 1024
@@ -353,7 +353,7 @@ class NumbaBackend(Backend):
             return
 
     def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, enable_cache=True,
+        def __parse_run_args(shots=None, returns=None, enable_cache=True, ignore_global=True,
                              dtype=DEFAULT_DTYPE, **_kwargs):
             if returns is None:
                 if shots is None:
@@ -369,9 +369,9 @@ class NumbaBackend(Backend):
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
                 warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns, dtype, enable_cache
+            return shots, returns, dtype, enable_cache, ignore_global
 
-        shots, returns, dtype, enable_cache = __parse_run_args(*args, **kwargs)
+        shots, returns, dtype, enable_cache, ignore_global = __parse_run_args(*args, **kwargs)
 
         if enable_cache:
             self.__clear_cache_if_invalid(n_qubits, dtype)
@@ -402,6 +402,8 @@ class NumbaBackend(Backend):
             if ctx.cregs:
                 ctx.store_shot()
 
+        if ignore_global:
+            _ignore_global(ctx.qubits)
         return self.__return_type[returns](ctx)
 
     def make_cache(self, gates, n_qubits):
@@ -602,7 +604,7 @@ class NumbaBackend(Backend):
 
 
 @njit(nogil=True, cache=True)
-def _ignore_globals(qubits):
+def _ignore_global(qubits):
     for q in qubits:
         if abs(q) > 0.0000001:
             ang = abs(q) / q
