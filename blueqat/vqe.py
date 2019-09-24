@@ -264,9 +264,7 @@ print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts
         if not meas:
             return {}
         circuit.measure[meas]
-        qasm = circuit.to_qasm()
-        qk_circuit = qiskit.load_qasm_string(qasm)
-        result = qiskit.execute(qk_circuit, backend, **execute_kwargs).result()
+        result = circuit.run_with_ibmq(qiskit_backend=backend, returns="qiskit_result", **execute_kwargs)
         counts = Counter({reduce_bits(bits, meas): val for bits, val in result.get_counts().items()})
         return {k: v / shots for k, v in counts.items()}
 

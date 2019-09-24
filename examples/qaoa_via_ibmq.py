@@ -1,4 +1,5 @@
 from blueqat import pauli, vqe
+from qiskit import Aer
 
 def maxcut_qaoa(n_step, edges, minimizer=None, sampler=None, verbose=True):
     """Setup QAOA.
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     # import qiskit
     # qiskit.register(your token here)
     runner = maxcut_qaoa(1, [(0, 1), (1, 2), (2, 3), (3, 0), (1, 3), (0, 2), (4, 0), (4, 3)],
-            sampler=vqe.get_qiskit_sampler(backend="local_qasm_simulator"))
+            sampler=vqe.get_qiskit_sampler(backend=Aer.get_backend('qasm_simulator')))
     result = runner.run(verbose=True)
     print("""
        {4}
