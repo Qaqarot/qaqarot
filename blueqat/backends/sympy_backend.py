@@ -63,6 +63,7 @@ class SympyBackend(Backend):
             'RX': Matrix([[cos(theta / 2), -I * sin(theta / 2)], [-I * sin(theta / 2), cos(theta / 2)]]),
             'RY': Matrix([[cos(theta / 2), -sin(theta / 2)], [sin(theta / 2), cos(theta / 2)]]),
             'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
+            'PHASE': Matrix([[1, 0], [0, exp(I * theta)]]),
             'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
             'U2': Matrix([
                 [exp(-I * (phi + lambd) / 2) / sqrt(2), -exp(-I * (phi - lambd) / 2) / sqrt(2)],
@@ -106,6 +107,7 @@ class SympyBackend(Backend):
     gate_rx = _one_qubit_gate_args_theta
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
+    gate_phase = _one_qubit_gate_args_theta
 
     def _one_qubit_gate_ugate(self, gate, ctx):
         if len(gate.params) == 3:

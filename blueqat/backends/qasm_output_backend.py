@@ -91,6 +91,11 @@ class QasmOutputBackend(Backend):
             ctx[0].append(f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{idx}];")
         return ctx
 
+    def gate_phase(self, gate, ctx):
+        for idx in gate.target_iter(ctx[1]):
+            ctx[0].append(f"u1({gate.theta}) q[{idx}]; // Global phase is ignored.")
+        return ctx
+
     def gate_cu1(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
             ctx[0].append(f"{gate.lowername}({gate.lambd}) q[{c}],q[{t}];")
@@ -104,6 +109,11 @@ class QasmOutputBackend(Backend):
     def gate_cu3(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
             ctx[0].append(f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{c}],q[{t}];")
+        return ctx
+
+    def gate_cphase(self, gate, ctx):
+        for c, t in gate.control_target_iter(ctx[1]):
+            ctx[0].append(f"cu1({gate.theta}) q[{c}],q[{t}];")
         return ctx
 
     def _three_qubit_gate_noargs(self, gate, ctx):
