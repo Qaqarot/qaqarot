@@ -278,7 +278,7 @@ class CRZGate(TwoQubitGate):
 
 class CPhaseGate(TwoQubitGate):
     """Rotate-Z gate but phase is different."""
-    lowername = "phase"
+    lowername = "cphase"
 
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
