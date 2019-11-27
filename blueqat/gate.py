@@ -290,7 +290,7 @@ class CPhaseGate(TwoQubitGate):
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
-            lambda c, t: [CRZGate(t, self.theta),
+            lambda c, t: [CRZGate((c, t), self.theta),
                           PhaseGate(c, self.theta / 2)])
 
 
