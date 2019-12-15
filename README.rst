@@ -227,6 +227,7 @@ SA Parameters
 Some parameters for simualtion is adjustable
 
 .. code-block:: python
+
     #for sa
     a.Ts  = 10    #default 5
     a.R   = 0.99  #default 0.95
@@ -238,6 +239,7 @@ SA Energy Function
 Energy function of the calculation is stored in attribute E as an array.
 
 .. code-block:: python
+
     print(a.E[-1]) #=>[0.0]
 
     #if you want to check the time evolution
@@ -249,6 +251,7 @@ SA Sampling
 Sampling and counter function with number of shots.
 
 .. code-block:: python
+
     result = a.sa(shots=100,sampler="fast")
 
     print(result)
@@ -267,13 +270,15 @@ Connection to D-Wave cloud
 Direct connection to D-Wave machine with apitoken
 https://github.com/dwavesystems/dwave-cloud-client is required
 
-from blueqat.opt import Opt
-a = Opt()
-a.dwavetoken = "your token here"
-a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
-a.dw()
+.. code-block:: python
 
-# => [1,1,-1,1,1,0,0,0,0,0,0]
+    from blueqat.opt import Opt
+    a = Opt()
+    a.dwavetoken = "your token here"
+    a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
+    a.dw()
+
+    # => [1,1,-1,1,1,0,0,0,0,0,0]
 
 QUBO Functions
 -----------------
@@ -282,6 +287,7 @@ sel(N,K,array)
 Automatically create QUBO which select K qubits from N qubits
 
 .. code-block:: python
+
     print(wq.sel(5,2))
     #=>
     [[-3  2  2  2  2]
@@ -293,6 +299,7 @@ Automatically create QUBO which select K qubits from N qubits
 if you set array on the 3rd params, the result likely to choose the nth qubit in the array
 
 .. code-block:: python
+
     print(wq.sel(5,2,[0,2]))
     #=>
     [[-3.5  2.   2.   2.   2. ]
@@ -305,6 +312,7 @@ net(arr,N)
 Automatically create QUBO which has value 1 for all connectivity defined by array of edges and graph size N
 
 .. code-block:: python
+
     print(wq.net([[0,1],[1,2]],4))
     #=>
     [[0. 1. 0. 0.]
@@ -317,6 +325,7 @@ this create 4*4 QUBO and put value 1 on connection between 0th and 1st qubit, 1s
 zeros(N) Create QUBO with all element value as 0
 
 .. code-block:: python
+
     print(wq.zeros(3))
     #=>
     [[0. 0. 0.]
@@ -326,6 +335,7 @@ zeros(N) Create QUBO with all element value as 0
 diag(list) Create QUBO with diag from list
 
 .. code-block:: python
+
     print(wq.diag([1,2,1]))
     #=>
     [[1 0 0]
@@ -335,6 +345,7 @@ diag(list) Create QUBO with diag from list
 rands(N) Create QUBO with random number
 
 .. code-block:: python
+
     print(wq.rands(2))
     #=>
     [[0.89903411 0.68839641]
