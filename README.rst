@@ -234,7 +234,7 @@ Some parameters for simualtion is adjustable
     a.ite = 10000 #default 1000
 
 SA Energy Function
------------------
+------------------
 
 Energy function of the calculation is stored in attribute E as an array.
 
