@@ -290,12 +290,12 @@ class BlueqatGlobalSetting:
             if allow_overwrite:
                 warnings.warn(f"Gate name `{name}` may conflict with run of backend.")
             else:
-                raise ValueError(f"Gate name `{name}` shall not start with 'run_with_'.")
+                raise ValueError(f"Gate name `{name}` should not start with 'run_with_'.")
         if not allow_overwrite:
             if name in GATE_SET:
-                raise ValueError(f"Gate '{name}' is already exists in gate set.")
+                raise ValueError(f"Gate '{name}' already exists in gate set.")
             if name in GLOBAL_MACROS:
-                raise ValueError(f"Macro '{name}' is already exists.")
+                raise ValueError(f"Macro '{name}' already exists.")
         GLOBAL_MACROS[name] = func
 
     @staticmethod
