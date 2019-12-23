@@ -188,8 +188,8 @@ Optimization
 
 .. code-block:: python
 
-    from blueqat.opt import Opt
-    c = Opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
+    import blueqat.opt as wq
+    c = wq.opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
 
     #qaoa
     print(c.qaoa().most_common(5))
