@@ -77,14 +77,12 @@ DEFAULT_BACKEND_NAME = "numpy"
 
 class Circuit:
     """Store the gate operations and call the backends."""
-    def __init__(self, n_qubits=0, ops=None):
+    def __init__(self, n_qubits=1, ops=None):
         self.ops = ops or []
         self._backends = {}
         self._default_backend = None
         # ad-hoc
         self.n_qubits = n_qubits
-        if n_qubits > 0:
-            self.i[n_qubits - 1]
 
     def __get_backend(self, backend_name):
         try:
