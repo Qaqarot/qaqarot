@@ -9,4 +9,4 @@ https://github.com/Blueqat/Blueqat-tutorials
 
 Japanese
 
-https://github.com/mdrft/Blueqat_tutorials_ja
+https://github.com/Blueqat/Blueqat-tutorials/tree/master/tutorial-ja
