@@ -223,6 +223,16 @@ class NumPyBackend(Backend):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
+        theta = gate.theta * 0.5
+        for target in gate.target_iter(n_qubits):
+            qubits[(i & (1 << target)) == 0] *= complex(math.cos(theta), -math.sin(theta))
+            qubits[(i & (1 << target)) != 0] *= complex(math.cos(theta), math.sin(theta))
+        return ctx
+
+    def gate_phase(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
         theta = gate.theta
         for target in gate.target_iter(n_qubits):
             qubits[(i & (1 << target)) != 0] *= complex(math.cos(theta), math.sin(theta))
@@ -309,6 +319,18 @@ class NumPyBackend(Backend):
         return ctx
 
     def gate_crz(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        theta = gate.theta * 0.5
+        for control, target in gate.control_target_iter(n_qubits):
+            c1t0 = ((i & (1 << control)) != 0) & ((i & (1 << target)) == 0)
+            c1t1 = ((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)
+            qubits[c1t0] *= complex(math.cos(theta), -math.sin(theta))
+            qubits[c1t1] *= complex(math.cos(theta), math.sin(theta))
+        return ctx
+
+    def gate_cphase(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices

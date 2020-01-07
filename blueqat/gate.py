@@ -160,6 +160,30 @@ class RZGate(OneQubitGate):
         return f'({self.theta})'
 
 
+class PhaseGate(OneQubitGate):
+    """Rotate-Z gate but global phase is different.
+
+    Global phase doesn't makes any difference of measured result.
+    You may use RZ gate or U1 gate instead, but distinguishing these gates
+    may better for debugging or future improvement.
+
+    furthermore, phase gate may efficient for simulating.
+    (It depends on backend implementation.
+    But matrix of phase gate is simpler than RZ gate or U1 gate.)"""
+    lowername = "phase"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
+
+    def fallback(self, n_qubits):
+        # If phase gate is not implemented in the backend, global phase is ignored.
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, self.theta)])
+
+
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
@@ -252,6 +276,24 @@ class CRZGate(TwoQubitGate):
                           CXGate((c, t))])
 
 
+class CPhaseGate(TwoQubitGate):
+    """Rotate-Z gate but phase is different."""
+    lowername = "cphase"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def _str_args(self):
+        return f'({self.theta})'
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [CRZGate((c, t), self.theta),
+                          PhaseGate(c, self.theta / 2)])
+
+
 class SwapGate(TwoQubitGate):
     """Swap gate"""
     lowername = "swap"
@@ -293,7 +335,13 @@ class CCZGate(Gate):
 
 
 class U1Gate(OneQubitGate):
-    """U1 gate"""
+    """U1 gate
+
+    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
+    It is because for compatibility with IBM's implementations.
+
+    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
+    """
     def __init__(self, targets, lambd, **kwargs):
         super().__init__(targets, (lambd,), **kwargs)
         self.lambd = lambd
@@ -331,7 +379,13 @@ class U3Gate(OneQubitGate):
 
 
 class CU1Gate(TwoQubitGate):
-    """Controlled U1 gate"""
+    """Controlled U1 gate
+
+    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
+    It is because for compatibility with IBM's implementations.
+
+    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
+    """
     def __init__(self, targets, lambd, **kwargs):
         super().__init__(targets, (lambd,), **kwargs)
         self.lambd = lambd
