@@ -35,7 +35,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/ --junitxml=test-reports/python/junit.xml --add-backend numba
+            #python -m pytest tests/ --junitxml=test-reports/python/junit.xml --add-backend numba
+            python -m pytest tests/ --junitxml=test-reports/python/junit.xml
             
       - run:
           name: twine check
