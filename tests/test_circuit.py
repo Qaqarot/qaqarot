@@ -253,24 +253,14 @@ def test_caching_then_expand(backend):
     assert is_vec_same(qubits, Circuit().h[0].i[1].run())
 
 
-def test_copy_empty_numpy():
+def test_copy_empty(backend):
     c = Circuit()
-    c.run(backend='numpy')
-    # copy_history: deprecated.
+    c.run(backend=backend)
     cc = c.copy(copy_backends=True)
     assert c.ops == cc.ops and c.ops is not cc.ops
-    assert c._backends['numpy'].cache is None and cc._backends['numpy'].cache is None
-    assert c._backends['numpy'].cache_idx == cc._backends['numpy'].cache_idx == -1
-
-
-def test_copy_empty_numba():
-    c = Circuit()
-    c.run(backend='numba')
-    # copy_history: deprecated.
-    cc = c.copy(copy_backends=True)
-    assert c.ops == cc.ops and c.ops is not cc.ops
-    assert c._backends['numba'].cache is None and cc._backends['numba'].cache is None
-    assert c._backends['numba'].cache_idx == cc._backends['numba'].cache_idx == -1
+    if backend in ['numpy', 'numba']:
+        assert c._backends[backend].cache is None and cc._backends[backend].cache is None
+        assert c._backends[backend].cache_idx == cc._backends[backend].cache_idx == -1
 
 
 def test_cache_then_append(backend):
