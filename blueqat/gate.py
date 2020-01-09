@@ -31,19 +31,21 @@ class Gate(ABC):
 
     def _str_args(self):
         """Returns printable string of args."""
-        return ""
+        if not self.params:
+            return ''
+        return '(' + ', '.join(str(param) for param in self.params) + ')'
 
     def _str_targets(self):
         """Returns printable string of targets."""
         def _slice_to_str(obj):
             if isinstance(obj, slice):
-                start = "" if obj.start is None else str(obj.start.__index__())
-                stop = "" if obj.stop is None else str(obj.stop.__index__())
+                start = '' if obj.start is None else str(obj.start.__index__())
+                stop = '' if obj.stop is None else str(obj.stop.__index__())
                 if obj.step is None:
-                    return f"{start}:{stop}"
+                    return f'{start}:{stop}'
                 else:
                     step = str(obj.step.__index__())
-                    return f"{start}:{stop}:{step}"
+                    return f'{start}:{stop}:{step}'
             else:
                 return obj.__index__()
 
@@ -55,7 +57,7 @@ class Gate(ABC):
     def __str__(self):
         str_args = self._str_args()
         str_targets = self._str_targets()
-        return f'{self.uppername}{str_args} {str_targets}'
+        return f'{self.lowername}{str_args}{str_targets}'
 
 
 class OneQubitGate(Gate):
@@ -132,9 +134,6 @@ class RXGate(OneQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
-    def _str_args(self):
-        return f'({self.theta})'
-
 
 class RYGate(OneQubitGate):
     """Rotate-Y gate"""
@@ -144,9 +143,6 @@ class RYGate(OneQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
-    def _str_args(self):
-        return f'({self.theta})'
-
 
 class RZGate(OneQubitGate):
     """Rotate-Z gate"""
@@ -155,9 +151,6 @@ class RZGate(OneQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
-
-    def _str_args(self):
-        return f'({self.theta})'
 
 
 class PhaseGate(OneQubitGate):
@@ -175,9 +168,6 @@ class PhaseGate(OneQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
-
-    def _str_args(self):
-        return f'({self.theta})'
 
     def fallback(self, n_qubits):
         # If phase gate is not implemented in the backend, global phase is ignored.
@@ -224,9 +214,6 @@ class CRXGate(TwoQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
-    def _str_args(self):
-        return f'({self.theta})'
-
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -243,9 +230,6 @@ class CRYGate(TwoQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
-
-    def _str_args(self):
-        return f'({self.theta})'
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -264,9 +248,6 @@ class CRZGate(TwoQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
-    def _str_args(self):
-        return f'({self.theta})'
-
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -283,9 +264,6 @@ class CPhaseGate(TwoQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
-
-    def _str_args(self):
-        return f'({self.theta})'
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
