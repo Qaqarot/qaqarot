@@ -76,7 +76,7 @@ def _shifted(lower_mask, idx):
 
 @njit(_QSMask[:](_QBIdx[:]), nogil=True, cache=True)
 def _create_masks(indices):
-    masks = np.zeros(len(indices), dtype=_QSMask_dtype)
+    masks = np.empty(len(indices), dtype=_QSMask_dtype)
     for i, x in enumerate(indices):
         masks[i] = (1 << x) - 1
     for i in range(len(indices), 0, -1):
