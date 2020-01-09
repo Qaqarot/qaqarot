@@ -30,10 +30,13 @@ DEFAULT_DTYPE = np.complex128
 # Typedef
 # Index of Qubit
 _QBIdx = numba.uint32
-# Mask of Quantum State
-_QSMask = numba.uint64
+_QBIdx_dtype = np.uint32
 # Index of Quantum State
-_QSIdx = _QSMask
+_QSIdx = numba.uint64
+_QSIdx_dtype = np.uint64
+# Mask of Quantum State
+_QSMask = _QSIdx
+_QSMask_dtype = _QSIdx_dtype
 
 class _NumbaBackendContext:
     """This class is internally used in NumbaBackend"""
@@ -62,7 +65,7 @@ class _NumbaBackendContext:
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 
-@njit(_QSIdx(_QSMask, _QBIdx),
+@njit(_QSIdx(_QSMask, _QSIdx),
       locals={'lower': _QSMask, 'higher': _QSMask},
       nogil=True, cache=True)
 def _shifted(lower_mask, idx):
@@ -71,38 +74,22 @@ def _shifted(lower_mask, idx):
     return higher + lower
 
 
-# Thanks to Morino-san!
-@njit(_QBIdx[:](_QBIdx[:], _QSIdx),
-      locals={'in_pos': _QBIdx, 'i': _QBIdx, 'shift_map': _QBIdx[:]},
-      nogil=True, cache=True)
-def _create_bit_shift_map(poslist, n_qubits):
-    shift_map = np.zeros(n_qubits, dtype=np.uint32)
-    for i, b in enumerate(sorted(poslist)):
-        in_pos = b - i
-        if in_pos < n_qubits:
-            shift_map[in_pos] += 1
-    for i in range(len(poslist) - 1):
-        shift_map[i + 1] += shift_map[i]
-    for i in range(n_qubits):
-        shift_map[i] += i
-    return shift_map
+@njit(_QSMask[:](_QBIdx[:]), nogil=True, cache=True)
+def _create_masks(indices):
+    masks = np.zeros(len(indices), dtype=_QSMask_dtype)
+    for i, x in enumerate(indices):
+        masks[i] = (1 << x) - 1
+    for i in range(len(indices), 0, -1):
+        masks[i] &= ~masks[i - 1]
+    return masks
 
 
-@njit(_QSMask(_QBIdx[:]), nogil=True, cache=True)
-def _create_mask_from_shift_map(shift_map):
-    mask = 0
-    for m in shift_map:
-        mask |= 1 << m
-    return mask
-
-
-@njit(_QSMask(_QSIdx, _QBIdx[:]), nogil=True, cache=True)
-def _create_idx_from_shift_map(noshiftidx, shift_map):
-    idx = 0
-    for m in shift_map:
-        if (1 << m) & noshiftidx:
-            idx |= 1 << m
-    return idx
+@njit(_QSIdx(_QSMask[:], _QSIdx), nogil=True, cache=True)
+def _mult_shifted(masks, idx):
+    shifted = 0
+    for i, x in enumerate(masks):
+        shifted += (idx & x) << i
+    return shifted
 
 
 @njit(locals={'lower_mask': _QSMask},
@@ -228,12 +215,12 @@ def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
 @njit(nogil=True, parallel=True)
 def _czgate(qubits, n_qubits, controls_target):
     target = controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     all1 = _QSMask(0)
     for b in controls_target:
         all1 |= _QSMask(1) << b
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i11 = _create_idx_from_shift_map(i, shift_map) | all1
+        i11 = _mult_shifted(masks, i) | all1
         qubits[i11] *= -1
 
 
@@ -243,9 +230,9 @@ def _cxgate(qubits, n_qubits, controls_target):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i10 = _create_idx_from_shift_map(i, shift_map) | c_mask
+        i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
         qubits[i10] = qubits[i11]
@@ -261,9 +248,9 @@ def _crxgate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i10 = _create_idx_from_shift_map(i, shift_map) | c_mask
+        i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
         u = qubits[i10 + (1 << controls_target[-1])]
@@ -280,9 +267,9 @@ def _crygate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i10 = _create_idx_from_shift_map(i, shift_map) | c_mask
+        i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
         u = qubits[i10 + (1 << controls_target[-1])]
@@ -299,9 +286,9 @@ def _crzgate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i10 = _create_idx_from_shift_map(i, shift_map) | c_mask
+        i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         qubits[i10] *= eitstar
         qubits[i11] *= eit
@@ -314,9 +301,9 @@ def _cphasegate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
-    shift_map = _create_bit_shift_map(controls_target, n_qubits)
+    masks = _create_masks(controls_target)
     for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
-        i11 = _create_idx_from_shift_map(i, shift_map) | c_mask | t_mask
+        i11 = _mult_shifted(masks, i) | c_mask | t_mask
         qubits[i11] *= eit
 
 
@@ -501,14 +488,14 @@ class NumbaBackend(Backend):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         for control, target in gate.control_target_iter(n_qubits):
-            _czgate(qubits, n_qubits, np.array([control, target], dtype=np.uint32))
+            _czgate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype))
         return ctx
 
     def gate_cx(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         for control, target in gate.control_target_iter(n_qubits):
-            _cxgate(qubits, n_qubits, np.array([control, target], dtype=np.uint32))
+            _cxgate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype))
         return ctx
 
     def gate_rx(self, gate, ctx):
@@ -548,7 +535,7 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         theta = gate.theta
         for control, target in gate.control_target_iter(n_qubits):
-            _crxgate(qubits, n_qubits, np.array([control, target], dtype=np.uint32), theta)
+            _crxgate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype), theta)
         return ctx
 
     def gate_cry(self, gate, ctx):
@@ -556,7 +543,7 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         theta = gate.theta
         for control, target in gate.control_target_iter(n_qubits):
-            _crygate(qubits, n_qubits, np.array([control, target], dtype=np.uint32), theta)
+            _crygate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype), theta)
         return ctx
 
     def gate_crz(self, gate, ctx):
@@ -564,7 +551,7 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         theta = gate.theta
         for control, target in gate.control_target_iter(n_qubits):
-            _crzgate(qubits, n_qubits, np.array([control, target], dtype=np.uint32), theta)
+            _crzgate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype), theta)
         return ctx
 
     def gate_cphase(self, gate, ctx):
@@ -572,19 +559,19 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         theta = gate.theta
         for control, target in gate.control_target_iter(n_qubits):
-            _cphasegate(qubits, n_qubits, np.array([control, target], dtype=np.uint32), theta)
+            _cphasegate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype), theta)
         return ctx
 
     def gate_ccz(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        _czgate(qubits, n_qubits, np.array(gate.targets, dtype=np.uint32))
+        _czgate(qubits, n_qubits, np.array(gate.targets, dtype=_QBIdx_dtype))
         return ctx
 
     def gate_ccx(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        _cxgate(qubits, n_qubits, np.array(gate.targets, dtype=np.uint32))
+        _cxgate(qubits, n_qubits, np.array(gate.targets, dtype=_QBIdx_dtype))
         return ctx
 
     def gate_u1(self, gate, ctx):
