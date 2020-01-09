@@ -321,6 +321,12 @@ def test_concat_circuit4(backend):
     assert is_vec_same(c2.run(backend=backend), Circuit().h[0].run(backend=backend))
 
 
+def test_idlequbit_circuit(backend):
+    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
+    c = Circuit().z[2].x[0].cx[0, 1]
+    assert is_vec_same(c.run(backend=backend), np.array([0., 0., 0., 1., 0., 0., 0., 0.]))
+
+
 def test_switch_backend1():
     c = Circuit().x[0].h[0]
     assert np.array_equal(c.run(), c.run(backend="numpy"))
