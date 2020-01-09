@@ -47,10 +47,10 @@ class Gate(ABC):
                     step = str(obj.step.__index__())
                     return f'{start}:{stop}:{step}'
             else:
-                return obj.__index__()
+                return str(obj.__index__())
 
         if isinstance(self.targets, tuple):
-            return f"[{', '.join(_slice_to_str(idx for idx in self.targets))}]"
+            return f"[{', '.join(_slice_to_str(target) for target in self.targets)}]"
         else:
             return f"[{_slice_to_str(self.targets)}]"
 
