@@ -85,6 +85,36 @@ def test_cx2(backend):
     )
 
 
+def test_cx3(backend):
+    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
+    c = Circuit().z[2].x[0].cx[0, 1]
+    assert is_vec_same(c.run(backend=backend), np.array([0., 0., 0., 1., 0., 0., 0., 0.]))
+
+
+def test_cx4(backend):
+    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
+    c = Circuit(4).x[0].cx[0, 1]
+    result = np.zeros(16)
+    result[3] = 1.0
+    assert is_vec_same(c.run(backend=backend), result)
+
+
+def test_cx5(backend):
+    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
+    c = Circuit(4).x[0].cx[0, 2].cx[0, 1]
+    result = np.zeros(16)
+    result[7] = 1.0
+    assert is_vec_same(c.run(backend=backend), result)
+
+
+def test_cx6(backend):
+    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
+    c = Circuit().x[0].cx[0, 3].cx[3, 1]
+    result = np.zeros(16)
+    result[11] = 1.0
+    assert is_vec_same(c.run(backend=backend), result)
+
+
 def test_rz1(backend):
     assert is_vec_same(Circuit().h[0].rz(np.pi)[0].run(backend=backend),
                        Circuit().x[0].h[0].run(backend=backend))
@@ -321,18 +351,47 @@ def test_concat_circuit4(backend):
     assert is_vec_same(c2.run(backend=backend), Circuit().h[0].run(backend=backend))
 
 
-def test_idlequbit_circuit(backend):
-    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
-    c = Circuit().z[2].x[0].cx[0, 1]
-    assert is_vec_same(c.run(backend=backend), np.array([0., 0., 0., 1., 0., 0., 0., 0.]))
+def test_complicated_circuit(backend):
+    c = Circuit()
+    c.x[0].h[0].rx(-1.5707963267948966)[2].cx[0, 2].rz(0.095491506289)[2]
+    c.cx[0, 2].h[0].rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2]
+    c.cx[0, 2].cx[2, 3].rz(0.095491506289)[3].cx[2, 3].cx[0, 2].h[0]
+    c.rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2].cx[0, 1]
+    c.cx[1, 2].rz(0.095491506289)[2].cx[1, 2].cx[0, 1].h[0].u2(1.58, -0.62)[2]
+    c.h[0].rx(-1.5707963267948966)[2].cx[0, 1].cx[1, 2].cx[2, 3]
+    c.rz(0.095491506289)[3].cx[2, 3].cx[1, 2].cx[0, 1].h[0]
+    c.rx(1.5707963267948966)[2].u3(0.42, -1.5707963267948966, 1.64)[2].h[2]
+    c.cx[0, 2].rz(-0.095491506289)[2].cx[0, 2].rx(1.5707963267948966)[0].h[2]
+    c.rx(-1.5707963267948966)[0].h[2].cx[0, 2].cx[2, 3].rz(-0.095491506289)[3]
+    c.cx[2, 3].cx[0, 2].rx(1.5707963267948966)[0].h[2]
+    c.rx(-1.5707963267948966)[0].h[2].cx[0, 1].cx[1, 2].rz(-0.095491506289)[2]
+    c.cx[1, 2].cx[0, 1].rx(1.5707963267948966)[0].h[2]
+    c.rx(-1.5707963267948966)[0].t[2].s[2].cx[0, 1].cx[1, 2].sdg[1].cx[2, 3]
+    c.rz(-0.095491506289)[3].cx[2, 3].cx[1, 2].cx[0, 1]
+    c.rx(1.5707963267948966)[0].h[2].h[0].rx(-1.5707963267948966)[1].h[2]
+    c.cx[0, 1].cx[1, 2].rz(1.1856905316303521e-08)[2].cx[1, 2].cx[0, 1].h[0]
+    c.rx(1.5707963267948966)[1].h[2].rx(-1.5707963267948966)[0]
+    c.rx(-1.5707963267948966)[1].rx(-1.5707963267948966)[2].cx[0, 1].cx[1, 2]
+    c.rz(1.1856905316303521e-08)[2].cx[1, 2].cx[0, 1].rx(1.5707963267948966)[0]
+    c.rx(1.5707963267948966)[1].rx(1.5707963267948966)[2]
+    c.rx(-1.5707963267948966)[1].cx[1, 3].rz(1.2142490216037756e-08)[3]
+    c.cx[1, 3].rx(1.5707963267948966)[1].rx(-1.5707963267948966)[1].cx[0, 1]
+    c.cx[1, 2].rz(-1.2142490216037756e-08)[2].cx[1, 2].cx[0, 1]
+    c.rx(1.5707963267948966)[1]
+    c.cx[0, 3].u3(0.23, 1.24, -0.65)[3].cx[3, 1].cx[3, 0]
+    vec = c.run(backend=backend)
+    assert is_vec_same(vec, np.array(
+            [ 5.88423813e-01+0.00000000e+00j, -3.82057626e-02-5.70122617e-02j,
+             -2.52821022e-17-5.09095967e-17j, -1.21188626e-11+5.63063568e-10j,
+             -2.19604047e-01-2.85449458e-01j, -2.59211189e-03+4.58219688e-02j,
+              3.08617333e-09-3.56619861e-09j,  4.48946755e-18-3.62425819e-19j,
+              4.64439684e-09-1.48402425e-09j,  4.61321871e-18-4.67197922e-18j,
+             -3.59382904e-01+4.73135946e-01j,  2.20759589e-02+6.42836440e-02j,
+             -1.55912415e-17-3.57403200e-17j,  5.05381446e-10+2.03362289e-10j,
+              3.82475330e-01-1.07620677e-01j,  2.29456407e-02-3.47003613e-02j]),
+            ignore_global='a')
 
 
-def test_idlequbit_circuit2(backend):
-    '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
-    c = Circuit(4).x[0].cx[0, 1]
-    result = np.zeros(16)
-    result[3] = 1.0
-    assert is_vec_same(c.run(backend=backend), result)
 
 
 def test_switch_backend1():
