@@ -189,7 +189,7 @@ class TGate(OneQubitGate):
     lowername = "t"
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 4)])
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
 
 
 class TDagGate(OneQubitGate):
@@ -197,7 +197,7 @@ class TDagGate(OneQubitGate):
     lowername = "tdg"
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 4)])
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
 
 
 class SGate(OneQubitGate):
@@ -205,7 +205,7 @@ class SGate(OneQubitGate):
     lowername = "s"
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, math.pi / 2)])
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
 
 
 class SDagGate(OneQubitGate):
@@ -213,7 +213,7 @@ class SDagGate(OneQubitGate):
     lowername = "sdg"
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, -math.pi / 2)])
+        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
 
 
 class CRXGate(TwoQubitGate):
