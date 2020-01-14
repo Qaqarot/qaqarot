@@ -294,6 +294,10 @@ def test_chgate():
 
 
 def test_cygate():
-    u1 = Circuit().cy[1, 0].to_unitary(ignore_global=True)
-    u2 = Circuit().cz[1, 0].cx[1, 0].s[1].to_unitary(ignore_global=True)
+    u1 = Circuit().cy[1, 0].to_unitary()
+    u2 = Matrix([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, -I],
+        [0, 0, I, 0]])
     assert simplify(u1 - u2) == zeros(4)

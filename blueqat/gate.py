@@ -129,7 +129,6 @@ class CYGate(TwoQubitGate):
     lowername = "cy"
 
     def fallback(self, n_qubits):
-        # Ignores global phase
         return self._make_fallback_for_control_target_iter(
             n_qubits,
             lambda c, t: [SDagGate(t),
