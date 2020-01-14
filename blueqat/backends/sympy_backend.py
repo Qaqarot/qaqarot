@@ -20,7 +20,7 @@ from .backendbase import Backend
 def lazy_import():
     global eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix, sympy_gate, TensorProduct, sympy
     from sympy import eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix
-    from sympy.physics.quantum import gate as sympy_gate, TensorProduct
+    from sympy.physics.quantum import TensorProduct
     import sympy
 
 
@@ -54,12 +54,10 @@ class SympyBackend(Backend):
         self.SYMPY_GATE = {
             '_C0': Matrix([[1, 0], [0, 0]]),
             '_C1': Matrix([[0, 0], [0, 1]]),
-            'X': sympy_gate.X(0).get_target_matrix(),
-            'Y': sympy_gate.Y(0).get_target_matrix(),
-            'Z': sympy_gate.Z(0).get_target_matrix(),
-            'H': sympy_gate.H(0).get_target_matrix(),
-            'T': sympy_gate.T(0).get_target_matrix(),
-            'S': sympy_gate.S(0).get_target_matrix(),
+            'X': Matrix([[0, 1], [1, 0]]),
+            'Y': Matrix([[0, -I], [I, 0]]),
+            'Z': Matrix([[1, 0], [0, -1]]),
+            'H': Matrix([[1, 1], [1, -1]]) / sqrt(2),
             'RX': Matrix([[cos(theta / 2), -I * sin(theta / 2)], [-I * sin(theta / 2), cos(theta / 2)]]),
             'RY': Matrix([[cos(theta / 2), -sin(theta / 2)], [sin(theta / 2), cos(theta / 2)]]),
             'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
@@ -102,8 +100,6 @@ class SympyBackend(Backend):
     gate_y = _one_qubit_gate_noargs
     gate_z = _one_qubit_gate_noargs
     gate_h = _one_qubit_gate_noargs
-    gate_t = _one_qubit_gate_noargs
-    gate_s = _one_qubit_gate_noargs
     gate_rx = _one_qubit_gate_args_theta
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
