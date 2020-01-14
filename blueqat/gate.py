@@ -87,7 +87,7 @@ class TwoQubitGate(Gate):
 
 
 class IGate(OneQubitGate):
-    """Identity Gate"""
+    """Identity gate"""
     lowername = "i"
 
     def fallback(self, n_qubits):
@@ -95,33 +95,58 @@ class IGate(OneQubitGate):
 
 
 class XGate(OneQubitGate):
-    """Pauli's X Gate"""
+    """Pauli's X gate"""
     lowername = "x"
 
 
 class YGate(OneQubitGate):
-    """Pauli's Y Gate"""
+    """Pauli's Y gate"""
     lowername = "y"
 
 
 class ZGate(OneQubitGate):
-    """Pauli's Z Gate"""
+    """Pauli's Z gate"""
     lowername = "z"
 
 
 class HGate(OneQubitGate):
-    """Hadamard Gate"""
+    """Hadamard gate"""
     lowername = "h"
 
 
 class CZGate(TwoQubitGate):
-    """Control-Z gate"""
+    """Controlled-Z gate"""
     lowername = "cz"
 
 
 class CXGate(TwoQubitGate):
-    """Control-X (CNOT) Gate"""
+    """Controlled-X (CNOT) gate"""
     lowername = "cx"
+
+
+class CYGate(TwoQubitGate):
+    """Controlled-Y gate"""
+    lowername = "cy"
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [SDagGate(t),
+                          CXGate((c, t)),
+                          SGate(t)])
+
+
+class CHGate(TwoQubitGate):
+    """Controlled-H gate"""
+    lowername = "ch"
+    def fallback(self, n_qubits):
+        # Ignores global phase
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RYGate(t, math.pi / 4),
+                          CXGate((c, t)),
+                          RYGate(t, -math.pi / 4)])
+
 
 
 class RXGate(OneQubitGate):

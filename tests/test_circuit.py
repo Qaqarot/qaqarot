@@ -392,8 +392,6 @@ def test_complicated_circuit(backend):
             ignore_global='a')
 
 
-
-
 def test_switch_backend1():
     c = Circuit().x[0].h[0]
     assert np.array_equal(c.run(), c.run(backend="numpy"))

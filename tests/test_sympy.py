@@ -15,20 +15,20 @@
 from functools import reduce
 
 import numpy as np
-from sympy import eye, zeros, symbols, simplify, sin, cos, exp, pi, I, Matrix
-from sympy.physics.quantum import gate, TensorProduct
+from sympy import eye, diag, zeros, symbols, simplify, sin, cos, exp, pi, sqrt, I, Matrix
+from sympy.physics.quantum import TensorProduct
 
 from blueqat import Circuit
 from test_circuit import is_vec_same
 
 def test_sympy_backend_for_one_qubit_gate():
     E = eye(2)
-    X = gate.X(0).get_target_matrix()
-    Y = gate.Y(0).get_target_matrix()
-    Z = gate.Z(0).get_target_matrix()
-    H = gate.H(0).get_target_matrix()
-    T = gate.T(0).get_target_matrix()
-    S = gate.S(0).get_target_matrix()
+    X = Matrix([[0, 1], [1, 0]])
+    Y = Matrix([[0, -I], [I, 0]])
+    Z = Matrix([[1, 0], [0, -1]])
+    H = Matrix([[1, 1], [1, -1]]) / sqrt(2)
+    T = Matrix([[1, 0], [0, exp(I*pi/4)]])
+    S = Matrix([[1, 0], [0, exp(I*pi/2)]])
 
     x, y, z = symbols('x, y, z')
     RX = Matrix([[cos(x / 2), -I * sin(x / 2)], [-I * sin(x / 2), cos(x / 2)]])
@@ -56,9 +56,9 @@ def test_sympy_backend_for_two_qubit_gate():
     E = eye(2)
     UPPER = Matrix([[1, 0], [0, 0]])
     LOWER = Matrix([[0, 0], [0, 1]])
-    X = gate.X(0).get_target_matrix()
-    Z = gate.Z(0).get_target_matrix()
-    H = gate.H(0).get_target_matrix()
+    X = Matrix([[0, 1], [1, 0]])
+    Z = Matrix([[1, 0], [0, -1]])
+    H = Matrix([[1, 1], [1, -1]]) / sqrt(2)
     H_3 = reduce(TensorProduct, [H, E, H])
     H_4 = reduce(TensorProduct, [H, E, E, H])
     CX_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [X, E, LOWER])
@@ -282,3 +282,22 @@ def test_toffoli_sympy():
         [0, 0, 0, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1],
         [0, 0, 0, 0, 0, 0, 1, 0]])
+
+
+def test_chgate():
+    u = simplify(Circuit().ch[1, 0].to_unitary())
+    assert simplify(u - Matrix([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1/sqrt(2), 1/sqrt(2)],
+        [0, 0, 1/sqrt(2), -1/sqrt(2)]])) == zeros(4)
+
+
+def test_cygate():
+    u1 = Circuit().cy[1, 0].to_unitary()
+    u2 = Matrix([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, -I],
+        [0, 0, I, 0]])
+    assert simplify(u1 - u2) == zeros(4)

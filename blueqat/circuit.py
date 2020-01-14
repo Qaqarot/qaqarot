@@ -40,6 +40,8 @@ GATE_SET = {
     "cz": gate.CZGate,
     "cx": gate.CXGate,
     "cnot": gate.CXGate,
+    "cy": gate.CYGate,
+    "ch": gate.CHGate,
     "rx": gate.RXGate,
     "ry": gate.RYGate,
     "rz": gate.RZGate,
