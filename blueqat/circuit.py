@@ -83,10 +83,10 @@ class Circuit:
         self.ops = ops or []
         self._backends = {}
         self._default_backend = None
-        # ad-hoc
         self.n_qubits = n_qubits
-        if n_qubits > 0:
-            self.i[n_qubits - 1]
+
+    def __repr__(self):
+        return f'Circuit({self.n_qubits}).' + '.'.join(str(op) for op in self.ops)
 
     def __get_backend(self, backend_name):
         try:
