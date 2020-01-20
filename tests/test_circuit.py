@@ -117,6 +117,9 @@ def test_cx6(backend):
 
 def test_rz1(backend):
     assert is_vec_same(Circuit().h[0].rz(np.pi)[0].run(backend=backend),
+                       Circuit().x[0].h[0].run(backend=backend),
+                       ignore_global='a')
+    assert is_vec_same(Circuit().h[0].r(np.pi)[0].run(backend=backend),
                        Circuit().x[0].h[0].run(backend=backend))
 
 
