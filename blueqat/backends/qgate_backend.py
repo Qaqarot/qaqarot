@@ -23,13 +23,14 @@ class QgateBackend(Backend) :
                 # 1-control-bit gate
                 'cz' : (gtype.Z, 1, 1), 'cx' : (gtype.X, 1, 1), 'cnot' : (gtype.X, 1, 1),
                 # rotation, phase gate
-                'rx' : (gtype.RX, 0, 1), 'ry' : (gtype.RY, 0, 1), 'rz' : (gtype.U1, 0, 1),
+                'rx' : (gtype.RX, 0, 1), 'ry' : (gtype.RY, 0, 1), 'rz' : (gtype.RZ, 0, 1),
                 'phase' : (gtype.U1, 0, 1),
                 # controlled rotation gate
                 'crx' : (gtype.RX, 1, 1), 'cry' : (gtype.RY, 1, 1), 'crz' : (gtype.RZ, 1, 1),
                 'cphase' : (gtype.U1, 1, 1),
                 # U gate
-                'u1' : (gtype.U1, 0, 1), # u2 and u3 are converted seperatedly.
+                'u1' : (gtype.RZ, 0, 1), 'u2' : (gtype.U2, 0, 1), 'u3' : (gtype.U, 0, 1),
+                # gtype of U1 gate is RZ instead of U1, for compatibility with OpenQASM.
                 # controlled U gate
                 'cu1' : (gtype.U1, 1, 1), 'cu2' : (gtype.U2, 1, 1), 'cu3' : (gtype.U, 1, 1),
                 # swap and multi-controlled-bit gate
@@ -83,14 +84,19 @@ class QgateBackend(Backend) :
     def convert_operators(self, gates) :
         ops = list()
         for op in gates :
+            # Ad-hoc to avoid bug
+            if op.lowername in ('rz', 'u1'):
+                ops += self.create_global_phase_gates(-op.params[0] * 0.5, op)
+                op = bqgate.PhaseGate(op.targets, op.params[0])
+            elif op.lowername == 'crz':
+                op = bqgate.CPhaseGate(op.targets, op.theta)
+
             typeinfo = QgateBackend.gatetypes.get(op.lowername, None)
             if typeinfo is not None :
                 if typeinfo[2] == 1 :
                     ops += self.convert_one_qubit_gate(op, typeinfo)
                 else :
                     ops += self.convert_multi_qubit_gate(op, typeinfo)
-            elif op.lowername in ('u2', 'u3') :
-                ops += self.convert_U_gate(op, op.lowername)
             elif op.lowername in ('measure', 'm') :
                 # "measure": gate.Measurement, "m": gate.Measurement,
                 ops += self.convert_measure(op)
@@ -143,22 +149,6 @@ class QgateBackend(Backend) :
         g.set_qreglist(qregs)
         glist.append(g)
         return glist
-
-    def convert_U_gate(self, gate, name) :
-        glist = list()
-        if name == 'u2' :
-            glist += self.create_gates(gtype.U2, gate)
-            phi, lambda_ = gate.params
-            phase = 0.5 * (lambda_ + phi)
-            glist += self.create_global_phase_gates(phase, gate)
-        elif name == 'u3' :
-            glist += self.create_gates(gtype.U, gate)
-            theta, phi, lambda_ = gate.params
-            phase = 0.5 * (lambda_ + phi)
-            glist += self.create_global_phase_gates(phase, gate)
-        else :
-            raise RuntimeError('Unknown gate, {}.'.format(typeinfo[0]))
-        return glist;
 
     def convert_measure(self, measure) :
         mlist = list()

@@ -117,6 +117,9 @@ def test_cx6(backend):
 
 def test_rz1(backend):
     assert is_vec_same(Circuit().h[0].rz(np.pi)[0].run(backend=backend),
+                       Circuit().x[0].h[0].run(backend=backend),
+                       ignore_global='a')
+    assert is_vec_same(Circuit().h[0].r(np.pi)[0].run(backend=backend),
                        Circuit().x[0].h[0].run(backend=backend))
 
 
@@ -205,6 +208,50 @@ def test_crotation3(backend):
     # |11> -> 0.7 * 0.6 = 0.42
     assert is_vec_same(Circuit().ry(p0)[0].cry(p1)[0, 1].run(backend=backend),
                        np.sqrt(np.array([0.3, 0.28, 0.0, 0.42])))
+
+
+def test_globalphase(backend):
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
+    c = Circuit().rz(theta)[0]
+    assert abs(c.run(backend=backend, ignore_global=False)[0] - np.exp(-0.5j * theta)) < 1e-8
+
+    c = Circuit().phase(theta)[0]
+    assert abs(c.run(backend=backend, ignore_global=False)[0] - 1) < 1e-8
+
+    c = Circuit().u1(theta)[0]
+    assert abs(c.run(backend=backend, ignore_global=False)[0] - np.exp(-0.5j * theta)) < 1e-8
+
+    v0 = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
+    c = Circuit().u2(phi, lambd)[0]
+    assert abs(c.run(backend=backend, ignore_global=False)[0] - v0) < 1e-8
+
+    v0 = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
+    c = Circuit().u3(theta, phi, lambd)[0]
+    assert abs(c.run(backend=backend, ignore_global=False)[0] - v0) < 1e-8
+
+
+def test_controlled_gate_phase(backend):
+    return None
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
+    c = Circuit().crz(theta)[0, 1]
+    assert abs(c.run(backend=backend)[2] - np.exp(-0.5j * theta)) < 1e-8
+
+    c = Circuit().cphase(theta)[0, 1]
+    assert abs(c.run(backend=backend)[2] - 1) < 1e-8
+
+    c = Circuit().cu1(theta)[0, 1]
+    assert abs(c.run(backend=backend)[2] - 1) < 1e-8
+
+    v0 = np.exp(-0.5j * (phi + lambd)) * np.sqrt(2)
+    c = Circuit().cu2(phi, lambd)[0, 1]
+    assert abs(c.run(backend=backend)[2] - v0) < 1e-8
+    v0 = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
+    c = Circuit().cu3(theta, phi, lambd)[0, 1]
+    assert abs(c.run(backend=backend)[2] - v0) < 1e-8
 
 
 def test_measurement1(backend):
