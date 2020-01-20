@@ -61,7 +61,7 @@ class Ops(NamedTuple):
     def __add__(self, other):
         if not isinstance(other, Ops):
             return NotImplemented
-        return NotImplemented
+        return Ops(max(self.n_qubits, other.n_qubits), self.ops + other.ops)
 
     def to_circuit(self):
         return Circuit(self.n_qubits, list(self.ops))
