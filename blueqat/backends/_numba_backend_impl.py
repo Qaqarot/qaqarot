@@ -217,11 +217,12 @@ def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
 @njit(nogil=True, parallel=True)
 def _czgate(qubits, n_qubits, controls_target):
     target = controls_target[-1]
-    masks = _create_masks(controls_target)
     all1 = _QSMask(0)
     for b in controls_target:
         all1 |= _QSMask(1) << b
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
+    masks = _create_masks(controls_target)
+    for i in prange(n_loop):
         i11 = _mult_shifted(masks, i) | all1
         qubits[i11] *= -1
 
@@ -232,8 +233,9 @@ def _cxgate(qubits, n_qubits, controls_target):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
     masks = _create_masks(controls_target)
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    for i in prange(n_loop):
         i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
@@ -250,12 +252,13 @@ def _crxgate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
     masks = _create_masks(controls_target)
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    for i in prange(n_loop):
         i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
-        u = qubits[i10 + (1 << controls_target[-1])]
+        u = qubits[i11]
         qubits[i10] = cos * t + nisin * u
         qubits[i11] = nisin * t + cos * u
 
@@ -269,12 +272,13 @@ def _crygate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
     masks = _create_masks(controls_target)
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    for i in prange(n_loop):
         i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         t = qubits[i10]
-        u = qubits[i10 + (1 << controls_target[-1])]
+        u = qubits[i11]
         qubits[i10] = cos * t - sin * u
         qubits[i11] = sin * t + cos * u
 
@@ -288,8 +292,9 @@ def _crzgate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
     masks = _create_masks(controls_target)
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    for i in prange(n_loop):
         i10 = _mult_shifted(masks, i) | c_mask
         i11 = i10 | t_mask
         qubits[i10] *= eitstar
@@ -303,8 +308,9 @@ def _cphasegate(qubits, n_qubits, controls_target, ang):
     for c in controls_target[:-1]:
         c_mask |= _QSMask(1) << c
     t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
     masks = _create_masks(controls_target)
-    for i in prange(1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))):
+    for i in prange(n_loop):
         i11 = _mult_shifted(masks, i) | c_mask | t_mask
         qubits[i11] *= eit
 
