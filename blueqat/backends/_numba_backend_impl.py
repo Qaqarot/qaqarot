@@ -519,9 +519,9 @@ class NumbaBackend(Backend):
     def gate_rz(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        factor = cmath.exp(1.j * gate.theta)
+        theta = gate.theta
         for target in gate.target_iter(n_qubits):
-            _diaggate(qubits, n_qubits, target, factor)
+            _rzgate(qubits, n_qubits, target, theta)
         return ctx
 
     def gate_phase(self, gate, ctx):
@@ -529,7 +529,7 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         factor = cmath.exp(1.j * gate.theta)
         for target in gate.target_iter(n_qubits):
-            _rzgate(qubits, n_qubits, target, factor)
+            _diaggate(qubits, n_qubits, target, factor)
         return ctx
 
     def gate_crx(self, gate, ctx):
@@ -579,9 +579,9 @@ class NumbaBackend(Backend):
     def gate_u1(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
-        factor = cmath.exp(1.j * gate.lambd)
+        angle = gate.lambd
         for target in gate.target_iter(n_qubits):
-            _diaggate(qubits, n_qubits, target, factor)
+            _rzgate(qubits, n_qubits, target, angle)
         return ctx
 
     def gate_u3(self, gate, ctx):
