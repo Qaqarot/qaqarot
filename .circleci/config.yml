@@ -22,7 +22,7 @@ jobs:
             pip install --upgrade pip setuptools
             pip install pytest twine wheel
             pip install -r requirements.txt -r optional-requirements.txt
-            pip install https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.1-cp37-cp37m-manylinux1_x86_64.whl
+            pip install https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp37-cp37m-manylinux1_x86_64.whl
       - save_cache:
           paths:
             - ./venv

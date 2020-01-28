@@ -84,13 +84,6 @@ class QgateBackend(Backend) :
     def convert_operators(self, gates) :
         ops = list()
         for op in gates :
-            # Ad-hoc to avoid bug
-            if op.lowername in ('rz', 'u1'):
-                ops += self.create_global_phase_gates(-op.params[0] * 0.5, op)
-                op = bqgate.PhaseGate(op.targets, op.params[0])
-            elif op.lowername == 'crz':
-                op = bqgate.CPhaseGate(op.targets, op.theta)
-
             typeinfo = QgateBackend.gatetypes.get(op.lowername, None)
             if typeinfo is not None :
                 if typeinfo[2] == 1 :
