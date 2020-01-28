@@ -233,25 +233,49 @@ def test_globalphase(backend):
 
 
 def test_controlled_gate_phase(backend):
-    return None
     theta = 1.2
     phi = 1.6
     lambd = 2.3
-    c = Circuit().crz(theta)[0, 1]
-    assert abs(c.run(backend=backend)[2] - np.exp(-0.5j * theta)) < 1e-8
 
-    c = Circuit().cphase(theta)[0, 1]
-    assert abs(c.run(backend=backend)[2] - 1) < 1e-8
+    val = np.exp(-0.5j * theta)
+    c0 = Circuit().crz(theta)[0, 1]
+    c1 = Circuit().x[0] + c0
+    v0 = c0.run(backend=backend, ignore_global=False)
+    v1 = c1.run(backend=backend, ignore_global=False)
+    assert abs(abs(v0[0]) - 1) < 1e-8
+    assert abs(v1[1] / v0[0] - val) < 1e-8
 
-    c = Circuit().cu1(theta)[0, 1]
-    assert abs(c.run(backend=backend)[2] - 1) < 1e-8
+    val = 1.0
+    c0 = Circuit().cphase(theta)[0, 1]
+    c1 = Circuit().x[0] + c0
+    v0 = c0.run(backend=backend, ignore_global=False)
+    v1 = c1.run(backend=backend, ignore_global=False)
+    assert abs(abs(v0[0]) - 1) < 1e-8
+    assert abs(v1[1] / v0[0] - val) < 1e-8
 
-    v0 = np.exp(-0.5j * (phi + lambd)) * np.sqrt(2)
-    c = Circuit().cu2(phi, lambd)[0, 1]
-    assert abs(c.run(backend=backend)[2] - v0) < 1e-8
-    v0 = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
-    c = Circuit().cu3(theta, phi, lambd)[0, 1]
-    assert abs(c.run(backend=backend)[2] - v0) < 1e-8
+    val = 1.0
+    c0 = Circuit().cu1(theta)[0, 1]
+    c1 = Circuit().x[0] + c0
+    v0 = c0.run(backend=backend, ignore_global=False)
+    v1 = c1.run(backend=backend, ignore_global=False)
+    assert abs(abs(v0[0]) - 1) < 1e-8
+    assert abs(v1[1] / v0[0] - val) < 1e-8
+
+    val = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
+    c0 = Circuit().cu2(phi, lambd)[0, 1]
+    c1 = Circuit().x[0] + c0
+    v0 = c0.run(backend=backend, ignore_global=False)
+    v1 = c1.run(backend=backend, ignore_global=False)
+    assert abs(abs(v0[0]) - 1) < 1e-8
+    assert abs(v1[1] / v0[0] - val) < 1e-8
+
+    val = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
+    c0 = Circuit().cu3(theta, phi, lambd)[0, 1]
+    c1 = Circuit().x[0] + c0
+    v0 = c0.run(backend=backend, ignore_global=False)
+    v1 = c1.run(backend=backend, ignore_global=False)
+    assert abs(abs(v0[0]) - 1) < 1e-8
+    assert abs(v1[1] / v0[0] - val) < 1e-8
 
 
 def test_measurement1(backend):
