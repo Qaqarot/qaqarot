@@ -5,16 +5,17 @@ This module is internally used.
 
 import math
 from abc import ABC
+from typing import List
 
 
 class Gate(ABC):
     """Abstract quantum gate class."""
 
     """Lower name of the gate."""
-    lowername = None
+    lowername: str = None
 
     @property
-    def uppername(self):
+    def uppername(self) -> str:
         """Upper name of the gate."""
         return self.lowername.upper()
 
@@ -25,17 +26,22 @@ class Gate(ABC):
         self.kwargs = kwargs
         self.targets = targets
 
-    def fallback(self, n_qubits):
+    def fallback(self, n_qubits: int) -> List['Gate']:
         """Returns alternative gates to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
 
-    def _str_args(self):
+    def dagger(self) -> 'Gate':
+        """Returns the Hermitian conjugate of `self`."""
+        raise NotImplementedError(f"Hermitian conjugate of this gate is not provided.")
+
+
+    def _str_args(self) -> str:
         """Returns printable string of args."""
         if not self.params:
             return ''
         return '(' + ', '.join(str(param) for param in self.params) + ')'
 
-    def _str_targets(self):
+    def _str_targets(self) -> str:
         """Returns printable string of targets."""
         def _slice_to_str(obj):
             if isinstance(obj, slice):
@@ -54,7 +60,7 @@ class Gate(ABC):
         else:
             return f"[{_slice_to_str(self.targets)}]"
 
-    def __str__(self):
+    def __str__(self) -> str:
         str_args = self._str_args()
         str_targets = self._str_targets()
         return f'{self.lowername}{str_args}{str_targets}'
@@ -95,40 +101,64 @@ class IGate(OneQubitGate):
     def fallback(self, n_qubits):
         return []
 
+    def dagger(self):
+        return self
+
 
 class XGate(OneQubitGate):
     """Pauli's X gate"""
     lowername = "x"
+
+    def dagger(self):
+        return self
 
 
 class YGate(OneQubitGate):
     """Pauli's Y gate"""
     lowername = "y"
 
+    def dagger(self):
+        return self
+
 
 class ZGate(OneQubitGate):
     """Pauli's Z gate"""
     lowername = "z"
+
+    def dagger(self):
+        return self
 
 
 class HGate(OneQubitGate):
     """Hadamard gate"""
     lowername = "h"
 
+    def dagger(self):
+        return self
+
 
 class CZGate(TwoQubitGate):
     """Controlled-Z gate"""
     lowername = "cz"
+
+    def dagger(self):
+        return self
 
 
 class CXGate(TwoQubitGate):
     """Controlled-X (CNOT) gate"""
     lowername = "cx"
 
+    def dagger(self):
+        return self
+
 
 class CYGate(TwoQubitGate):
     """Controlled-Y gate"""
     lowername = "cy"
+
+    def dagger(self):
+        return self
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -141,6 +171,10 @@ class CYGate(TwoQubitGate):
 class CHGate(TwoQubitGate):
     """Controlled-H gate"""
     lowername = "ch"
+
+    def dagger(self):
+        return self
+
     def fallback(self, n_qubits):
         # Ignores global phase
         return self._make_fallback_for_control_target_iter(
@@ -159,6 +193,9 @@ class RXGate(OneQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
+    def dagger(self):
+        return RXGate(self.targets, -self.theta, **self.kwargs)
+
 
 class RYGate(OneQubitGate):
     """Rotate-Y gate"""
@@ -168,6 +205,9 @@ class RYGate(OneQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
+    def dagger(self):
+        return RYGate(self.targets, -self.theta, **self.kwargs)
+
 
 class RZGate(OneQubitGate):
     """Rotate-Z gate"""
@@ -176,6 +216,9 @@ class RZGate(OneQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
+
+    def dagger(self):
+        return RZGate(self.targets, -self.theta, **self.kwargs)
 
 
 class PhaseGate(OneQubitGate):
@@ -194,6 +237,9 @@ class PhaseGate(OneQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
+    def dagger(self):
+        return PhaseGate(self.targets, -self.theta, **self.kwargs)
+
     def fallback(self, n_qubits):
         # If phase gate is not implemented in the backend, global phase is ignored.
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, self.theta)])
@@ -203,6 +249,9 @@ class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
 
+    def dagger(self):
+        return TDagGate(self.targets, self.params, **self.kwargs)
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
 
@@ -210,6 +259,9 @@ class TGate(OneQubitGate):
 class TDagGate(OneQubitGate):
     """Dagger of T ($\\pi/8$) gate"""
     lowername = "tdg"
+
+    def dagger(self):
+        return TGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
@@ -219,6 +271,9 @@ class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
 
+    def dagger(self):
+        return SDagGate(self.targets, self.params, **self.kwargs)
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
 
@@ -226,6 +281,9 @@ class SGate(OneQubitGate):
 class SDagGate(OneQubitGate):
     """Dagger of S gate"""
     lowername = "sdg"
+
+    def dagger(self):
+        return SGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
@@ -238,6 +296,9 @@ class CRXGate(TwoQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
+
+    def dagger(self):
+        return CRXGate(self.targets, -self.theta, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -256,6 +317,9 @@ class CRYGate(TwoQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
+    def dagger(self):
+        return CRYGate(self.targets, -self.theta, **self.kwargs)
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -272,6 +336,9 @@ class CRZGate(TwoQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
+
+    def dagger(self):
+        return CRZGate(self.targets, -self.theta, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -290,6 +357,9 @@ class CPhaseGate(TwoQubitGate):
         super().__init__(targets, (theta,), **kwargs)
         self.theta = theta
 
+    def dagger(self):
+        return CPhaseGate(self.targets, -self.theta, **self.kwargs)
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -301,6 +371,9 @@ class SwapGate(TwoQubitGate):
     """Swap gate"""
     lowername = "swap"
 
+    def dagger(self):
+        return self
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -310,6 +383,9 @@ class SwapGate(TwoQubitGate):
 class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
+
+    def dagger(self):
+        return self
 
     def fallback(self, n_qubits):
         c1, c2, t = self.targets
@@ -336,6 +412,9 @@ class CCZGate(Gate):
     """2-Controlled Z gate"""
     lowername = "ccz"
 
+    def dagger(self):
+        return self
+
 
 class U1Gate(OneQubitGate):
     """U1 gate
@@ -345,11 +424,14 @@ class U1Gate(OneQubitGate):
 
     You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
     """
+    lowername = "u1"
+
     def __init__(self, targets, lambd, **kwargs):
         super().__init__(targets, (lambd,), **kwargs)
         self.lambd = lambd
 
-    lowername = "u1"
+    def dagger(self):
+        return U1Gate(self.targets, -self.lambd, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
@@ -358,12 +440,15 @@ class U1Gate(OneQubitGate):
 
 class U2Gate(OneQubitGate):
     """U2 gate"""
+    lowername = "u2"
+
     def __init__(self, targets, phi, lambd, **kwargs):
         super().__init__(targets, (phi, lambd), **kwargs)
         self.phi = phi
         self.lambd = lambd
 
-    lowername = "u2"
+    def dagger(self):
+        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
@@ -372,13 +457,16 @@ class U2Gate(OneQubitGate):
 
 class U3Gate(OneQubitGate):
     """U3 gate"""
+    lowername = "u3"
+
     def __init__(self, targets, theta, phi, lambd, **kwargs):
         super().__init__(targets, (theta, phi, lambd), **kwargs)
         self.theta = theta
         self.phi = phi
         self.lambd = lambd
 
-    lowername = "u3"
+    def dagger(self):
+        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
 
 
 class CU1Gate(TwoQubitGate):
@@ -389,11 +477,14 @@ class CU1Gate(TwoQubitGate):
 
     You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
     """
+    lowername = "cu1"
+
     def __init__(self, targets, lambd, **kwargs):
         super().__init__(targets, (lambd,), **kwargs)
         self.lambd = lambd
 
-    lowername = "cu1"
+    def dagger(self):
+        return CU1Gate(self.targets, -self.lambd, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -408,12 +499,15 @@ class CU1Gate(TwoQubitGate):
 
 class CU2Gate(TwoQubitGate):
     """Controlled U2 gate"""
+    lowername = "cu2"
+
     def __init__(self, targets, phi, lambd, **kwargs):
         super().__init__(targets, (phi, lambd), **kwargs)
         self.phi = phi
         self.lambd = lambd
 
-    lowername = "cu2"
+    def dagger(self):
+        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -421,13 +515,16 @@ class CU2Gate(TwoQubitGate):
 
 class CU3Gate(TwoQubitGate):
     """Controlled U3 gate"""
+    lowername = "cu3"
+
     def __init__(self, targets, theta, phi, lambd, **kwargs):
         super().__init__(targets, (theta, phi, lambd), **kwargs)
         self.theta = theta
         self.phi = phi
         self.lambd = lambd
 
-    lowername = "cu3"
+    def dagger(self):
+        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -443,6 +540,9 @@ class CU3Gate(TwoQubitGate):
 class Measurement(OneQubitGate):
     """Measurement gate"""
     lowername = "measure"
+
+    def dagger(self):
+        raise NotImplementedError(f"Hermitian conjugate of the measurement is not available.")
 
 
 def slicing_singlevalue(arg, length):
