@@ -153,6 +153,31 @@ class Circuit:
 
         return copied
 
+    def dagger(self, ignore_measurement=False, copy_backends=False, copy_default_backend=True):
+        """Make Hermitian conjugate of the circuit.
+
+        This feature is beta. Interface may be changed.
+
+        ignore_measurement (bool, optional): If True, ignore the measurement in the circuit.
+                                             Otherwise, if measurement in the circuit, raises ValueError.
+        """
+        ops = []
+        for g in reversed(self.ops):
+            try:
+                ops.append(g.dagger())
+            except ValueError:
+                if not ignore_measurement:
+                    raise ValueError('Cannot make the Hermitian conjugate of this circuit because '
+                                     'the circuit contains measurement.')
+
+        copied = Circuit(self.n_qubits, ops)
+        if copy_backends:
+            copied._backends = {k: v.copy() for k, v in self._backends.items()}
+        if copy_default_backend:
+            copied._default_backend = self._default_backend
+
+        return copied
+
     def run(self, *args, backend=None, **kwargs):
         """Run the circuit.
 
