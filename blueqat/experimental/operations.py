@@ -63,6 +63,10 @@ class Ops(NamedTuple):
             return NotImplemented
         return Ops(max(self.n_qubits, other.n_qubits), self.ops + other.ops)
 
+    def dagger(self):
+        """Get Hamiltonian conjugate of `self`."""
+        return Ops(self.n_qubits, tuple(g.dagger() for g in reversed(self.ops)))
+
     def to_circuit(self):
         return Circuit(self.n_qubits, list(self.ops))
 
