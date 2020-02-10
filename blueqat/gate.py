@@ -542,7 +542,7 @@ class Measurement(OneQubitGate):
     lowername = "measure"
 
     def dagger(self):
-        raise NotImplementedError(f"Hermitian conjugate of the measurement is not available.")
+        raise ValueError(f"Hermitian conjugate of the measurement is not available.")
 
 
 def slicing_singlevalue(arg, length):
