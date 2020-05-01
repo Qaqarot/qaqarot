@@ -339,6 +339,13 @@ class Term(_TermTuple):
             if other.is_identity:
                 return self
             return Term(Term.join_ops(self.ops, (other,)), self.coeff)
+        try:
+            import sympy
+        except ImportError:
+            pass
+        else:
+            if isinstance(other, sympy.Basic):
+                return Term(self.ops, self.coeff * other)
         return NotImplemented
 
     def __rmul__(self, other):
@@ -516,12 +523,17 @@ class Term(_TermTuple):
         """Convert to the matrix."""
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
-        mat = I.to_matrix(n_qubits)
-        for op in self.ops:
-            if op.is_identity:
-                continue
-            mat = mat @ op.to_matrix(n_qubits)
-        return mat * self.coeff
+        simp = self.simplify()
+        n_last = -1
+        krons = []
+        for op in simp.ops:
+            if op.n > n_last + 1:
+                krons.append(np.eye(2 ** (op.n - n_last - 1)))
+            krons.append(pauli_from_char(op.op).matrix)
+            n_last = op.n
+        if n_qubits - 1 > n_last:
+            krons.append(np.eye(2 ** (n_qubits - 1 - n_last)))
+        return reduce(np.kron, krons)
 
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
