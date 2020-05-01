@@ -339,13 +339,6 @@ class Term(_TermTuple):
             if other.is_identity:
                 return self
             return Term(Term.join_ops(self.ops, (other,)), self.coeff)
-        try:
-            import sympy
-        except ImportError:
-            pass
-        else:
-            if isinstance(other, sympy.Basic):
-                return Term(self.ops, self.coeff * other)
         return NotImplemented
 
     def __rmul__(self, other):
