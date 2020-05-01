@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import numpy as np
-from blueqat import Circuit
+from blueqat import Circuit, pauli
 from blueqat.pauli import *
 
 def test_equality_identity_matrix():
@@ -116,6 +117,13 @@ def test_to_matrix1():
 def test_to_matrix2():
     assert np.allclose(Z[1].to_matrix(), np.kron(np.eye(2), Z[0].to_matrix()))
     assert np.allclose(Z[0].to_matrix(n_qubits=2), np.kron(Z[0].to_matrix(), np.eye(2)))
+
+
+@pytest.mark.parametrize('sparse', list(pauli._sparse_types))
+@pytest.mark.parametrize('expr', [X[1], I, 1j*Y[2]*Z[0], 3+X[0], 2*X[1]*Y[2] + 1*X[1]*Y[2],
+                                  3*Y[3] + 4*X[1]*Y[1] - 2j*Z[1] + 2*X[4]])
+def test_sparse(sparse, expr):
+    assert np.allclose(expr.to_matrix(), expr.to_matrix(sparse=sparse).toarray())
 
 
 def test_pickle():
