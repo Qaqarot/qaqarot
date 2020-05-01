@@ -21,9 +21,32 @@ from numbers import Number, Integral
 from math import pi
 
 import numpy as np
+import scipy.sparse
 
 _PauliTuple = namedtuple("_PauliTuple", "n")
 half_pi = pi / 2
+
+_sparse_types = {
+        'bsr': scipy.sparse.bsr_matrix,
+        'coo': scipy.sparse.coo_matrix,
+        'csc': scipy.sparse.csc_matrix,
+        'csr': scipy.sparse.csr_matrix,
+        'dia': scipy.sparse.dia_matrix,
+        'dok': scipy.sparse.dok_matrix,
+        'lil': scipy.sparse.lil_matrix,
+}
+
+_matrix = {
+    'I': np.array([[1, 0], [0, 1]], dtype=complex),
+    'X': np.array([[0, 1], [1, 0]], dtype=complex),
+    'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
+    'Z': np.array([[1, 0], [0, -1]], dtype=complex)
+}
+
+_sparse_matrix = {
+    ty: {ch: fn(mat, dtype=complex) for ch, mat in _matrix.items()}
+    for ty, fn in _sparse_types.items()
+}
 
 def pauli_from_char(ch, n=0):
     """Make Pauli matrix from an character.
@@ -202,35 +225,37 @@ class _PauliImpl:
         """Convert to Pauli Expr"""
         return self.to_term().to_expr()
 
-    _matrix = {
-        'I': np.array([[1, 0], [0, 1]], dtype=complex),
-        'X': np.array([[0, 1], [1, 0]], dtype=complex),
-        'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
-        'Z': np.array([[1, 0], [0, -1]], dtype=complex)
-    }
 
     @property
     def matrix(self):
         """Matrix reprentation of this operator."""
-        return self._matrix[self.op].copy()
+        return _matrix[self.op].copy()
 
-    def to_matrix(self, n_qubits=-1):
+    def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
+        if sparse is None:
+            kron = np.kron
+            mat = _matrix[self.op]
+            eye = np.eye
+        else:
+            if sparse not in _sparse_types:
+                raise ValueError(f'Unknown sparse format {sparse}.')
+            kron = lambda a, b: scipy.sparse.kron(a, b, format=sparse)
+            mat = _sparse_matrix[sparse][self.op]
+            eye = lambda n: scipy.sparse.eye(n, format=sparse)
         if self.is_identity:
             if n_qubits == -1:
-                return self.matrix
-            else:
-                return reduce(np.kron, [I.matrix for _ in range(n_qubits)])
+                return eye(2)
+            return eye(2 ** n_qubits)
         if n_qubits == -1:
             n_qubits = _n(self) + 1
-        if _n(self) == 0:
-            mat = self.matrix
-        else:
-            mat = reduce(np.kron, [I.matrix for _ in range(_n(self))])
-            mat = np.kron(mat, self.matrix)
+        krons = []
+        if _n(self) > 0:
+            krons.append(eye(2 ** (_n(self))))
+        krons.append(mat)
         if n_qubits > _n(self) + 1:
-            mat = reduce(np.kron, [I.matrix for _ in range(n_qubits - _n(self) - 1)], mat)
-        return mat
+            krons.append(eye(2 ** (n_qubits - _n(self) - 1)))
+        return reduce(kron, krons)
 
 class _X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
@@ -512,16 +537,31 @@ class Term(_TermTuple):
                     circuit.rx(half_pi)[n]
         return append_to_circuit
 
-    def to_matrix(self, n_qubits=-1):
+    def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
+        if sparse is None:
+            kron = np.kron
+            mat = _matrix
+            eye = np.eye
+        else:
+            if sparse not in _sparse_types:
+                raise ValueError(f'Unknown sparse format {sparse}.')
+            kron = lambda a, b: scipy.sparse.kron(a, b, format=sparse)
+            mat = _sparse_matrix[sparse]
+            eye = lambda n: scipy.sparse.eye(n, format=sparse)
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
-        mat = I.to_matrix(n_qubits)
-        for op in self.ops:
-            if op.is_identity:
-                continue
-            mat = mat @ op.to_matrix(n_qubits)
-        return mat * self.coeff
+        simp = self.simplify()
+        n_last = -1
+        krons = []
+        for op in simp.ops:
+            if op.n > n_last + 1:
+                krons.append(eye(2 ** (op.n - n_last - 1)))
+            krons.append(mat[op.op])
+            n_last = op.n
+        if n_qubits - 1 > n_last:
+            krons.append(eye(2 ** (n_qubits - 1 - n_last)))
+        return reduce(kron, krons)
 
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
@@ -734,11 +774,11 @@ class Expr(_ExprTuple):
         return Expr.from_terms_iter(
             Term.from_ops_iter(k, d[k]) for k in sorted(d, key=repr) if d[k])
 
-    def to_matrix(self, n_qubits=-1):
+    def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
         if n_qubits == -1:
             n_qubits = self.max_n() + 1
-        return sum(term.to_matrix(n_qubits) for term in self.terms)
+        return sum(term.to_matrix(n_qubits, sparse=sparse) for term in self.terms)
 
 
 def qubo_bit(n):
