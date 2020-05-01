@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 from blueqat import Circuit
 from blueqat.pauli import *
 
@@ -106,6 +107,15 @@ def test_radd():
 
 def test_simplify1():
     assert (Z[0] + 0*X[1]).simplify() == Z[0].to_expr()
+
+
+def test_to_matrix1():
+    assert np.allclose((X[0]*Z[1]).to_matrix(),
+                       np.array([[0, 0, 1, 0], [0, 0, 0, -1], [1, 0, 0, 0], [0, -1, 0, 0]]))
+
+def test_to_matrix2():
+    assert np.allclose(Z[1].to_matrix(), np.kron(np.eye(2), Z[0].to_matrix()))
+    assert np.allclose(Z[0].to_matrix(n_qubits=2), np.kron(Z[0].to_matrix(), np.eye(2)))
 
 
 def test_pickle():
