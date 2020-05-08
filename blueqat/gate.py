@@ -137,54 +137,6 @@ class HGate(OneQubitGate):
         return self
 
 
-class CZGate(TwoQubitGate):
-    """Controlled-Z gate"""
-    lowername = "cz"
-
-    def dagger(self):
-        return self
-
-
-class CXGate(TwoQubitGate):
-    """Controlled-X (CNOT) gate"""
-    lowername = "cx"
-
-    def dagger(self):
-        return self
-
-
-class CYGate(TwoQubitGate):
-    """Controlled-Y gate"""
-    lowername = "cy"
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [SDagGate(t),
-                          CXGate((c, t)),
-                          SGate(t)])
-
-
-class CHGate(TwoQubitGate):
-    """Controlled-H gate"""
-    lowername = "ch"
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        # Ignores global phase
-        return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RYGate(t, math.pi / 4),
-                          CXGate((c, t)),
-                          RYGate(t, -math.pi / 4)])
-
-
-
 class RXGate(OneQubitGate):
     """Rotate-X gate"""
     lowername = "rx"
@@ -289,6 +241,106 @@ class SDagGate(OneQubitGate):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
 
 
+class U1Gate(OneQubitGate):
+    """U1 gate
+
+    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
+    It is because for compatibility with IBM's implementations.
+
+    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
+    """
+    lowername = "u1"
+
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd,), **kwargs)
+        self.lambd = lambd
+
+    def dagger(self):
+        return U1Gate(self.targets, -self.lambd, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
+
+
+class U2Gate(OneQubitGate):
+    """U2 gate"""
+    lowername = "u2"
+
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
+
+
+class U3Gate(OneQubitGate):
+    """U3 gate"""
+    lowername = "u3"
+
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
+
+
+class CXGate(TwoQubitGate):
+    """Controlled-X (CNOT) gate"""
+    lowername = "cx"
+
+    def dagger(self):
+        return self
+
+
+class CZGate(TwoQubitGate):
+    """Controlled-Z gate"""
+    lowername = "cz"
+
+    def dagger(self):
+        return self
+
+
+class CYGate(TwoQubitGate):
+    """Controlled-Y gate"""
+    lowername = "cy"
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [SDagGate(t),
+                          CXGate((c, t)),
+                          SGate(t)])
+
+
+class CHGate(TwoQubitGate):
+    """Controlled-H gate"""
+    lowername = "ch"
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        # Ignores global phase
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RYGate(t, math.pi / 4),
+                          CXGate((c, t)),
+                          RYGate(t, -math.pi / 4)])
+
+
 class CRXGate(TwoQubitGate):
     """Rotate-X gate"""
     lowername = "crx"
@@ -367,6 +419,70 @@ class CPhaseGate(TwoQubitGate):
                           PhaseGate(c, self.theta / 2)])
 
 
+class RXXGate(TwoQubitGate):
+    """Rotate-XX gate"""
+    lowername = "rxx"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RXXGate(self.targets, -self.theta, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        # TODO: test
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [HGate(c),
+                          HGate(t),
+                          RZZGate((c, t), self.theta),
+                          HGate(c),
+                          HGate(t)])
+
+
+class RYYGate(TwoQubitGate):
+    """Rotate-YY gate"""
+    lowername = "ryy"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RYYGate(self.targets, -self.theta, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        # TODO: test
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [RXGate(c, -math.pi * 0.5),
+                          RXGate(t, -math.pi * 0.5),
+                          RZZGate((c, t), self.theta),
+                          RXGate(c, math.pi * 0.5),
+                          RXGate(t, math.pi * 0.5)])
+
+
+class RZZGate(TwoQubitGate):
+    """Rotate-ZZ gate"""
+    lowername = "rzz"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta,), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RZZGate(self.targets, -self.theta, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        # TODO: test
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [CXGate((c, t)),
+                          RZGate(t, self.theta),
+                          CXGate((c, t))])
+
+
 class SwapGate(TwoQubitGate):
     """Swap gate"""
     lowername = "swap"
@@ -378,95 +494,6 @@ class SwapGate(TwoQubitGate):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
             lambda c, t: [CXGate((c, t)), CXGate((t, c)), CXGate((c, t))])
-
-
-class ToffoliGate(Gate):
-    """Toffoli (CCX) gate"""
-    lowername = "ccx"
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        c1, c2, t = self.targets
-        return [
-            HGate(t),
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(t),
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(c2),
-            TGate(t),
-            HGate(t),
-            CXGate((c1, c2)),
-            TGate(c1),
-            TDagGate(c2),
-            CXGate((c1, c2)),
-        ]
-
-
-class CCZGate(Gate):
-    """2-Controlled Z gate"""
-    lowername = "ccz"
-
-    def dagger(self):
-        return self
-
-
-class U1Gate(OneQubitGate):
-    """U1 gate
-
-    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
-    It is because for compatibility with IBM's implementations.
-
-    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
-    """
-    lowername = "u1"
-
-    def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd,), **kwargs)
-        self.lambd = lambd
-
-    def dagger(self):
-        return U1Gate(self.targets, -self.lambd, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
-
-
-class U2Gate(OneQubitGate):
-    """U2 gate"""
-    lowername = "u2"
-
-    def __init__(self, targets, phi, lambd, **kwargs):
-        super().__init__(targets, (phi, lambd), **kwargs)
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
-
-
-class U3Gate(OneQubitGate):
-    """U3 gate"""
-    lowername = "u3"
-
-    def __init__(self, targets, theta, phi, lambd, **kwargs):
-        super().__init__(targets, (theta, phi, lambd), **kwargs)
-        self.theta = theta
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
 
 
 class CU1Gate(TwoQubitGate):
@@ -513,6 +540,7 @@ class CU2Gate(TwoQubitGate):
         return self._make_fallback_for_control_target_iter(
             n_qubits, lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
 
+
 class CU3Gate(TwoQubitGate):
     """Controlled U3 gate"""
     lowername = "cu3"
@@ -535,6 +563,57 @@ class CU3Gate(TwoQubitGate):
                 CXGate((c, t)),
                 U3Gate(t, self.theta / 2, self.phi, 0),
             ])
+
+
+class ToffoliGate(Gate):
+    """Toffoli (CCX) gate"""
+    lowername = "ccx"
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        c1, c2, t = self.targets
+        return [
+            HGate(t),
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(t),
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(c2),
+            TGate(t),
+            HGate(t),
+            CXGate((c1, c2)),
+            TGate(c1),
+            TDagGate(c2),
+            CXGate((c1, c2)),
+        ]
+
+
+class CCZGate(Gate):
+    """2-Controlled Z gate"""
+    lowername = "ccz"
+
+    def dagger(self):
+        return self
+
+
+class CSwapGate(Gate):
+    """Controlled SWAP gate"""
+    lowername = "cswap"
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        # TODO: test
+        c, t1, t2 = self.targets
+        return [CXGate((t2, t1)),
+                ToffoliGate((c, t1, t2)),
+                CXGate((t2, t1))]
 
 
 class Measurement(OneQubitGate):
