@@ -59,8 +59,12 @@ GATE_SET = {
     "cu2": gate.CU2Gate,
     "cu3": gate.CU3Gate,
     "swap": gate.SwapGate,
+    "rxx": gate.RXXGate,
+    "ryy": gate.RYYGate,
+    "rzz": gate.RZZGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
+    "cswap": gate.CSwapGate,
     "measure": gate.Measurement,
     "m": gate.Measurement,
 }
