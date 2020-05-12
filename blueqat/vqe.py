@@ -60,7 +60,20 @@ class AnsatzBase:
         return objective
 
 class QaoaAnsatz(AnsatzBase):
-    def __init__(self, hamiltonian, step=1, init_circuit=None):
+    """Ansatz for QAOA."""
+    def __init__(self, hamiltonian, step=1, init_circuit=None, mixer=None):
+        """
+        Args:
+            hamiltonian (Pauli expr): Hamiltonian for optimization.
+            step (optional, int): The number of step for repeat the circuit.
+                Generally, larger is precise and slow.
+            init_circuit (optional, Circuit): Initial circuit for QAOA.
+                By default, `Circuit().h[:]` is used.
+                If mixer is specified, this argument is required.
+            mixer (optional, list of Pauli expr): Mixer for Quantum Alternative Operator Ansatz.
+                By default, mixer is None and normal Quantum Approximate Optimization Algorithm is used.
+                This feature is experimental. It may be modified.
+        """
         super().__init__(hamiltonian, step * 2)
         self.hamiltonian = hamiltonian.to_expr().simplify()
         if not self.check_hamiltonian():
@@ -73,9 +86,13 @@ class QaoaAnsatz(AnsatzBase):
             if init_circuit.n_qubits > self.n_qubits:
                 self.n_qubits = init_circuit.n_qubits
         else:
+            if mixer:
+                raise ValueError('init_circuit is required when mixer is not default.')
             self.init_circuit = Circuit(self.n_qubits).h[:]
+        self.mixer = mixer
         self.init_circuit.make_cache()
         self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
+        self.mixer_time_evolutions = [term.get_time_evolution() for term in self.mixer] if mixer else []
 
     def check_hamiltonian(self):
         """Check hamiltonian is commutable. This condition is required for QaoaAnsatz"""
@@ -90,8 +107,13 @@ class QaoaAnsatz(AnsatzBase):
             gamma *= 2 * np.pi
             for evo in self.time_evolutions:
                 evo(c, gamma)
-            c.rx(beta)[:]
+            if self.mixer is None:
+                c.rx(beta)[:]
+            else:
+                for evo in self.mixer_time_evolutions:
+                    evo(c, beta)
         return c
+
 
 class VqeResult:
     def __init__(self, vqe=None, params=None, circuit=None):
