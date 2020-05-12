@@ -301,3 +301,56 @@ def test_cygate():
         [0, 0, 0, -I],
         [0, 0, I, 0]])
     assert simplify(u1 - u2) == zeros(4)
+
+
+def test_rxgate():
+    t = symbols('t')
+    u = Circuit().rx(t)[0].to_unitary()
+    expected = exp(-I * t / 2 * Circuit().x[0].to_unitary())
+    assert simplify(u - expected) == zeros(2)
+
+
+def test_rygate():
+    t = symbols('t')
+    u = Circuit().ry(t)[0].to_unitary()
+    expected = simplify(exp(-I * t / 2 * Circuit().y[0].to_unitary()))
+    assert simplify(u - expected) == zeros(2)
+
+
+def test_rzgate():
+    t = symbols('t')
+    u = Circuit().rz(t)[0].to_unitary()
+    expected = exp(-I * t / 2 * Circuit().z[0].to_unitary())
+    assert simplify(u - expected) == zeros(2)
+
+
+def test_rxxgate():
+    t = symbols('t')
+    u = Circuit().rxx(t)[1, 0].to_unitary()
+    expected = simplify(exp(-I * t / 2 * Circuit().x[0, 1].to_unitary()))
+    assert simplify(u - expected) == zeros(4)
+
+
+def test_ryygate():
+    t = symbols('t')
+    u = Circuit().ryy(t)[1, 0].to_unitary()
+    expected = simplify(exp(-I * t / 2 * Circuit().y[0, 1].to_unitary()))
+    assert simplify(u - expected) == zeros(4)
+
+
+def test_rzzgate():
+    t = symbols('t')
+    u = Circuit().rzz(t)[1, 0].to_unitary()
+    expected = simplify(exp(-I * t / 2 * Circuit().z[0, 1].to_unitary()))
+    assert simplify(u - expected) == zeros(4)
+
+
+def test_swapgate():
+    assert simplify(Circuit().swap[1, 0].to_unitary() -
+                    Matrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])) == zeros(4)
+
+
+def test_cswapgate():
+    expected = eye(8)
+    expected[4:, 4:] = Circuit().swap[1, 0].to_unitary()
+    assert simplify(Circuit().cswap[2, 1, 0].to_unitary() - expected) == zeros(8)
