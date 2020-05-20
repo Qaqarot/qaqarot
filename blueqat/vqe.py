@@ -28,6 +28,14 @@ class AnsatzBase:
         self.hamiltonian = hamiltonian
         self.n_params = n_params
         self.n_qubits = self.hamiltonian.max_n() + 1
+        self.sparse = None
+
+    def make_sparse(self, fmt='csc', make_method=None):
+        """Make sparse matrix. This method may be changed in the future release."""
+        if make_method:
+            self.sparse = make_method(self.hamiltonian)
+        else:
+            self.sparse = self.hamiltonian.to_matrix(sparse=fmt)
 
     def get_circuit(self, params):
         """Make a circuit from parameters."""
@@ -51,13 +59,27 @@ class AnsatzBase:
                     val += prob * meas.coeff
         return val.real
 
-    def get_objective(self, sampler):
+    def get_energy_sparse(self, circuit):
+        """Get energy using sparse matrix. This method may be changed in the future release."""
+        return sparse_expectation(self.sparse, circuit.run())
+
+    def get_objective(self, sampler=None):
         """Get an objective function to be optimized."""
         def objective(params):
             circuit = self.get_circuit(params)
             circuit.make_cache()
             return self.get_energy(circuit, sampler)
-        return objective
+
+        def obj_expect(params):
+            circuit = self.get_circuit(params)
+            circuit.make_cache()
+            return self.get_energy_sparse(circuit)
+
+        if sampler is not None:
+            return objective
+        if self.sparse is None:
+            self.make_sparse()
+        return obj_expect
 
 class QaoaAnsatz(AnsatzBase):
     """Ansatz for QAOA."""
@@ -140,7 +162,11 @@ class VqeResult:
             return self._probs
         if sampler is None:
             sampler = self.vqe.sampler
-        probs = sampler(self.circuit, range(self.circuit.n_qubits))
+
+        if sampler is None:
+            probs = expect(self.circuit.run(returns="statevector"), range(self.circuit.n_qubits))
+        else:
+            probs = sampler(self.circuit, range(self.circuit.n_qubits))
         if store:
             self._probs = probs
         return probs
@@ -153,8 +179,7 @@ class Vqe:
             method="Powell",
             options={"ftol": 5.0e-2, "xtol": 5.0e-2, "maxiter": 1000}
         )
-        self.sampler = sampler or non_sampling_sampler
-        self._result = None
+        self.sampler = sampler
 
     def run(self, verbose=False):
         objective = self.ansatz.get_objective(self.sampler)
@@ -291,3 +316,17 @@ print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts
         return {k: v / shots for k, v in counts.items()}
 
     return sampling
+
+
+def sparse_expectation(mat, vec):
+    """Calculate expectation value <vec|mat|vec>.
+
+    Args:
+        mat (scipy sparse matrix): Sparse matrix
+        vec (numpy array): Vector
+
+    Returns:
+        (Real part of) expectation value <vec|mat|vec>.
+        Remarks: when mat is Hermitian, <vec|mat|vec> is real.
+    """
+    return np.vdot(vec, mat.dot(vec)).real
