@@ -74,7 +74,7 @@ def pauli_from_char(ch, n=0):
 
 def term_from_chars(chars):
     """Make Pauli's Term from chars which is written by "X", "Y", "Z" or "I".
-    e.g. "XZIY" => X(0) * Z(1) * Y(3)
+    e.g. "XZIY" => X(3) * Z(2) * Y(0)
 
     Args:
         chars (str): Written in "X", "Y", "Z" or "I".
@@ -85,7 +85,7 @@ def term_from_chars(chars):
     Raises:
         ValueError: When chars conteins the character which is "X", "Y", "Z" nor "I".
     """
-    return Term.from_chars(chars)
+    return Term.from_chars(reversed(chars))
 
 def to_term(pauli):
     """Convert to Term from Pauli operator (X, Y, Z, I).
@@ -255,7 +255,7 @@ class _PauliImpl:
         krons.append(mat)
         if n_qubits > _n(self) + 1:
             krons.append(eye(2 ** (n_qubits - _n(self) - 1)))
-        return reduce(kron, krons)
+        return reduce(kron, reversed(krons))
 
 class _X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
@@ -561,7 +561,7 @@ class Term(_TermTuple):
             n_last = op.n
         if n_qubits - 1 > n_last:
             krons.append(eye(2 ** (n_qubits - 1 - n_last)))
-        return reduce(kron, krons)
+        return self.coeff * reduce(kron, reversed(krons))
 
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")

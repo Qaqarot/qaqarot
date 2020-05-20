@@ -78,7 +78,7 @@ def test_equality_calced_expr():
 
 
 def test_notation():
-    assert X(0) * Z[2] + Y(1) * Z[2] == term_from_chars("XIZ") + term_from_chars("IYZ")
+    assert X(2) * Z[0] + Y(1) * Z[0] == term_from_chars("XIZ") + term_from_chars("IYZ")
 
 
 def test_all_terms_commutable():
@@ -111,12 +111,12 @@ def test_simplify1():
 
 
 def test_to_matrix1():
-    assert np.allclose((X[0]*Z[1]).to_matrix(),
-                       np.array([[0, 0, 1, 0], [0, 0, 0, -1], [1, 0, 0, 0], [0, -1, 0, 0]]))
+    assert np.allclose((2*Z[0]*X[1]).to_matrix(),
+                       np.array([[0, 0, 1, 0], [0, 0, 0, -1], [1, 0, 0, 0], [0, -1, 0, 0]]) * 2)
 
 def test_to_matrix2():
-    assert np.allclose(Z[1].to_matrix(), np.kron(np.eye(2), Z[0].to_matrix()))
-    assert np.allclose(Z[0].to_matrix(n_qubits=2), np.kron(Z[0].to_matrix(), np.eye(2)))
+    assert np.allclose(Z[0].to_matrix(n_qubits=2), np.kron(np.eye(2), Z[0].to_matrix()))
+    assert np.allclose(Z[1].to_matrix(), np.kron(Z[0].to_matrix(), np.eye(2)))
 
 
 @pytest.mark.parametrize('sparse', list(pauli._sparse_types))
