@@ -85,7 +85,7 @@ class NumPyBackend(Backend):
             return
 
     def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, ignore_global=True, **_kwargs):
+        def __parse_run_args(shots=None, returns=None, ignore_global=False, **_kwargs):
             if returns is None:
                 if shots is None:
                     returns = "statevector"

@@ -377,7 +377,7 @@ class NumbaBackend(Backend):
             return
 
     def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, enable_cache=True, ignore_global=True,
+        def __parse_run_args(shots=None, returns=None, enable_cache=True, ignore_global=False,
                              dtype=DEFAULT_DTYPE, **_kwargs):
             if returns is None:
                 if shots is None:
