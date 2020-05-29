@@ -26,6 +26,7 @@ import scipy.sparse
 _PauliTuple = namedtuple("_PauliTuple", "n")
 half_pi = pi / 2
 
+
 _sparse_types = {
         'bsr': scipy.sparse.bsr_matrix,
         'coo': scipy.sparse.coo_matrix,
@@ -36,17 +37,33 @@ _sparse_types = {
         'lil': scipy.sparse.lil_matrix,
 }
 
+
 _matrix = {
-    'I': np.array([[1, 0], [0, 1]], dtype=complex),
-    'X': np.array([[0, 1], [1, 0]], dtype=complex),
-    'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
-    'Z': np.array([[1, 0], [0, -1]], dtype=complex)
+        'I': np.array([[1, 0], [0, 1]], dtype=complex),
+        'X': np.array([[0, 1], [1, 0]], dtype=complex),
+        'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
+        'Z': np.array([[1, 0], [0, -1]], dtype=complex)
 }
+
+
+_mul_map = {
+    ('X', 'X'): (1.0, 'I'),
+    ('X', 'Y'): (1j, 'Z'),
+    ('X', 'Z'): (-1j, 'Y'),
+    ('Y', 'X'): (-1j, 'Z'),
+    ('Y', 'Y'): (1.0, 'I'),
+    ('Y', 'Z'): (1j, 'X'),
+    ('Z', 'X'): (1j, 'Y'),
+    ('Z', 'Y'): (-1j, 'X'),
+    ('Z', 'Z'): (1.0, 'I'),
+}
+
 
 _sparse_matrix = {
     ty: {ch: fn(mat, dtype=complex) for ch, mat in _matrix.items()}
     for ty, fn in _sparse_types.items()
 }
+
 
 def pauli_from_char(ch, n=0):
     """Make Pauli matrix from an character.
@@ -72,6 +89,7 @@ def pauli_from_char(ch, n=0):
         return Z(n)
     raise ValueError("ch shall be X, Y, Z or I")
 
+
 def term_from_chars(chars):
     """Make Pauli's Term from chars which is written by "X", "Y", "Z" or "I".
     e.g. "XZIY" => X(3) * Z(2) * Y(0)
@@ -87,6 +105,7 @@ def term_from_chars(chars):
     """
     return Term.from_chars(reversed(chars))
 
+
 def to_term(pauli):
     """Convert to Term from Pauli operator (X, Y, Z, I).
 
@@ -98,6 +117,7 @@ def to_term(pauli):
     """
     return pauli.to_term()
 
+
 def to_expr(term):
     """Convert to Expr from Term or Pauli operator (X, Y, Z, I).
 
@@ -108,6 +128,7 @@ def to_expr(term):
         Expr: An `Expr` object.
     """
     return term.to_expr()
+
 
 def commutator(expr1, expr2):
     """Returns [expr1, expr2] = expr1 * expr2 - expr2 * expr1.
@@ -123,6 +144,7 @@ def commutator(expr1, expr2):
     expr2 = expr2.to_expr().simplify()
     return (expr1 * expr2 - expr2 * expr1).simplify()
 
+
 def is_commutable(expr1, expr2, eps=0.00000001):
     """Test whether expr1 and expr2 are commutable.
 
@@ -136,6 +158,7 @@ def is_commutable(expr1, expr2, eps=0.00000001):
         bool: if expr1 and expr2 are commutable, returns True, otherwise False.
     """
     return sum((x * x.conjugate()).real for x in commutator(expr1, expr2).coeffs()) < eps
+
 
 # To avoid pylint error
 def _n(pauli):
@@ -230,7 +253,6 @@ class _PauliImpl:
         """Convert to Pauli Expr"""
         return self.to_term().to_expr()
 
-
     @property
     def matrix(self):
         """Matrix reprentation of this operator."""
@@ -281,6 +303,11 @@ class _PauliCtor:
     def __getitem__(self, n):
         return self.ty(n)
 
+    @property
+    def matrix(self):
+        """Matrix reprentation of this operator."""
+        return _matrix[self.ty.__name__[-1]].copy()
+
 X = _PauliCtor(_X)
 Y = _PauliCtor(_Y)
 Z = _PauliCtor(_Z)
@@ -289,6 +316,11 @@ class _I(_PauliImpl, namedtuple("_I", "")):
     """Identity operator"""
     def __call__(self):
         return self
+
+    @property
+    def matrix(self):
+        """Matrix reprentation of this operator."""
+        return _matrix['I'].copy()
 
 I = _I()
 _TermTuple = namedtuple("_TermTuple", "ops coeff")
@@ -457,14 +489,7 @@ class Term(_TermTuple):
                 return 1.0, op2
             if op2 == "I":
                 return 1.0, op1
-            if op1 == op2:
-                return 1.0, "I"
-            if op1 == "X":
-                return (-1j, "Z") if op2 == "Y" else (1j, "Y")
-            if op1 == "Y":
-                return (-1j, "X") if op2 == "Z" else (1j, "Z")
-            if op1 == "Z":
-                return (-1j, "Y") if op2 == "X" else (1j, "X")
+            return _mul_map[op1, op2]
 
         before = defaultdict(list)
         for op in self.ops:
@@ -587,16 +612,14 @@ class Expr(_ExprTuple):
         """Make new Expr from a number"""
         if num:
             return Expr.from_term(Term((), num))
-        else:
-            return Expr.zero()
+        return Expr.zero()
 
     @staticmethod
     def from_term(term):
         """Make new Expr from a Term"""
         if term.coeff:
             return Expr((term,))
-        else:
-            return Expr.zero()
+        return Expr.zero()
 
     @staticmethod
     def from_terms_iter(terms):
