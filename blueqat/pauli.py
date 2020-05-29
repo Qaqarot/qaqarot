@@ -155,6 +155,11 @@ class _PauliImpl:
         """If `self` is I, returns True, otherwise False."""
         return self.op == "I"
 
+    @property
+    def n_qubits(self):
+        """Returns `self.n + 1` if self is not I. otherwise 0."""
+        return 0 if self.is_identity else _n(self) + 1
+
     def __hash__(self):
         return hash((self.op, _n(self)))
 
@@ -489,8 +494,19 @@ class Term(_TermTuple):
         return (op.n for op in self.ops)
 
     def max_n(self):
-        """Returns the maximum index of Pauli matrices in the Term."""
-        return max(self.n_iter())
+        """Returns the maximum index of Pauli matrices in the Term.
+        If there's no Pauli matrices, returns -1.
+        """
+        try:
+            return max(self.n_iter())
+        except ValueError:
+            return -1
+
+    @property
+    def n_qubits(self):
+        """Returns the number of qubits of the term.
+        If the term is constant with identity matrix, n_qubits is 0."""
+        return self.max_n() + 1
 
     def append_to_circuit(self, circuit, simplify=True):
         """Append Pauli gates to `Circuit`."""
@@ -745,8 +761,21 @@ class Expr(_ExprTuple):
         return self
 
     def max_n(self):
-        """Returns the maximum index of Pauli matrices in the Term."""
-        return max(term.max_n() for term in self.terms if term.ops)
+        """Returns the maximum index of Pauli matrices in the Expr.
+        If Expr is empty or only constant and identity matrix, returns -1.
+        """
+        try:
+            return max(term.max_n() for term in self.terms if term.ops)
+        except ValueError:
+            return -1
+
+    @property
+    def n_qubits(self):
+        """Returns the number of qubits of the Term.
+
+        If Expr is empty or only constant and identity matrix, returns 0.
+        """
+        return self.max_n() + 1
 
     def coeffs(self):
         """Generator which yields a coefficent for each Term."""
@@ -777,7 +806,7 @@ class Expr(_ExprTuple):
     def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
         if n_qubits == -1:
-            n_qubits = self.max_n() + 1
+            n_qubits = self.n_qubits
         return sum(term.to_matrix(n_qubits, sparse=sparse) for term in self.terms)
 
 
