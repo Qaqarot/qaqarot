@@ -14,9 +14,10 @@
 
 """The module for calculate Pauli matrices."""
 
+from bisect import bisect_left
 from collections import defaultdict, namedtuple
 from functools import reduce
-from itertools import combinations, product
+from itertools import combinations, groupby, product
 from numbers import Number, Integral
 from math import pi
 
@@ -63,6 +64,64 @@ _sparse_matrix = {
     ty: {ch: fn(mat, dtype=complex) for ch, mat in _matrix.items()}
     for ty, fn in _sparse_types.items()
 }
+
+
+def _kron_1d(a, b):
+    """This function is for internal use.
+    Returns a⊗b for 1d array.
+    """
+    nb = b.size
+    d = np.repeat(a, nb).reshape(-1, nb)
+    d *= b
+    return d.reshape(-1)
+
+
+def _kron_1d_rec(krons, cumsum, lo, hi):
+    """This function is for internal use.
+    Equivalent with reduce(_kron_1d, krons[lo:hi]), but faster.
+    """
+    if hi - lo == 1:
+        return krons[lo]
+    if hi - lo == 2:
+        return _kron_1d(krons[lo], krons[lo + 1])
+    mid = bisect_left(cumsum, (cumsum[lo] + cumsum[hi - 1]) // 2, lo, hi)
+    if mid == lo:
+        return _kron_1d(krons[lo], _kron_1d_rec(krons, cumsum, lo + 1, hi))
+    return _kron_1d(_kron_1d_rec(krons, cumsum, lo, mid), _kron_1d_rec(krons, cumsum, mid, hi))
+
+
+def _term_to_dataarray(term, n_qubits, rowmajor):
+    """This function is for internal use.
+    Make data of sparse Kronecker product matrix."""
+    y_mat = np.array([-1j, 1j]) if rowmajor else np.array([1j, -1j])
+    paulis = ['I'] * n_qubits
+    data_list = []
+    for op in term.ops:
+        paulis[op.n] = op.op
+    for g, l in groupby(paulis):
+        n = len(tuple(l))
+        if g == 'Y':
+            data_list += [y_mat.copy() for _ in range(n)]
+        elif g == 'Z':
+            data_list += [np.array([1, -1], dtype=complex) for _ in range(n)]
+        else:
+            data_list.append(np.repeat(np.array([1], dtype=complex), 2 ** n))
+    t = min(data_list, key=len)
+    t *= term.coeff
+    data_list.reverse()
+    cumsum = np.array([k.size for k in data_list]).cumsum()
+    return _kron_1d_rec(data_list, cumsum, 0, len(cumsum))
+
+
+def _term_to_indices(term, dim, dtype, rowcol):
+    """This function is for internal use.
+    Make indices for sparse Kronecker product matrix."""
+    xor_bits = sum(1 << op.n for op in term.ops if op.op in 'XY')
+    if rowcol:
+        col = np.arange(dim, dtype=dtype)
+        row = col ^ xor_bits
+        return row, col
+    return np.arange(dim, dtype=dtype) ^ xor_bits
 
 
 def pauli_from_char(ch, n=0):
@@ -260,29 +319,7 @@ class _PauliImpl:
 
     def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
-        if sparse is None:
-            kron = np.kron
-            mat = _matrix[self.op]
-            eye = np.eye
-        else:
-            if sparse not in _sparse_types:
-                raise ValueError(f'Unknown sparse format {sparse}.')
-            kron = lambda a, b: scipy.sparse.kron(a, b, format=sparse)
-            mat = _sparse_matrix[sparse][self.op]
-            eye = lambda n: scipy.sparse.eye(n, format=sparse)
-        if self.is_identity:
-            if n_qubits == -1:
-                return eye(2)
-            return eye(2 ** n_qubits)
-        if n_qubits == -1:
-            n_qubits = _n(self) + 1
-        krons = []
-        if _n(self) > 0:
-            krons.append(eye(2 ** (_n(self))))
-        krons.append(mat)
-        if n_qubits > _n(self) + 1:
-            krons.append(eye(2 ** (n_qubits - _n(self) - 1)))
-        return reduce(kron, reversed(krons))
+        return self.to_term().to_matrix(n_qubits, sparse=sparse)
 
 class _X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
@@ -580,29 +617,30 @@ class Term(_TermTuple):
 
     def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
-        if sparse is None:
-            kron = np.kron
-            mat = _matrix
-            eye = np.eye
-        else:
-            if sparse not in _sparse_types:
-                raise ValueError(f'Unknown sparse format {sparse}.')
-            kron = lambda a, b: scipy.sparse.kron(a, b, format=sparse)
-            mat = _sparse_matrix[sparse]
-            eye = lambda n: scipy.sparse.eye(n, format=sparse)
+        if not (sparse is None or sparse in _sparse_types):
+            raise ValueError(f'Unknown sparse format {sparse}.')
         if n_qubits == -1:
-            n_qubits = self.max_n() + 1
-        simp = self.simplify()
-        n_last = -1
-        krons = []
-        for op in simp.ops:
-            if op.n > n_last + 1:
-                krons.append(eye(2 ** (op.n - n_last - 1)))
-            krons.append(mat[op.op])
-            n_last = op.n
-        if n_qubits - 1 > n_last:
-            krons.append(eye(2 ** (n_qubits - 1 - n_last)))
-        return self.coeff * reduce(kron, reversed(krons))
+            n_qubits = self.n_qubits
+        if n_qubits == 0:
+            m = np.array([[self.coeff]])
+            if sparse is None:
+                return m
+            return _sparse_types[sparse](m)
+        dim = 2 ** n_qubits
+        term = self.simplify()
+        data = _term_to_dataarray(term, n_qubits, sparse == 'csr')
+        dtype_idx = np.int32 if n_qubits < 31 else np.int64
+        if sparse == 'csc':
+            indices = _term_to_indices(term, dim, dtype_idx, False)
+            return scipy.sparse.csc_matrix((data, indices, np.arange(dim + 1, dtype=dtype_idx)), shape=(dim, dim))
+        if sparse == 'csr':
+            indices = _term_to_indices(term, dim, dtype_idx, False)
+            return scipy.sparse.csr_matrix((data, indices, np.arange(dim + 1, dtype=dtype_idx)), shape=(dim, dim))
+        row, col = _term_to_indices(term, dim, dtype_idx, True)
+        m = scipy.sparse.coo_matrix((data, (row, col)), shape=(dim, dim))
+        if sparse is None:
+            return m.toarray()
+        return _sparse_types[sparse](m)
 
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
@@ -830,7 +868,30 @@ class Expr(_ExprTuple):
         """Convert to the matrix."""
         if n_qubits == -1:
             n_qubits = self.n_qubits
-        return sum(term.to_matrix(n_qubits, sparse=sparse) for term in self.terms)
+        expr = self.simplify()
+        grpkey = lambda pau: sum(1 << op.n for op in pau.ops if op.op in 'XY')
+        dim = 2 ** n_qubits
+        is_csr = sparse == 'csr'
+        gr_terms = [list(g) for _, g in groupby(sorted(expr.terms, key=grpkey), key=grpkey)]
+        n_groups = len(gr_terms)
+        n_vals = n_groups * dim
+        dtype_idx = np.int32 if n_qubits < 31 else np.int64
+        vals = np.empty(n_vals, dtype=complex)
+        inds = np.empty(n_vals, dtype=dtype_idx)
+        for i_grp, grp in enumerate(gr_terms):
+            val_acc = _term_to_dataarray(grp[0], n_qubits, is_csr)
+            inds[i_grp::n_groups] = _term_to_indices(grp[0], dim, dtype_idx, False)
+            for term in grp[1:]:
+                val_acc += _term_to_dataarray(term, n_qubits, is_csr)
+            vals[i_grp::n_groups] = val_acc
+        if not is_csr:
+            m = scipy.sparse.csc_matrix((vals, inds, np.arange(0, n_vals + 1, n_groups)), shape=(dim, dim))
+        else:
+            m = scipy.sparse.csr_matrix((vals, inds, np.arange(0, n_vals + 1, n_groups)), shape=(dim, dim))
+        m.eliminate_zeros()
+        if sparse is None:
+            return m.toarray()
+        return _sparse_types[sparse](m)
 
 
 def qubo_bit(n):
