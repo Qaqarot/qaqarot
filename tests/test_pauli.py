@@ -122,13 +122,21 @@ def test_simplify1():
                             [(Y[1]*2.0*X[1]).to_matrix(), (-2.0j*Z[1]).to_matrix()],
                             [(X[1]*2.0*Y[1]).to_matrix(n_qubits=3), (2.0j*Z[1]).to_matrix(n_qubits=3)],
                             [Y[1].to_matrix(), np.kron(Y.matrix, I.matrix)],
+                            [I.to_matrix(), np.array([[1]])],
+                            [(I*2).to_matrix(), np.array([[2]])],
+                            [(X[0]*2).to_term().to_matrix(), np.array([[0, 2], [2, 0]])],
+                            [(X[0]*2).to_expr().to_matrix(), np.array([[0, 2], [2, 0]])],
+                            [(I*2+3*I).to_matrix(), np.array([[5]])],
+                            [(I*2+3*I+7*I).to_matrix(), np.array([[12]])],
+                            [(0*I).simplify().to_matrix(), np.array([[0]])],
+                            [Expr(()).to_matrix(), np.array([[0]])],
                         ))
 def test_to_matrix(pair):
     assert np.allclose(pair[0], pair[1])
 
 
 @pytest.mark.parametrize('sparse', list(pauli._sparse_types))
-@pytest.mark.parametrize('expr', [X[1], I, 1j*Y[2]*Z[0], 3+X[0], 2.*X[1]*Y[2] + 1.5*X[1]*Y[2],
+@pytest.mark.parametrize('expr', [X[1], I, 3*I, 3*I+1j*I, 1j*Y[2]*Z[0], 3+X[0], 2.*X[1]*Y[2] + 1.5*X[1]*Y[2],
                                   3*Y[3] + 4*X[1]*Y[1] - 2j*Z[1] + (2 + 4j)*X[4],
                                   3.5*Z[0]*Z[1]*Z[2], 3.5*Y[0]*Y[1]*Y[2]])
 def test_sparse(sparse, expr):
