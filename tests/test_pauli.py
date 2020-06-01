@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pickle
 import pytest
 import numpy as np
 from blueqat import Circuit, pauli
@@ -59,8 +60,8 @@ def test_non_equality():
 
 def test_equality_calced_term():
     assert 2 * X(0) * Y(1) * X(2) == (0.5j * Y(1) * X(2)) * (-4j * X(0))
-    assert Y(2) * X(2) == 1j * Z(2)
-    assert 1j * Y(2) == X(2) * Z(2) * -Z(2) * -I * X(3) * I * Z(2) * Z(0) * Z(0) * X(3)
+    assert Y(2) * X(2) == -1j * Z(2)
+    assert 1j * Y(2) == -X(2) * Z(2) * -Z(2) * -I * X(3) * I * Z(2) * Z(0) * Z(0) * X(3)
 
 
 def test_nonequality_calced_term():
@@ -73,7 +74,7 @@ def test_nonequality_calced_term():
 def test_equality_calced_expr():
     assert X(0) + X(1) == X(1) + X(0)
     assert X(0) + X(0) == 2 * X(0)
-    assert X(1) + Y(2) == 1j * Z(2) * X(2) + X(1)
+    assert X(1) + Y(2) == -1j * Z(2) * X(2) + X(1)
     assert (X(0) + Y(1)) * (Z(2) - 2*Y(1)) == Z(2) * X(0) + Y(1) * Z(2) - 2 * X(0) * Y(1) - 2
 
 
@@ -110,29 +111,49 @@ def test_simplify1():
     assert (Z[0] + 0*X[1]).simplify() == Z[0].to_expr()
 
 
-def test_to_matrix1():
-    assert np.allclose((2*Z[0]*X[1]).to_matrix(),
-                       np.array([[0, 0, 1, 0], [0, 0, 0, -1], [1, 0, 0, 0], [0, -1, 0, 0]]) * 2)
-
-def test_to_matrix2():
-    assert np.allclose(Z[0].to_matrix(n_qubits=2), np.kron(np.eye(2), Z[0].to_matrix()))
-    assert np.allclose(Z[1].to_matrix(), np.kron(Z[0].to_matrix(), np.eye(2)))
+@pytest.mark.parametrize('pair', (
+                            [(2*Z[0]*X[1]).to_matrix(), np.array([[0, 0, 1, 0], [0, 0, 0, -1], [1, 0, 0, 0], [0, -1, 0, 0]]) * 2],
+                            [Z[0].to_matrix(n_qubits=2), np.kron(np.eye(2), Z.matrix)],
+                            [Z[1].to_matrix(), np.kron(Z.matrix, np.eye(2))],
+                            [((-1j)*I).to_matrix(), np.array([[-1j]])],
+                            [I.to_matrix(n_qubits=1), np.eye(2)],
+                            [((2+3j)*I).to_matrix(n_qubits=3), np.eye(8)*(2+3j)],
+                            [Y[0].to_matrix(n_qubits=2), np.kron(I.matrix, Y.matrix)],
+                            [(Y[1]*2.0*X[1]).to_matrix(), (-2.0j*Z[1]).to_matrix()],
+                            [(X[1]*2.0*Y[1]).to_matrix(n_qubits=3), (2.0j*Z[1]).to_matrix(n_qubits=3)],
+                            [Y[1].to_matrix(), np.kron(Y.matrix, I.matrix)],
+                            [I.to_matrix(), np.array([[1]])],
+                            [(I*2).to_matrix(), np.array([[2]])],
+                            [(X[0]*2).to_term().to_matrix(), np.array([[0, 2], [2, 0]])],
+                            [(X[0]*2).to_expr().to_matrix(), np.array([[0, 2], [2, 0]])],
+                            [(I*2+3*I).to_matrix(), np.array([[5]])],
+                            [(I*2+3*I+7*I).to_matrix(), np.array([[12]])],
+                            [(0*I).simplify().to_matrix(), np.array([[0]])],
+                            [Expr(()).to_matrix(), np.array([[0]])],
+                        ))
+def test_to_matrix(pair):
+    assert np.allclose(pair[0], pair[1])
 
 
 @pytest.mark.parametrize('sparse', list(pauli._sparse_types))
-@pytest.mark.parametrize('expr', [X[1], I, 1j*Y[2]*Z[0], 3+X[0], 2*X[1]*Y[2] + 1*X[1]*Y[2],
-                                  3*Y[3] + 4*X[1]*Y[1] - 2j*Z[1] + 2*X[4]])
+@pytest.mark.parametrize('expr', [X[1], I, 3*I, 3*I+1j*I, 1j*Y[2]*Z[0], 3+X[0], 2.*X[1]*Y[2] + 1.5*X[1]*Y[2],
+                                  3*Y[3] + 4*X[1]*Y[1] - 2j*Z[1] + (2 + 4j)*X[4],
+                                  3.5*Z[0]*Z[1]*Z[2], 3.5*Y[0]*Y[1]*Y[2]])
 def test_sparse(sparse, expr):
     assert np.allclose(expr.to_matrix(), expr.to_matrix(sparse=sparse).toarray())
 
 
-def test_pickle():
-    import pickle
-    h = X[0] * Z[0] * -1.23 + 4.56 + Z[2] * Z[3] * Z[4] * X[2] - 4 + X[1] * Y[2] + X[2] * Z[2]
+@pytest.mark.parametrize('h', [
+                            X[0] * Z[0] * -1.23 + 4.56 + Z[2] * Z[3] * Z[4] * X[2] - 4 + X[1] * Y[2] + X[2] * Z[2],
+                            Expr(()),
+                            Y[1]*X[2]*(1.23-4.56j),
+                            X[0],
+                            Y[2],
+                            I,
+                        ])
+def test_pickle(h):
     assert h == pickle.loads(pickle.dumps(h))
-    assert Expr(()) == pickle.loads(pickle.dumps(Expr(())))
-    assert X[0].to_expr() == pickle.loads(pickle.dumps(X[0].to_expr()))
-    assert I.to_expr() == pickle.loads(pickle.dumps(I.to_expr()))
+
 
 def test_expr_neg():
     a = -(X[0] + 2 * Y[0])
