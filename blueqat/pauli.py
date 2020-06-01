@@ -866,8 +866,15 @@ class Expr(_ExprTuple):
 
     def to_matrix(self, n_qubits=-1, *, sparse=None):
         """Convert to the matrix."""
+        if not (sparse is None or sparse in _sparse_types):
+            raise ValueError(f'Unknown sparse format {sparse}.')
         if n_qubits == -1:
             n_qubits = self.n_qubits
+        if n_qubits == 0:
+            m = np.array([[sum(term.coeff for term in self.terms)]])
+            if sparse is None:
+                return m
+            return _sparse_types[sparse](m)
         expr = self.simplify()
         grpkey = lambda pau: sum(1 << op.n for op in pau.ops if op.op in 'XY')
         dim = 2 ** n_qubits
