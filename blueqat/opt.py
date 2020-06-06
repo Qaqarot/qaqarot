@@ -327,7 +327,7 @@ class opt:
 
 		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
 		self.dwavetoken = ''
-		self.dwavesolver = 'DW_2000Q_2_1'
+		self.dwavesolver = 'DW_2000Q_6'
 
 		#: RBM Models
 		self.RBMvisible = 0
@@ -421,10 +421,6 @@ class opt:
 		print("sqa() function is deprecated. please use the older version to use this function")
 
 	def dw(self):
-		self.dwaveendpoint = 'https://cloud.dwavesys.com/sapi'
-		self.dwavetoken = ''
-		self.dwavesolver = 'DW_2000Q_2_1'
-
 		try:
 			from dwave.cloud import Client
 		except ImportError:
