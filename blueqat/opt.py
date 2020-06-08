@@ -506,8 +506,8 @@ class Opt:
             self.E = self.E[0]
         return qq
 
-    def sa(self,shots=1):
-        sar = self.run(shots=shots)
+    def sa(self,shots=1,sampler="normal"):
+        sar = self.run(shots=shots,sampler=sampler)
         return sar
 
     def sqa(self):

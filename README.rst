@@ -205,7 +205,7 @@ Optimization
 
     #annealing
     print(c.run())
-    [0, 0]
+    #=>[0, 0]
 
     
 SA Annealing
@@ -278,7 +278,7 @@ https://github.com/dwavesystems/dwave-cloud-client is required
     a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
     a.dw()
 
-    # => [1,1,-1,1,1,0,0,0,0,0,0]
+    # => [1, 1, 0, 1, 1]
 
 QUBO Functions
 -----------------
