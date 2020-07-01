@@ -18,7 +18,6 @@ import numpy as np
 def pauli(qubo):
     """
     Convert to pauli operators of universal gate model.
-    Requires blueqat.
     """
     from blueqat.pauli import qubo_bit
     h = 0.0
