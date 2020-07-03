@@ -95,23 +95,62 @@ msgid ""
 msgstr ""
 "イジングモデルのハミルトニアンを作る場合は、q(x)ではなくZ(x)を使ってください。"
 
-#: ../../source/getting_started.rst:136
+#: ../../source/getting_started.rst:146
 msgid "Blueqat to Qiskit"
 msgstr "BlueqatからQiskit"
 
-#: ../../source/getting_started.rst:145
+#: ../../source/getting_started.rst:155
 msgid "Blueqat to QASM"
 msgstr "BlueqatからQASM"
 
-#: ../../source/getting_started.rst:158
+#: ../../source/getting_started.rst:168
 msgid "Example"
 msgstr "例"
 
-#: ../../source/getting_started.rst:161
+#: ../../source/getting_started.rst:171
 msgid "2-qubit Grover"
 msgstr ""
 
-#: ../../source/getting_started.rst:171
+#: ../../source/getting_started.rst:181
 msgid "Maxcut QAOA"
 msgstr ""
 
+#: ../../source/getting_started.rst:270
+msgid "Connection to D-Wave cloud"
+msgstr "D-Wave クラウドとの接続"
+
+#: ../../source/getting_started.rst:27３
+msgid "Direct connection to D-Wave machine with apitoken"
+msgstr "APIトークンを用いたD-Waveマシンとの接続"
+
+#: ../../source/getting_started.rst:27４
+msgid "https://github.com/dwavesystems/dwave-cloud-client is required"
+msgstr "https://github.com/dwavesystems/dwave-cloud-client が必要です"
+
+#: ../../source/getting_started.rst:290
+msgid "Automatically create QUBO which select K qubits from N qubits"
+msgstr "N個の量子ビットからK個を選択するQUBOを自動生成します"
+
+#: ../../source/getting_started.rst:302
+msgid "if you set array on the 3rd params, the result likely to choose the nth qubit in the array"
+msgstr "3番目の変数で指定した配列により量子ビットを選択できます"
+
+#: ../../source/getting_started.rst:315
+msgid "Automatically create QUBO which has value 1 for all connectivity defined by array of edges and graph size N"
+msgstr "配列で指定したエッジを持つサイズNのグラフについて、エッジの値1である隣接行列QUBOを自動生成します"
+
+#: ../../source/getting_started.rst:326
+msgid "this create 4*4 QUBO and put value 1 on connection between 0th and 1st qubit, 1st and 2nd qubit"
+msgstr "0番目と1番目、1番目2番目の量子ビット間の接続がそれぞれ1である4x4 QUBOを生成しました"
+
+#: ../../source/getting_started.rst:328
+msgid "zeros(N) Create QUBO with all element value as 0"
+msgstr "zeros(N) は全要素が0のQUBOを生成します"
+
+#: ../../source/getting_started.rst:338
+msgid "diag(list) Create QUBO with diag from list"
+msgstr "diag(list) は配列で指定した対角要素をもつQUBOを生成します"
+
+#: ../../source/getting_started.rst:348
+msgid "rands(N) Create QUBO with random number"
+msgstr "rands(N) ランダムな要素をもつQUBOを生成します"

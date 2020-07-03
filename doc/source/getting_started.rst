@@ -132,6 +132,17 @@ If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the
 
     hamiltonian = Z(0)-3*Z(1)+2*Z(0)*Z(1)+2*Z(0)*Z(2)
 
+Ising Model
+---
+
+.. code-block:: python
+
+    import blueqat.wq as wq
+    a = wq.Opt()
+    a.qubo = [[4,-4,-4],[0,4,-4],[0,0,4]]
+    a.sa() #=> [1, 1, 1]
+    print(a.E[-1]) #=>[0.0]
+
 Blueqat to Qiskit
 -----------------
 
@@ -188,7 +199,7 @@ Maxcut QAOA
 
  .. code-block:: python
 
-     import blueqat.opt as wq
+     import blueqat.wq as wq
      c = wq.Opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
 
      #qaoa
@@ -205,7 +216,7 @@ Maxcut QAOA
 
  .. code-block:: python
 
-     import blueqat.opt as wq
+     import blueqat.wq as wq
      a = wq.Opt()
      a.qubo = wq.sel(3,1) #creating QUBO matrix
      result = a.sa(shots=100,sampler="fast")
@@ -264,7 +275,7 @@ Maxcut QAOA
 
  .. code-block:: python
 
-     import blueqat.opt as wq
+     import blueqat.wq as wq
      a = wq.Opt()
      a.dwavetoken = "your token here"
      a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
