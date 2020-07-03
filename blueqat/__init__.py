@@ -19,4 +19,4 @@ from . import vqe
 from . import wq
 from ._version import __version__
 
-__all__ = ["pauli", "utils", "vqe", "opt", "Circuit", "BlueqatGlobalSetting"]
+__all__ = ["pauli", "utils", "vqe", "wq", "Circuit", "BlueqatGlobalSetting"]
