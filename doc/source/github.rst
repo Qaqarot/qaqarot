@@ -3,4 +3,4 @@ GitHub
 
 Blueqat's GitHub repository is here:
 
-https://github.com/mdrft/Blueqat
+https://github.com/Blueqat/Blueqat
