@@ -37,7 +37,7 @@ msgid "Japanese"
 msgstr "日本語"
 
 #: ../../source/tutorial.rst:12
-msgid "https://github.com/mdrft/Blueqat_tutorials_ja"
+msgid "https://github.com/Blueqat/Blueqat-tutorials/tree/master/tutorial-ja"
 msgstr ""
 
 #~ msgid "https://github.com/mdrft/Blueqat/blob/master/tutorial_en/README.md"

@@ -196,8 +196,8 @@ Optimization
 
 .. code-block:: python
 
-    from blueqat.opt import Opt
-    c = Opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
+    import blueqat.wq as wq
+    c = wq.Opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
 
     #qaoa
     print(c.qaoa().most_common(5))
@@ -205,7 +205,7 @@ Optimization
 
     #annealing
     print(c.run())
-    [0, 0]
+    #=>[0, 0]
 
     
 SA Annealing
@@ -213,8 +213,8 @@ SA Annealing
 
 .. code-block:: python
 
-    import blueqat.opt as wq
-    a = wq.opt()
+    import blueqat.wq as wq
+    a = wq.Opt()
     a.qubo = wq.sel(3,1) #creating QUBO matrix
     result = a.sa(shots=100,sampler="fast")
     wq.counter(result)
@@ -272,13 +272,13 @@ https://github.com/dwavesystems/dwave-cloud-client is required
 
 .. code-block:: python
 
-    from blueqat.opt import Opt
-    a = Opt()
+    import blueqat.wq as wq
+    a = wq.Opt()
     a.dwavetoken = "your token here"
     a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
     a.dw()
 
-    # => [1,1,-1,1,1,0,0,0,0,0,0]
+    # => [1, 1, 0, 1, 1]
 
 QUBO Functions
 -----------------
