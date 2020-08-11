@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import warnings
 from functools import reduce
 from .backendbase import Backend
 
@@ -149,8 +150,12 @@ class SympyBackend(Backend):
             ctx.matrix_of_circuit = control_gate_of_matrix * ctx.matrix_of_circuit
         return ctx
 
-    def gate_measure(self, gate, ctx):
+    def _warn_unavailable_operation(self, gate, ctx):
+        warnings.warn(f'`{gate.uppername}` operation is ignored because unavailable in this backend.')
         return ctx
+
+    gate_measure = _warn_unavailable_operation
+    gate_reset = _warn_unavailable_operation
 
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
         kwargs.setdefault('ignore_global', False)

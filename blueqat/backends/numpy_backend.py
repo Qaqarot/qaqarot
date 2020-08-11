@@ -430,3 +430,21 @@ class NumPyBackend(Backend):
                 ctx.cregs[target] = 1
         ctx.save_cache = False
         return ctx
+
+    def gate_reset(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        for target in gate.target_iter(n_qubits):
+            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0]) ** 2
+            rand = random.random()
+            t1 = (i & (1 << target)) != 0
+            if rand < p_zero:
+                qubits[t1] = 0.0
+                qubits /= np.sqrt(p_zero)
+            else:
+                qubits[(i & (1 << target)) == 0] = qubits[t1]
+                qubits[t1] = 0.0
+                qubits /= np.sqrt(1.0 - p_zero)
+        ctx.save_cache = False
+        return ctx

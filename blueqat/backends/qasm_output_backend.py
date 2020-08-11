@@ -128,3 +128,5 @@ class QasmOutputBackend(Backend):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append(f"measure q[{idx}] -> c[{idx}];")
         return ctx
+
+    gate_reset = _one_qubit_gate_noargs
