@@ -154,6 +154,11 @@ def test_sdg_gate(backend):
                        ignore_global='ab')
 
 
+def test_y_gate(backend):
+    assert is_vec_same(Circuit().y[1].run(backend=backend),
+                       Circuit().z[1].x[1].run(backend=backend) * 1j)
+
+
 @pytest.mark.parametrize('bin', [(0, 0), (0, 1), (1, 0), (1, 1)])
 def test_toffoli_gate(bin, backend):
     c = Circuit()

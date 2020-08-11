@@ -100,7 +100,7 @@ def _mult_shifted(masks, idx):
 def _zgate(qubits, n_qubits, target):
     lower_mask = (1 << _QSMask(target)) - 1
     for i in prange(1 << (_QSMask(n_qubits) - 1)):
-        qubits[_shifted(lower_mask, i)] *= -1
+        qubits[_shifted(lower_mask, i) + (1 << target)] *= -1
 
 
 @njit(locals={'lower_mask': _QSMask},
@@ -120,9 +120,8 @@ def _ygate(qubits, n_qubits, target):
     lower_mask = (1 << _QSMask(target)) - 1
     for i in prange(1 << (_QSMask(n_qubits) - 1)):
         i0 = _shifted(lower_mask, i)
-        t = qubits[i0]
-        # Global phase is ignored.
-        qubits[i0] = -qubits[i0 + (1 << target)]
+        t = qubits[i0] * 1j
+        qubits[i0] = qubits[i0 + (1 << target)] * -1j
         qubits[i0 + (1 << target)] = t
 
 
@@ -145,7 +144,6 @@ def _diaggate(qubits, n_qubits, target, factor):
     lower_mask = (1 << _QSMask(target)) - 1
     for i in prange(1 << (_QSMask(n_qubits) - 1)):
         i1 = _shifted(lower_mask, i) + (1 << target)
-        # Global phase is ignored.
         qubits[i1] *= factor
 
 
