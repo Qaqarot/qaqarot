@@ -1,6 +1,7 @@
 .. image:: https://raw.githubusercontent.com/Blueqat/Blueqat/master/blueqat_logo_blue.png
     :target: https://github.com/Blueqat/Blueqat
     :alt: Blueqat
+    :scale: 40%
 
 =======
 blueqat
