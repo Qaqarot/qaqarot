@@ -617,11 +617,19 @@ class CSwapGate(Gate):
 
 
 class Measurement(OneQubitGate):
-    """Measurement gate"""
+    """Measurement operation"""
     lowername = "measure"
 
     def dagger(self):
         raise ValueError(f"Hermitian conjugate of the measurement is not available.")
+
+
+class Reset(OneQubitGate):
+    """Reset operation"""
+    lowername = "reset"
+
+    def dagger(self):
+        raise ValueError(f"Hermitian conjugate of the reset operation is not available.")
 
 
 def slicing_singlevalue(arg, length):

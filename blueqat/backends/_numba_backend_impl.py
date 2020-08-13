@@ -345,6 +345,16 @@ def _reduce1(qubits, target, n_qubits, p0):
         qubits[i0] = 0.0
 
 
+@njit(nogil=True, parallel=True, fastmath=FASTMATH)
+def _reset1(qubits, target, n_qubits, p0):
+    sqrtp_inv = 1.0 / math.sqrt(1.0 - p0)
+    lower_mask = (1 << _QSMask(target)) - 1
+    for i in prange(1 << (_QSMask(n_qubits) - 1)):
+        i0 = _shifted(lower_mask, i)
+        qubits[i0] = qubits[i0 + (1 << target)] * sqrtp_inv
+        qubits[i0 + (1 << target)] = 0.0
+
+
 class NumbaBackend(Backend):
     """Simulator backend which uses numba."""
     __return_type = {
@@ -614,6 +624,21 @@ class NumbaBackend(Backend):
             else:
                 _reduce1(qubits, target, n_qubits, p0)
                 ctx.cregs[target] = 1
+        return ctx
+
+    def gate_reset(self, gate, ctx):
+        if ctx.save_cache:
+            self.cache = ctx.qubits.copy()
+        ctx.save_cache = False
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        for target in gate.target_iter(n_qubits):
+            rand = random.random()
+            p0 = _p0calc(qubits, target, n_qubits)
+            if rand < p0:
+                _reduce0(qubits, target, n_qubits, p0)
+            else:
+                _reset1(qubits, target, n_qubits, p0)
         return ctx
 
 

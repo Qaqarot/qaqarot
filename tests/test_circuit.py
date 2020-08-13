@@ -492,3 +492,23 @@ def test_macro():
         assert is_vec_same(Circuit().foo(1).run(), Circuit().h[1].run())
     finally:
         BlueqatGlobalSetting.unregister_macro('foo')
+
+
+@pytest.mark.parametrize('pair', [
+    (Circuit(10).x[:].reset[:], Circuit(10)),
+    (Circuit(10).h[:].reset[:], Circuit(10)),
+])
+def test_reset1(backend, pair):
+    if backend == 'qgate':
+        pytest.xfail('Reset gate for qgate is unimplemented.')
+    assert is_vec_same(pair[0].run(backend=backend), pair[1].run(backend=backend))
+
+
+def test_reset2(backend):
+    if backend == 'qgate':
+        pytest.xfail('Reset gate for qgate is unimplemented.')
+    common = Circuit().h[0].cx[0, 1].cx[0, 2].reset[1].m[:].run(backend=backend, shots=100).most_common(3)
+    assert len(common) == 2
+    a, b = common
+    assert a[0] in ('000', '101')
+    assert b[0] in ('000', '101')
