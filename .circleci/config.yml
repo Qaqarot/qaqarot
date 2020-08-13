@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.7.5
+      - image: circleci/python:3.7.8
 
     working_directory: ~/repo
 
@@ -36,7 +36,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/ --junitxml=test-reports/python/junit.xml --add-backend qgate
+            python -m pytest tests/ --junitxml=test-reports/python/junit.xml --add-backend qgate --add-backend numba
 
       - run:
           name: twine check
