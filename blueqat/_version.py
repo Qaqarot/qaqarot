@@ -14,4 +14,4 @@
 
 """The version of blueqat."""
 
-__version__ = "0.3.18-dev"
+__version__ = "0.3.18"
