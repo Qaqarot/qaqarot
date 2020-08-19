@@ -36,6 +36,13 @@ blueqat.vqe module
     :undoc-members:
     :show-inheritance:
 
+blueqat.wq module
+------------------
+
+.. automodule:: blueqat.wq
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------
