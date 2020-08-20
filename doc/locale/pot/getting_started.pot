@@ -1,28 +1,28 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) 2018, MDR Inc.
+# Copyright (C) 2018, The Blueqat Developers
 # This file is distributed under the same license as the Blueqat package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Blueqat \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-20 00:23+0900\n"
+"POT-Creation-Date: 2020-08-19 23:46+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
 
 #: ../../source/getting_started.rst:3
 msgid "Getting Started"
-msgstr "はじめの一歩"
+msgstr ""
 
 #: ../../source/getting_started.rst:6
 msgid "Prerequisites"
-msgstr "前提条件"
+msgstr ""
 
 #: ../../source/getting_started.rst:8
 msgid "Python3"
@@ -38,61 +38,59 @@ msgstr ""
 
 #: ../../source/getting_started.rst:13
 msgid "Install"
-msgstr "インストール"
+msgstr ""
 
 #: ../../source/getting_started.rst:21
 msgid "or"
-msgstr "または"
+msgstr ""
 
 #: ../../source/getting_started.rst:29
 msgid "Basics"
-msgstr "基本"
+msgstr ""
 
 #: ../../source/getting_started.rst:32
 msgid "Circuit"
-msgstr "回路の作り方"
+msgstr ""
 
 #: ../../source/getting_started.rst:46
 msgid "Method Chain"
-msgstr "メソッド・チェーン"
+msgstr ""
 
 #: ../../source/getting_started.rst:58
 msgid "Slice"
-msgstr "Sliceによる複数ビット操作"
+msgstr ""
 
 #: ../../source/getting_started.rst:68
 msgid "Rotation Gate"
-msgstr "ローテーション操作"
+msgstr ""
 
 #: ../../source/getting_started.rst:75
 msgid "Measurement"
-msgstr "測定"
+msgstr ""
 
 #: ../../source/getting_started.rst:82
 msgid "Run()"
-msgstr "実行"
+msgstr ""
 
 #: ../../source/getting_started.rst:89
 msgid "Run(shots=n)"
-msgstr "回数を指定した実行"
+msgstr ""
 
 #: ../../source/getting_started.rst:97
 msgid "Hamiltonian"
-msgstr "ハミルトニアン"
+msgstr ""
 
 #: ../../source/getting_started.rst:108
 msgid "simplify the hamiltonian"
-msgstr "ハミルトニアンの単純化"
+msgstr ""
 
 #: ../../source/getting_started.rst:116
 msgid "VQE"
 msgstr ""
 
 #: ../../source/getting_started.rst:129
-msgid ""
-"If you want to create an ising model hamiltonian use Z(x) instead of q(x)"
-" in the equation"
-msgstr "イジングモデルのハミルトニアンを作る場合は、q(x)ではなくZ(x)を使ってください。"
+msgid "If you want to create an ising model hamiltonian use Z(x) instead of q(x) in the equation"
+msgstr ""
 
 #: ../../source/getting_started.rst:136
 msgid "Ising Model"
@@ -100,15 +98,15 @@ msgstr ""
 
 #: ../../source/getting_started.rst:147
 msgid "Blueqat to Qiskit"
-msgstr "BlueqatからQiskit"
+msgstr ""
 
 #: ../../source/getting_started.rst:156
 msgid "Blueqat to QASM"
-msgstr "BlueqatからQASM"
+msgstr ""
 
 #: ../../source/getting_started.rst:169
 msgid "Example"
-msgstr "例"
+msgstr ""
 
 #: ../../source/getting_started.rst:172
 msgid "2-qubit Grover"
@@ -132,7 +130,7 @@ msgstr ""
 
 #: ../../source/getting_started.rst:230
 msgid "Some parameters for simualtion is adjustable"
-msgstr "シミュレーションにおけるいくつかのパラメータは調整可能です。"
+msgstr ""
 
 #: ../../source/getting_started.rst:240
 msgid "SA Energy Function"
@@ -140,7 +138,7 @@ msgstr ""
 
 #: ../../source/getting_started.rst:242
 msgid "Energy function of the calculation is stored in attribute E as an array."
-msgstr "計算されたエネルギー関数は配列としてアトリビュート E に保存されます。"
+msgstr ""
 
 #: ../../source/getting_started.rst:252
 msgid "SA Sampling"
@@ -148,57 +146,49 @@ msgstr ""
 
 #: ../../source/getting_started.rst:254
 msgid "Sampling and counter function with number of shots."
-msgstr "ショット数だけサンプリング、カウントを行う関数です。"
+msgstr ""
 
 #: ../../source/getting_started.rst:271
 msgid "Connection to D-Wave cloud"
-msgstr "D-Wave クラウドとの接続"
+msgstr ""
 
 #: ../../source/getting_started.rst:273
 msgid "Direct connection to D-Wave machine with apitoken"
-msgstr "APIトークンを用いたD-Waveマシンとの接続"
+msgstr ""
 
 #: ../../source/getting_started.rst:274
 msgid "https://github.com/dwavesystems/dwave-cloud-client is required"
-msgstr "https://github.com/dwavesystems/dwave-cloud-client が必要です"
+msgstr ""
 
 #: ../../source/getting_started.rst:287
 msgid "QUBO Functions"
 msgstr ""
 
 #: ../../source/getting_started.rst:289
-msgid ""
-"sel(N,K,array) Automatically create QUBO which select K qubits from N "
-"qubits"
-msgstr "N個の量子ビットからK個を選択するQUBOを自動生成します"
+msgid "sel(N,K,array) Automatically create QUBO which select K qubits from N qubits"
+msgstr ""
 
 #: ../../source/getting_started.rst:302
-msgid ""
-"if you set array on the 3rd params, the result likely to choose the nth "
-"qubit in the array"
-msgstr "3番目の変数で指定した配列により量子ビットを選択できます"
+msgid "if you set array on the 3rd params, the result likely to choose the nth qubit in the array"
+msgstr ""
 
 #: ../../source/getting_started.rst:314
-msgid ""
-"net(arr,N) Automatically create QUBO which has value 1 for all "
-"connectivity defined by array of edges and graph size N"
-msgstr "配列で指定したエッジを持つサイズNのグラフについて、エッジの値1である隣接行列QUBOを自動生成します"
+msgid "net(arr,N) Automatically create QUBO which has value 1 for all connectivity defined by array of edges and graph size N"
+msgstr ""
 
 #: ../../source/getting_started.rst:326
-msgid ""
-"this create 4*4 QUBO and put value 1 on connection between 0th and 1st "
-"qubit, 1st and 2nd qubit"
-msgstr "0番目と1番目、1番目2番目の量子ビット間の接続がそれぞれ1である4x4 QUBOを生成しました"
+msgid "this create 4*4 QUBO and put value 1 on connection between 0th and 1st qubit, 1st and 2nd qubit"
+msgstr ""
 
 #: ../../source/getting_started.rst:328
 msgid "zeros(N) Create QUBO with all element value as 0"
-msgstr "zeros(N) は全要素が0のQUBOを生成します"
+msgstr ""
 
 #: ../../source/getting_started.rst:338
 msgid "diag(list) Create QUBO with diag from list"
-msgstr "diag(list) は配列で指定した対角要素をもつQUBOを生成します"
+msgstr ""
 
 #: ../../source/getting_started.rst:348
 msgid "rands(N) Create QUBO with random number"
-msgstr "rands(N) ランダムな要素をもつQUBOを生成します"
+msgstr ""
 

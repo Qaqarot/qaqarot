@@ -1,7 +1,7 @@
 Ising/QUBO problem
 ==================
 
-Blueqat "wq" module is a module for solbing Ising and Quadratic Unconstrained Binary Optimization (QUBO) problems. 
+Blueqat wq module is a module for solbing Ising and Quadratic Unconstrained Binary Optimization (QUBO) problems. 
 It includes local solver for Simulated Annealing (SA) and Simulated Quantum Annealing (SQA).
 You can also submit problems to D-Wave cloud machine using wq module.
 
