@@ -70,8 +70,8 @@ def make_qs(n, m=None):
     
     Args:
         n(int), m(int, optional):
-            If specified both n and m, returns [qn, q(n+1), ..., qm],
-            Only n is specified, returns[q0, q1, ..., qn].
+            | If specified both n and m, returns [qn, q(n+1), ..., qm],
+            | Only n is specified, returns[q0, q1, ..., qn].
     Return:
         tuple(Symbol): Tuple of sympy symbols.
     """
@@ -95,13 +95,13 @@ def nbody_separation(expr, qs):
     """Convert n-body problem to 2-body problem.
     
     Args:
-        expr: sympy expressions to be separated.
-        qs: sympy's symbols to be used as supplementary variable.
+        | expr: sympy expressions to be separated.
+        | qs: sympy's symbols to be used as supplementary variable.
     Return:
         new_expr(sympy expr), constraints(sympy expr), mapping(dict(str, str -> Symbol)):
-            `new_expr` is converted problem, `constraints` is constraints for supplementary variable.
-            You may use `expr = new_expr + delta * constraints`, delta is floating point variable.
-            mapping is supplementary variable's mapping.
+            | `new_expr` is converted problem, `constraints` is constraints for supplementary variable.
+            | You may use `expr = new_expr + delta * constraints`, delta is floating point variable.
+            | mapping is supplementary variable's mapping.
     """
     try:
         import sympy
@@ -208,7 +208,9 @@ def Ei_sqa(q, J, T, P, G):
 def sel(selN,selK,selarr=[]):
     """
     Automatically create QUBO which select K qubits from N qubits
+
     .. code-block:: python
+
         print(wq.sel(5,2))
         #=>
         [[-3  2  2  2  2]
@@ -218,7 +220,9 @@ def sel(selN,selK,selarr=[]):
         [ 0  0  0  0 -3]]
         
     if you set array on the 3rd params, the result likely to choose the nth qubit in the array
+
     .. code-block:: python
+
         print(wq.sel(5,2,[0,2]))
         #=>
         [[-3.5  2.   2.   2.   2. ]
@@ -243,13 +247,16 @@ def sqr(sqrA):
 def net(narr,nnet):
     """
     Automatically create QUBO which has value 1 for all connectivity defined by array of edges and graph size N
+
     .. code-block:: python
+
         print(wq.net([[0,1],[1,2]],4))
         #=>
         [[0. 1. 0. 0.]
         [0. 0. 1. 0.]
         [0. 0. 0. 0.]
         [0. 0. 0. 0.]]
+
     this create 4*4 QUBO and put value 1 on connection between 0th and 1st qubit, 1st and 2nd qubit
     """
     mat = np.zeros((nnet,nnet))
@@ -268,7 +275,9 @@ def counter(narr):
 def diag(diag_ele):
     """
     Create QUBO with diag from list
+
     .. code-block:: python
+
         print(wq.diag([1,2,1]))
         #=>
         [[1 0 0]
@@ -280,7 +289,9 @@ def diag(diag_ele):
 def zeros(zeros_ele):
     """
     Create QUBO with all element value as 0
+
     .. code-block:: python
+
         print(wq.zeros(3))
         #=>
         [[0. 0. 0.]
@@ -291,7 +302,14 @@ def zeros(zeros_ele):
 
 def rands(rands_ele):
     """
-    Create random QUBO
+    Create QUBO with random number
+
+    .. code-block:: python
+
+        print(wq.rands(2))
+        #=>
+        [[0.89903411 0.68839641]
+        [0.         0.28554602]]
     """
     return np.triu(np.random.rand(rands_ele,rands_ele))
 

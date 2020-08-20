@@ -128,8 +128,8 @@ def pauli_from_char(ch, n=0):
     """Make Pauli matrix from an character.
 
     Args:
-        ch (str): "X" or "Y" or "Z" or "I".
-        n (int, optional): Make Pauli matrix as n-th qubits.
+        | ch (str): "X" or "Y" or "Z" or "I".
+        | n (int, optional): Make Pauli matrix as n-th qubits.
 
     Returns:
         If ch is "X" => X, "Y" => Y, "Z" => Z, "I" => I
@@ -193,8 +193,8 @@ def commutator(expr1, expr2):
     """Returns [expr1, expr2] = expr1 * expr2 - expr2 * expr1.
 
     Args:
-        expr1 (Expr, Term or Pauli operator): Pauli's expression.
-        expr2 (Expr, Term or Pauli operator): Pauli's expression.
+        | expr1 (Expr, Term or Pauli operator): Pauli's expression.
+        | expr2 (Expr, Term or Pauli operator): Pauli's expression.
 
     Returns:
         Expr: expr1 * expr2 - expr2 * expr1.
@@ -208,10 +208,10 @@ def is_commutable(expr1, expr2, eps=0.00000001):
     """Test whether expr1 and expr2 are commutable.
 
     Args:
-        expr1 (Expr, Term or Pauli operator): Pauli's expression.
-        expr2 (Expr, Term or Pauli operator): Pauli's expression.
-        eps (float, optional): Machine epsilon.
-            If |[expr1, expr2]| < eps, consider it is commutable.
+        | expr1 (Expr, Term or Pauli operator): Pauli's expression.
+        | expr2 (Expr, Term or Pauli operator): Pauli's expression.
+        | eps (float, optional): Machine epsilon.  
+            If | \[expr1, expr2 \]| < eps, consider it is commutable.
 
     Returns:
         bool: if expr1 and expr2 are commutable, returns True, otherwise False.
