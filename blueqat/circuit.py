@@ -139,9 +139,9 @@ class Circuit:
              copy_cache=None, copy_history=None):
         """Copy the circuit.
 
-        :params
-        copy_backends :bool copy backends if True.
-        copy_default_backend :bool copy default_backend if True.
+        params:
+            | copy_backends :bool copy backends if True.
+            | copy_default_backend :bool copy default_backend if True.
         """
         copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_backends:
@@ -163,8 +163,9 @@ class Circuit:
 
         This feature is beta. Interface may be changed.
 
-        ignore_measurement (bool, optional): If True, ignore the measurement in the circuit.
-                                             Otherwise, if measurement in the circuit, raises ValueError.
+        ignore_measurement (bool, optional): 
+            | If True, ignore the measurement in the circuit.
+            | Otherwise, if measurement in the circuit, raises ValueError.
         """
         ops = []
         for g in reversed(self.ops):
@@ -194,12 +195,12 @@ class Circuit:
         However, following parameters are commonly used.
 
         Commonly used args (Depends on backend):
-            shots (int, optional): The number of sampling the circuit.
-            returns (str, optional):  The category of returns value.
-                e.g. "statevector" returns the state vector after run the circuit.
-                     "shots" returns the counter of measured value.
-            token, url (str, optional): The token and URL for cloud resource.
-
+            | shots (int, optional): The number of sampling the circuit.
+            | returns (str, optional):  The category of returns value.
+            |   e.g. "statevector" returns the state vector after run the circuit.
+            |         "shots" returns the counter of measured value.
+            | token, url (str, optional): The token and URL for cloud resource.
+        
         Returns:
             Depends on backend.
 
@@ -246,8 +247,8 @@ class Circuit:
         If you want to use global default setting, call this method with backend_name=None.
 
         Args:
-            backend_name (str or None): new default backend name.
-                If None is given, global setting is applied.
+            | backend_name (str or None): new default backend name.
+            |     If None is given, global setting is applied.
 
         Raises:
             ValueError: If `backend_name` is not registered backend.
@@ -304,10 +305,10 @@ class BlueqatGlobalSetting:
         """Register new macro to Circuit.
 
         Args:
-            name (str): The name of macro.
-            func (callable): The function to be called.
-            allow_overwrite (bool, optional): If True, allow to overwrite the existing macro.
-                Otherwise, raise the ValueError.
+            | name (str): The name of macro.
+            | func (callable): The function to be called.
+            | allow_overwrite (bool, optional): If True, allow to overwrite the existing macro.
+            |     Otherwise, raise the ValueError.
 
         Raises:
             ValueError: The name is duplicated with existing macro, gate or method.
@@ -349,10 +350,10 @@ class BlueqatGlobalSetting:
         """Register new gate to gate set.
 
         Args:
-            name (str): The name of gate.
-            gateclass (type): The type object of gate.
-            allow_overwrite (bool, optional): If True, allow to overwrite the existing gate.
-                Otherwise, raise the ValueError.
+            | name (str): The name of gate.
+            | gateclass (type): The type object of gate.
+            | allow_overwrite (bool, optional): If True, allow to overwrite the existing gate.
+            |     Otherwise, raise the ValueError.
 
         Raises:
             ValueError: The name is duplicated with existing gate.
@@ -394,9 +395,10 @@ class BlueqatGlobalSetting:
         """Register new backend.
 
         Args:
-            name (str): The name of backend.
-            gateclass (type): The type object of backend
-            allow_overwrite (bool, optional): If True, allow to overwrite the existing backend.
+            | name (str): The name of backend.
+            | gateclass (type): The type object of backend
+            | allow_overwrite (bool, optional): If True, allow to overwrite the existing backend.
+              
                 Otherwise, raise the ValueError.
 
         Raises:

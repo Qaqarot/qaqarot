@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Blueqat \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-19 16:11+0900\n"
+"POT-Creation-Date: 2020-08-20 00:23+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,6 +25,9 @@ msgid "Blueqat's GitHub repository is here:"
 msgstr "BlueqatのGitHubリポジトリはこちらです。"
 
 #: ../../source/github.rst:6
-msgid "https://github.com/mdrft/Blueqat"
+msgid "https://github.com/Blueqat/Blueqat"
 msgstr ""
+
+#~ msgid "https://github.com/mdrft/Blueqat"
+#~ msgstr ""
 

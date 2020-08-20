@@ -15,6 +15,7 @@ Blueqat is an open source Python framework for quantum gate simulator.
 
    intro
    getting_started
+   ising
    tutorial
    api/modules
    github
