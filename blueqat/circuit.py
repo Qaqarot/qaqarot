@@ -66,6 +66,7 @@ GATE_SET = {
     "toffoli": gate.ToffoliGate,
     "ccz": gate.CCZGate,
     "cswap": gate.CSwapGate,
+    "mat1": gate.Mat1Gate,
     "reset": gate.Reset,
     "measure": gate.Measurement,
     "m": gate.Measurement,

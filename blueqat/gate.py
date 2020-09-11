@@ -376,6 +376,25 @@ class U3Gate(OneQubitGate):
         return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=np.complex)
 
 
+class Mat1Gate(OneQubitGate):
+    """Arbitrary 2x2 matrix gate
+
+    `mat` is expected a 2x2 unitary matrix, but not checked.
+    (If unexpected matrix is given, backend may raises error or returns weird result)
+    """
+    lowername = "mat1"
+
+    def __init__(self, targets, mat: np.array, **kwargs):
+        super().__init__(targets, (mat,), **kwargs)
+        self.mat = mat
+
+    def dagger(self):
+        return Mat1Gate(self.targets, self.mat.T.conjugate(), **self.kwargs)
+
+    def matrix(self):
+        return self.mat
+
+
 class CXGate(TwoQubitGate):
     """Controlled-X (CNOT) gate"""
     lowername = "cx"
