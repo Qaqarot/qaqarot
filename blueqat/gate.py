@@ -743,20 +743,8 @@ class ToffoliGate(Gate):
         c1, c2, t = self.targets
         return [
             HGate(t),
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(t),
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(c2),
-            TGate(t),
+            CCZGate((c1, c2, t)),
             HGate(t),
-            CXGate((c1, c2)),
-            TGate(c1),
-            TDagGate(c2),
-            CXGate((c1, c2)),
         ]
 
     def matrix(self):
@@ -778,9 +766,19 @@ class CCZGate(Gate):
     def fallback(self, n_qubits):
         c1, c2, t = self.targets
         return [
-                HGate(t),
-                ToffoliGate((c1, c2, t)),
-                HGate(t),
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(t),
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(c2),
+            TGate(t),
+            CXGate((c1, c2)),
+            TGate(c1),
+            TDagGate(c2),
+            CXGate((c1, c2)),
         ]
 
     def dagger(self):
