@@ -68,6 +68,11 @@ class Operation:
 
 class Gate(Operation):
     """Abstract quantum gate class."""
+    @property
+    def n_qargs(self) -> int:
+        """Number of qubit arguments of this gate."""
+        raise NotImplementedError()
+
     def fallback(self, n_qubits: int) -> List['Gate']:
         """Returns alternative gates to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
@@ -87,6 +92,9 @@ class Gate(Operation):
 
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
+    @property
+    def n_qargs(self):
+        return 1
 
     def target_iter(self, n_qubits):
         """The generator which yields the target qubits."""
@@ -101,6 +109,9 @@ class OneQubitGate(Gate):
 
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
+    @property
+    def n_qargs(self):
+        return 2
 
     def control_target_iter(self, n_qubits):
         """The generator which yields the tuples of (control, target) qubits."""
@@ -736,6 +747,10 @@ class ToffoliGate(Gate):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
 
+    @property
+    def n_qargs(self):
+        return 3
+
     def dagger(self):
         return self
 
@@ -762,6 +777,10 @@ class ToffoliGate(Gate):
 class CCZGate(Gate):
     """2-Controlled Z gate"""
     lowername = "ccz"
+
+    @property
+    def n_qargs(self):
+        return 3
 
     def fallback(self, n_qubits):
         c1, c2, t = self.targets
@@ -799,6 +818,10 @@ class CCZGate(Gate):
 class CSwapGate(Gate):
     """Controlled SWAP gate"""
     lowername = "cswap"
+
+    @property
+    def n_qargs(self):
+        return 3
 
     def dagger(self):
         return self
