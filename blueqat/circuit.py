@@ -62,6 +62,7 @@ GATE_SET = {
     "rxx": gate.RXXGate,
     "ryy": gate.RYYGate,
     "rzz": gate.RZZGate,
+    "zz": gate.ZZGate,
     "ccx": gate.ToffoliGate,
     "toffoli": gate.ToffoliGate,
     "ccz": gate.CCZGate,

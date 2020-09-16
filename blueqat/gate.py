@@ -658,6 +658,35 @@ class SwapGate(TwoQubitGate):
         return np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
 
 
+class ZZGate(TwoQubitGate):
+    """ZZ gate
+
+    This gate is a basis two-qubit gate for some kinds of trapped-ion based machines.
+    It is equivalent with RZZ(pi/2) except global phase.
+    """
+    lowername = "zz"
+
+    def __init__(self, targets, **kwargs):
+        super().__init__(targets, (), **kwargs)
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        # Ignoring global phase.
+        return self._make_fallback_for_control_target_iter(
+                n_qubits, lambda c, t: [
+                    RYGate(t, math.pi * 0.5),
+                    CXGate((c, t)),
+                    RZGate(t, math.pi * 0.5),
+                    U3Gate(t, -math.pi * 0.5, math.pi * 0.5, -math.pi * 0.5),
+                    RZGate(c, math.pi * 0.5),
+                ])
+
+        def matrix(self):
+            return np.diag([1, 1j, 1j, 1])
+
+
 class CU1Gate(TwoQubitGate):
     """Controlled U1 gate
 
