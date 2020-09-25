@@ -19,13 +19,8 @@ This module defines Circuit and the setting for circuit.
 import warnings
 from functools import partial
 from typing import Callable
+
 from . import gate
-from .backends.numpy_backend import NumPyBackend
-from .backends.numba_backend import numba_backend_lazy
-from .backends.qasm_output_backend import QasmOutputBackend
-from .backends.ibmq_backend import ibmq_backend
-from .backends.sympy_backend import SympyBackend
-from .backends.qgate_backend import QgateBackend
 
 GATE_SET = {
     "i": gate.IGate,
@@ -74,16 +69,6 @@ GATE_SET = {
 }
 
 GLOBAL_MACROS = {}
-
-BACKENDS = {
-    "numpy": NumPyBackend,
-    "numba": numba_backend_lazy,
-    "qasm_output": QasmOutputBackend,
-    "ibmq": ibmq_backend,
-    "sympy_unitary": SympyBackend,
-    "qgate": QgateBackend,
-}
-DEFAULT_BACKEND_NAME = "numpy"
 
 class Circuit:
     """Store the gate operations and call the backends."""
@@ -461,3 +446,5 @@ class BlueqatGlobalSetting:
             str: The name of default backend.
         """
         return DEFAULT_BACKEND_NAME
+
+from .backends import BACKENDS, DEFAULT_BACKEND_NAME
