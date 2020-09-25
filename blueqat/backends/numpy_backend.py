@@ -413,6 +413,25 @@ class NumPyBackend(Backend):
         ctx.qubits_buf = newq
         return ctx
 
+    def gate_mat1(self, gate, ctx):
+        qubits = ctx.qubits
+        newq = ctx.qubits_buf
+        n_qubits = ctx.n_qubits
+        i = ctx.indices
+        mat = gate.mat
+        for target in gate.target_iter(n_qubits):
+            np.copyto(newq, qubits)
+            t0 = (i & (1 << target)) == 0
+            t1 = (i & (1 << target)) != 0
+            newq[t0] = mat[0, 0] * qubits[t0]
+            newq[t0] += mat[0, 1] * qubits[t1]
+            newq[t1] = mat[1, 0] * qubits[t0]
+            newq[t1] += mat[1, 1] * qubits[t1]
+            qubits, newq = newq, qubits
+        ctx.qubits = qubits
+        ctx.qubits_buf = newq
+        return ctx
+
     def gate_measure(self, gate, ctx):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
