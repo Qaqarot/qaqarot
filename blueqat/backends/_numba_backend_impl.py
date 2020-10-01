@@ -212,6 +212,21 @@ def _u3gate(qubits, n_qubits, target, theta, phi, lambd):
         qubits[i0] = a * t + b * u
         qubits[i0 + (1 << target)] = c * t + d * u
 
+@njit(locals={'lower_mask': _QSMask},
+      nogil=True, parallel=True, fastmath=FASTMATH)
+def _mat1gate(qubits, n_qubits, target, mat):
+    lower_mask = (1 << _QSMask(target)) - 1
+    a = mat[0, 0]
+    b = mat[0, 1]
+    c = mat[1, 0]
+    d = mat[1, 1]
+    for i in prange(1 << (_QSMask(n_qubits) - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + (1 << target)]
+        qubits[i0] = a * t + b * u
+        qubits[i0 + (1 << target)] = c * t + d * u
+
 
 @njit(nogil=True, parallel=True, fastmath=FASTMATH)
 def _czgate(qubits, n_qubits, controls_target):
@@ -607,6 +622,14 @@ class NumbaBackend(Backend):
         lambd = gate.lambd
         for target in gate.target_iter(n_qubits):
             _u3gate(qubits, n_qubits, target, theta, phi, lambd)
+        return ctx
+
+    def gate_mat1(self, gate, ctx):
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        mat = gate.matrix()
+        for target in gate.target_iter(n_qubits):
+            _mat1gate(qubits, n_qubits, target, mat)
         return ctx
 
     def gate_measure(self, gate, ctx):
