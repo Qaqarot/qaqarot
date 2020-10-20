@@ -52,7 +52,7 @@ class TwoQubitGateDecomposingTranspiler(Backend):
     """Decomposite two qubit gate."""
     def _run_inner(self, gates, operations: List[Operation], singlemats: List[np.array],
             n_qubits: int, basis: Sequence[str],
-            mat1_decomposer: Optional[Callable[[OneQubitGate], List[Operation]]]):
+            mat1_decomposer: Callable[[OneQubitGate], List[Operation]]):
         basisgate = BASIS_TABLE[basis[0]]
         table = DECOMPOSE_TABLE[basis[0]]
         for gate in gates:
@@ -60,7 +60,7 @@ class TwoQubitGateDecomposingTranspiler(Backend):
                 # Non-gate operations.
                 for t in gate.target_iter(n_qubits):
                     if not np.allclose(singlemats[t], _eye):
-                        operations.append(Mat1Gate((t,), singlemats[t]))
+                        operations += mat1_decomposer(Mat1Gate((t,), singlemats[t]))
                         singlemats[t] = _eye.copy()
                 operations.append(gate)
             elif gate.n_qargs == 1:

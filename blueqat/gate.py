@@ -27,6 +27,10 @@ class Operation:
         self.kwargs = kwargs
         self.targets = targets
 
+    def target_iter(self, n_qubits):
+        """The generator which yields the target qubits."""
+        return slicing(self.targets, n_qubits)
+
     def fallback(self, n_qubits: int) -> List['Operation']:
         """Returns alternative operations to make equivalent circuit."""
         raise NotImplementedError(f"The fallback of {self.__class__.__name__} operation is not defined.")
@@ -95,10 +99,6 @@ class OneQubitGate(Gate):
     @property
     def n_qargs(self):
         return 1
-
-    def target_iter(self, n_qubits):
-        """The generator which yields the target qubits."""
-        return slicing(self.targets, n_qubits)
 
     def _make_fallback_for_target_iter(self, n_qubits, fallback):
         gates = []
