@@ -69,10 +69,10 @@ class TwoQubitGateDecomposingTranspiler(Backend):
             elif gate.lowername in basis:
                 for t1, t2 in gate.control_target_iter(n_qubits):
                     if not np.allclose(singlemats[t1], _eye):
-                        operations.append(Mat1Gate((t1,), singlemats[t1]))
+                        operations += mat1_decomposer(Mat1Gate((t1,), singlemats[t1]))
                         singlemats[t1] = _eye.copy()
                     if not np.allclose(singlemats[t2], _eye):
-                        operations.append(Mat1Gate((t2,), singlemats[t2]))
+                        operations += mat1_decomposer(Mat1Gate((t2,), singlemats[t2]))
                         singlemats[t2] = _eye.copy()
                 operations.append(gate)
             elif gate.lowername in table:
@@ -81,10 +81,10 @@ class TwoQubitGateDecomposingTranspiler(Backend):
                     np.matmul(l1, singlemats[t1], out=singlemats[t1])
                     np.matmul(l2, singlemats[t2], out=singlemats[t2])
                     if not np.allclose(singlemats[t1], _eye):
-                        operations.append(Mat1Gate((t1,), singlemats[t1]))
+                        operations += mat1_decomposer(Mat1Gate((t1,), singlemats[t1]))
                     singlemats[t1] = r1.copy()
                     if not np.allclose(singlemats[t2], _eye):
-                        operations.append(Mat1Gate((t2,), singlemats[t2]))
+                        operations += mat1_decomposer(Mat1Gate((t2,), singlemats[t2]))
                     singlemats[t2] = r2.copy()
                     operations.append(basisgate((t1, t2), *gparams))
             else:
@@ -115,5 +115,5 @@ class TwoQubitGateDecomposingTranspiler(Backend):
         self._run_inner(gates, operations, singlemats, n_qubits, basis, mat1_decomposer)
         for i, mat in enumerate(singlemats):
             if not np.allclose(mat, _eye):
-                operations.append(Mat1Gate((i,), mat))
+                operations += mat1_decomposer(Mat1Gate((i,), mat))
         return Circuit(n_qubits, operations)

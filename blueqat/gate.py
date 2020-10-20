@@ -384,7 +384,7 @@ class U3Gate(OneQubitGate):
         t, p, l = self.params
         a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
         b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=np.complex)
+        return np.array([[a.conjugate(), -b.conjugate()], [b, a]], dtype=np.complex)
 
 
 class Mat1Gate(OneQubitGate):
