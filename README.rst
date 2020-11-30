@@ -192,96 +192,6 @@ Maxcut QAOA
      | x |
      {1}---{2}""".format(*result.most_common()[0][0]))
 
-Optimization
--------------------------
-
-.. code-block:: python
-
-    import blueqat.wq as wq
-    c = wq.Opt().add([[1,1],[1,1]]).add("(q0+q1)^2")
-
-    #qaoa
-    print(c.qaoa().most_common(5))
-    #=>(((0, 0), 0.7639901896866), ((1, 0), 0.10321404014639714), ((0, 1), 0.10321404014639707), ((1, 1), 0.029581730020605202))
-
-    #annealing
-    print(c.run())
-    #=>[0, 0]
-
-    
-SA Annealing
------------------
-
-.. code-block:: python
-
-    import blueqat.wq as wq
-    a = wq.Opt()
-    a.qubo = wq.sel(3,1) #creating QUBO matrix
-    result = a.sa(shots=100,sampler="fast")
-    wq.counter(result)
-    
-    Counter({'010': 29, '100': 34, '001': 37})
-
-SA Parameters
------------------
-
-Some parameters for simualtion is adjustable
-
-.. code-block:: python
-
-    #for sa
-    a.Ts  = 10    #default 5
-    a.R   = 0.99  #default 0.95
-    a.ite = 10000 #default 1000
-
-SA Energy Function
-------------------
-
-Energy function of the calculation is stored in attribute E as an array.
-
-.. code-block:: python
-
-    print(a.E[-1]) #=>[0.0]
-
-    #if you want to check the time evolution
-    a.plot()
-
-SA Sampling
------------------
-
-Sampling and counter function with number of shots.
-
-.. code-block:: python
-
-    result = a.sa(shots=100,sampler="fast")
-
-    print(result)
-
-    [[0, 1, 0],
-     [0, 0, 1],
-     [0, 1, 0],
-     [0, 0, 1],
-     [0, 1, 0],
- 
-     counter(result) # => Counter({'001': 37, '010': 25, '100': 38})
-
-Connection to D-Wave cloud
------------------------------
-
-Direct connection to D-Wave machine with apitoken
-https://github.com/dwavesystems/dwave-cloud-client is required
-
-.. code-block:: python
-
-    import blueqat.wq as wq
-    a = wq.Opt()
-    a.dwavetoken = "your token here"
-    a.qubo = [[0,0,0,0,-4],[0,2,0,0,-4],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,4]] 
-    a.dw()
-
-    # => [1, 1, 0, 1, 1]
-
-
 Document
 ========
 
@@ -289,8 +199,8 @@ https://blueqat.readthedocs.io/en/latest/
 
 Author
 ======
-Takumi Kato (MDR), Yuichiro Minato (MDR), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
+Takumi Kato (blueqat), Yuichiro Minato (blueqat), Yuma Murata (D Slit Technologies), Satoshi Takezawa (TerraSky)
 
 Disclaimer
 ==========
-Copyright 2019 The Blueqat Developers.
+Copyright 2020 The Blueqat Developers.
