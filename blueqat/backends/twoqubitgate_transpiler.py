@@ -27,7 +27,7 @@ DECOMPOSE_TABLE = {
                np.array([[0.5 - 0.5j, 0.5 - 0.5j], [-0.5 - 0.5j, 0.5 + 0.5j]])),
     },
     'cz': {
-        'cx': (_eye.copy(), np.array([[1, 0], [0, -1]], dtype=np.complex),
+        'cx': (_eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2),
                (),
                _eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2)),
         'zz': (_eye.copy(), np.array([[1j, 0], [0, -1j]]),
