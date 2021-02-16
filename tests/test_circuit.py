@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import random
 from collections import Counter
 from functools import reduce
 
@@ -20,6 +21,7 @@ import pytest
 import numpy as np
 
 from blueqat import Circuit, BlueqatGlobalSetting
+from blueqat.backends.onequbitgate_decomposer import u3_decomposer
 from blueqat.utils import ignore_global_phase
 
 
@@ -512,3 +514,86 @@ def test_reset2(backend):
     a, b = common
     assert a[0] in ('000', '101')
     assert b[0] in ('000', '101')
+
+
+def test_mat1(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    p = random.random() * math.pi
+    q = random.random() * math.pi
+    r = random.random() * math.pi
+    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
+    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
+    
+    b1 = Circuit().mat1(a)[0].run(backend=backend)
+    assert is_vec_same(a1, b1)
+    b2 = Circuit().x[0].mat1(a)[0].run(backend=backend)
+    assert is_vec_same(a2, b2)
+
+
+def test_mat1_2(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    t = random.random() * math.pi
+    a = np.array([
+        [math.cos(t), -math.sin(t)],
+        [math.sin(t), math.cos(t)]])
+    v1 = Circuit().mat1(a)[1:3].run(backend=backend)
+    v2 = Circuit().ry(t * 2)[1:3].run(backend=backend)
+    assert is_vec_same(v1, v2)
+
+
+def test_mat1_decomposite(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    p = random.random() * math.pi
+    q = random.random() * math.pi
+    r = random.random() * math.pi
+    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
+    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
+
+    c = Circuit().mat1(a)[2, 4]
+    v1 = c.run(backend=backend)
+    v2 = c.run_with_2q_decomposition(basis='cx', mat1_decomposer=u3_decomposer).run(backend=backend)
+    assert is_vec_same(v1, v2)
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite1(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[3].rz(s)[3].cz[3, 1].h[2].ry(r)[3].rz(s)[3].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite2(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].cx[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite3(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].zz[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')
