@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import random
 from collections import Counter
 from functools import reduce
 
@@ -20,6 +21,7 @@ import pytest
 import numpy as np
 
 from blueqat import Circuit, BlueqatGlobalSetting
+from blueqat.backends.onequbitgate_decomposer import u3_decomposer
 from blueqat.utils import ignore_global_phase
 
 
@@ -220,21 +222,21 @@ def test_globalphase(backend):
     phi = 1.6
     lambd = 2.3
     c = Circuit().rz(theta)[0]
-    assert abs(c.run(backend=backend, ignore_global=False)[0] - np.exp(-0.5j * theta)) < 1e-8
+    assert abs(c.run(backend=backend)[0] - np.exp(-0.5j * theta)) < 1e-8
 
     c = Circuit().phase(theta)[0]
-    assert abs(c.run(backend=backend, ignore_global=False)[0] - 1) < 1e-8
+    assert abs(c.run(backend=backend)[0] - 1) < 1e-8
 
     c = Circuit().u1(theta)[0]
-    assert abs(c.run(backend=backend, ignore_global=False)[0] - np.exp(-0.5j * theta)) < 1e-8
+    assert abs(c.run(backend=backend)[0] - np.exp(-0.5j * theta)) < 1e-8
 
     v0 = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
     c = Circuit().u2(phi, lambd)[0]
-    assert abs(c.run(backend=backend, ignore_global=False)[0] - v0) < 1e-8
+    assert abs(c.run(backend=backend)[0] - v0) < 1e-8
 
     v0 = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
     c = Circuit().u3(theta, phi, lambd)[0]
-    assert abs(c.run(backend=backend, ignore_global=False)[0] - v0) < 1e-8
+    assert abs(c.run(backend=backend)[0] - v0) < 1e-8
 
 
 def test_controlled_gate_phase(backend):
@@ -245,40 +247,40 @@ def test_controlled_gate_phase(backend):
     val = np.exp(-0.5j * theta)
     c0 = Circuit().crz(theta)[0, 1]
     c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend, ignore_global=False)
-    v1 = c1.run(backend=backend, ignore_global=False)
+    v0 = c0.run(backend=backend)
+    v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
     val = 1.0
     c0 = Circuit().cphase(theta)[0, 1]
     c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend, ignore_global=False)
-    v1 = c1.run(backend=backend, ignore_global=False)
+    v0 = c0.run(backend=backend)
+    v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
     val = 1.0
     c0 = Circuit().cu1(theta)[0, 1]
     c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend, ignore_global=False)
-    v1 = c1.run(backend=backend, ignore_global=False)
+    v0 = c0.run(backend=backend)
+    v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
     val = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
     c0 = Circuit().cu2(phi, lambd)[0, 1]
     c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend, ignore_global=False)
-    v1 = c1.run(backend=backend, ignore_global=False)
+    v0 = c0.run(backend=backend)
+    v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
     val = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
     c0 = Circuit().cu3(theta, phi, lambd)[0, 1]
     c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend, ignore_global=False)
-    v1 = c1.run(backend=backend, ignore_global=False)
+    v0 = c0.run(backend=backend)
+    v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
@@ -512,3 +514,86 @@ def test_reset2(backend):
     a, b = common
     assert a[0] in ('000', '101')
     assert b[0] in ('000', '101')
+
+
+def test_mat1(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    p = random.random() * math.pi
+    q = random.random() * math.pi
+    r = random.random() * math.pi
+    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
+    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
+    
+    b1 = Circuit().mat1(a)[0].run(backend=backend)
+    assert is_vec_same(a1, b1)
+    b2 = Circuit().x[0].mat1(a)[0].run(backend=backend)
+    assert is_vec_same(a2, b2)
+
+
+def test_mat1_2(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    t = random.random() * math.pi
+    a = np.array([
+        [math.cos(t), -math.sin(t)],
+        [math.sin(t), math.cos(t)]])
+    v1 = Circuit().mat1(a)[1:3].run(backend=backend)
+    v2 = Circuit().ry(t * 2)[1:3].run(backend=backend)
+    assert is_vec_same(v1, v2)
+
+
+def test_mat1_decomposite(backend):
+    if backend == 'qgate':
+        pytest.xfail('mat1 gate for qgate is unimplemented.')
+    p = random.random() * math.pi
+    q = random.random() * math.pi
+    r = random.random() * math.pi
+    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
+    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
+
+    c = Circuit().mat1(a)[2, 4]
+    v1 = c.run(backend=backend)
+    v2 = c.run_with_2q_decomposition(basis='cx', mat1_decomposer=u3_decomposer).run(backend=backend)
+    assert is_vec_same(v1, v2)
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite1(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[3].rz(s)[3].cz[3, 1].h[2].ry(r)[3].rz(s)[3].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite2(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].cx[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')
+
+
+@pytest.mark.parametrize('basis', ['cx', 'cz', 'zz'])
+def test_decomposite3(basis):
+    p = random.random()
+    q = random.random()
+    r = random.random()
+    s = random.random()
+
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].zz[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    v1 = c.run()
+    v2 = c.run_with_2q_decomposition(basis=basis).run()
+    assert is_vec_same(v1, v2, ignore_global='ab')

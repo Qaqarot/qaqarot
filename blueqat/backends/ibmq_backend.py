@@ -58,7 +58,7 @@ def _qasm_runner_qiskit(qasm, qiskit_backend=None, shots=None, returns=None, **k
 
     if import_error:
         if returns == "_exception":
-            return e
+            return import_error
         if isinstance(import_error, ImportError):
             raise ImportError("Cannot import qiskit. To use this backend, please install qiskit." +
                               " `pip install qiskit`.")

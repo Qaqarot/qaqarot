@@ -14,8 +14,12 @@
 
 """Utilities for convenient."""
 from collections import Counter
+from typing import Union, Tuple
 
-def to_inttuple(bitstr):
+import numpy as np
+
+
+def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
     """Convert from bit string likes '01011' to int tuple likes (0, 1, 0, 1, 1)
 
     Args:
@@ -38,7 +42,8 @@ def to_inttuple(bitstr):
         return {tuple(int(b) for b in k): v for k, v in bitstr.items()}
     raise ValueError("bitstr type shall be `str`, `Counter` or `dict`")
 
-def ignore_global_phase(statevec):
+
+def ignore_global_phase(statevec: np.array) -> np.array:
     """Multiple e^-iθ to `statevec` where θ is a phase of first non-zero element.
 
     Args:
@@ -53,3 +58,12 @@ def ignore_global_phase(statevec):
             statevec *= ang
             break
     return statevec
+
+
+def check_unitarity(mat: np.array) -> bool:
+    """Check whether mat is a unitary matrix."""
+    shape = mat.shape
+    if len(shape) != 2 or shape[0] != shape[1]:
+        # Not a square matrix.
+        return False
+    return np.allclose(mat @ mat.T.conjugate(), np.eye(shape[0]))
