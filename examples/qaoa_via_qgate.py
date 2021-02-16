@@ -45,6 +45,9 @@ if __name__ == "__main__":
     # default is 'cpu'.
     #
     # simargs['runtime'] = 'cpu'
+
+    # NOTE: please explicitly specify cuda to enable CUDA runtime
+    simargs['runtime'] = 'cuda'
     
     # dynamic qubit grouping
     #  'dynamic' : enable dynamic qubit grouping.
@@ -59,6 +62,9 @@ if __name__ == "__main__":
     # default is 'qgate'
     #
     # simargs['sampling'] = 'qgate'
+
+    # if you see issues, disable all optimizations
+    # simargs['optimize'] = False
     
     sampler = vqe.get_measurement_sampler(1024, run_options = simargs)
 
