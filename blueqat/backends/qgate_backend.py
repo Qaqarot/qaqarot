@@ -34,33 +34,112 @@ class QgateBackend(Backend) :
                 # controlled U gate
                 'cu1' : (gtype.U1, 1, 1), 'cu2' : (gtype.U2, 1, 1), 'cu3' : (gtype.U, 1, 1),
                 # swap and multi-controlled-bit gate
-                'swap' : (gtype.SWAP, 0, 2), 'ccx' : (gtype.X, 2, 1),
+                'swap' : (gtype.SWAP, 0, 2),
+                'ccx' : (gtype.X, 2, 1), 'ccz' : (gtype.Z, 2, 1)
             }
+
+            if hasattr(qgate, '__version__') and qgate.__version__.startswith('0.4.0'):
+                # register new gate types in Qgate 0.4
+                QgateBackend.gatetypes['rxx'] = (gtype.RXX, 0, 2)
+                QgateBackend.gatetypes['ryy'] = (gtype.RYY, 0, 2)
+                QgateBackend.gatetypes['rzz'] = (gtype.RZZ, 0, 2)
+                QgateBackend.gatetypes['cphase'] = (gtype.P, 1, 1)
+                QgateBackend.gatetypes['cswap'] = (gtype.SWAP, 1, 2)
+                # wrappers to absorb interface changes for Qgate 0.4
+                def set_qregs_04(gate, qreg, controls):
+                    gate.set_target(qreg)
+                    if controls:
+                        gate.set_controls(controls)
+
+                def get_target_04(gate):
+                    return gate.target
+
+                def create_multi_qubit_gate_04(gate, typeinfo, targets):
+                    g = model.Gate(typeinfo[0](*gate.params))
+                    if ctrls:
+                        q.set_controls(ctrls)
+                    g.set_targets(targets)
+                    return g
+
+                def create_simulator_04(prefs):
+                    return qgate.simulator.create(**prefs)
+
+                def create_sampler_04(sim, qreg_ordering, sampling_method):
+                    if sampling_method == 'blueqat' :
+                        # create prob numpy array
+                        probs = sim.qubits.create_prob_accessor(qreg_ordering)[:]
+                        return BlueqatCompatibleSampler_04(probs, qreg_ordering)
+                    else:
+                        return SamplingWrapper_04(sim.qubits, qreg_ordering)
+
+                QgateBackend.set_qregs = set_qregs_04
+                QgateBackend.get_target = get_target_04
+                QgateBackend.create_multi_qubit_gate = create_multi_qubit_gate_04
+                QgateBackend.create_simulator = create_simulator_04
+                QgateBackend.create_sampler = create_sampler_04
+            else:
+                # wrappers to absorb interface changes for Qgate 0.3 or older
+                def set_qregs_03(gate, qreg, controls):
+                    gate.set_qreg(qreg)
+                    if controls:
+                        gate.set_ctrllist(controls)
+
+                def get_target_03(gate):
+                    return gate.qreg
+
+                def create_multi_qubit_gate_03(gate, typeinfo, ctrls, targets):
+                    assert not ctrls, 'controlled multi qubit gate is not supported'
+                    g = model.MultiQubitGate(typeinfo[0](*gate.params))
+                    g.set_qreglist(targets)
+                    return g
+
+                def create_simulator_03(prefs):
+                    circuit_prep = prefs.get('circuit_prep', qgate.prefs.dynamic)
+                    simprefs = {'circuit_prep': circuit_prep}
+                    # create simulator instance
+                    runtime = prefs.get('runtime', 'cpu')
+                    if runtime == 'cuda' :
+                        sim = qgate.simulator.cuda(**simprefs)
+                    elif runtime == 'cpu' :
+                        sim = qgate.simulator.cpu(**simprefs)
+                    elif runtime == 'py' :
+                        sim = qgate.simulator.py(**simprefs)
+                    else :
+                        raise RuntimeError("Unknown runtime, {}.  Accetable values are 'cpu', 'cuda' and 'py'.".format(runtime))
+                    return sim
+
+                def create_sampler_03(sim, qreg_ordering, sampling_method):
+                    if sampling_method == 'blueqat' :
+                        # create prob numpy array
+                        return sim.qubits.create_sampling_pool(qreg_ordering, BlueqatCompatibleSampler_03)
+                    else:
+                        return sim.qubits.create_sampling_pool(qreg_ordering)
+
+                QgateBackend.set_qregs = set_qregs_03
+                QgateBackend.get_target = get_target_03
+                QgateBackend.create_multi_qubit_gate = create_multi_qubit_gate_03
+                QgateBackend.create_simulator = create_simulator_03
+                QgateBackend.create_sampler = create_sampler_03
 
     def run(self, gates, n_qubits, *args, **kwargs):
         self.n_qubits = n_qubits
         # returns
         r = kwargs.get('returns', '')
         sampling = kwargs.get('sampling', 'qgate')
-        circuit_prep = kwargs.get('circuit_prep', qgate.prefs.dynamic)
-        simprefs = {'circuit_prep': circuit_prep}
         shots = kwargs.get('shots', 0)
         if shots != 0 and r == '' :
             r = 'shots'
         elif r == '' :
             r = 'statevector'
 
-        # create simulator instance
-        runtime = kwargs.get('runtime', 'cpu')
-        # runtime = kwargs.get('runtime', 'py')
-        if runtime == 'cuda' :
-            sim = qgate.simulator.cuda(**simprefs)
-        elif runtime == 'cpu' :
-            sim = qgate.simulator.cpu(**simprefs)
-        elif runtime == 'py' :
-            sim = qgate.simulator.py(**simprefs)
-        else :
-            raise RuntimeError("Unknown runtime, {}.  Accetable values are 'cpu', 'cuda' and 'py'.".format(runtime))
+        if 'returns' in kwargs:
+            del kwargs['returns']
+        if 'sampling' in kwargs:
+            del kwargs['sampling']
+        if 'shots' in kwargs:
+            del kwargs['shots']
+
+        sim = QgateBackend.create_simulator(kwargs)
 
         # creating registers and references.
         self.qregs = [model.Qreg() for _ in range(n_qubits)]
@@ -117,8 +196,7 @@ class QgateBackend(Backend) :
                     g = model.Gate(gt)
                     ctrl = self.qregs[ctrlidx]
                     qreg = self.qregs[qregidx]
-                    g.set_ctrllist(ctrl)
-                    g.set_qreg(qreg)
+                    QgateBackend.set_qregs(g, qreg, [ctrl])
                     glist.append(g)
             elif isinstance(gate, bqgate.ToffoliGate) :
                 gt = typeinfo[0](*gate.params)
@@ -126,8 +204,7 @@ class QgateBackend(Backend) :
                 c0, c1, t = gate.targets
                 ctrls = (self.qregs[c0], self.qregs[c1])
                 qreg = self.qregs[t]
-                g.set_ctrllist(ctrls)
-                g.set_qreg(qreg)
+                QgateBackend.set_qregs(g, qreg, ctrls)
                 glist.append(g)
             else :
                 raise RuntimeError('Unknown gate, {}.'.format(repr(gate)))
@@ -136,10 +213,12 @@ class QgateBackend(Backend) :
 
     def convert_multi_qubit_gate(self, gate, typeinfo) :
         glist = list()
-        g = model.MultiQubitGate(typeinfo[0](*gate.params))
-        t0, t1 = gate.targets
-        qregs = (self.qregs[t0], self.qregs[t1])
-        g.set_qreglist(qregs)
+        n_ctrls = typeinfo[1]
+        ctrls = gate.targets[:n_ctrls]
+        ctrl_qregs = (self.qregs[idx] for idx in ctrls)
+        targets = gate.targets[n_ctrls]
+        target_qregs = (self.qregs[idx] for idx in targets)
+        g = QgateBackend.create_multi_qubit_gate(gate, typeinfo, ctrls, targets)
         glist.append(g)
         return glist
 
@@ -156,7 +235,7 @@ class QgateBackend(Backend) :
             gt = gate_type_factory(*gate.params)
             g = model.Gate(gt)
             qreg = self.qregs[qregidx]
-            g.set_qreg(qreg)
+            QgateBackend.set_qregs(g, qreg, None)
             glist.append(g)
         return glist
 
@@ -166,7 +245,7 @@ class QgateBackend(Backend) :
             gt = gtype.ExpiI(phase)
             g = model.Gate(gt)
             qreg = self.qregs[qregidx]
-            g.set_qreg(qreg)
+            self.set_qregs(g, qreg, None)
             glist.append(g)
         return glist
 
@@ -180,7 +259,8 @@ class QgateBackend(Backend) :
 
         for op in ops :
             if isinstance(op, model.Measure) :
-                sampling_qregs.append(op.qreg)
+                target = QgateBackend.get_target(op)
+                sampling_qregs.append(target)
             else :
                 ops_no_measure.append(op)
 
@@ -191,13 +271,8 @@ class QgateBackend(Backend) :
         sampling_qregs = list(qregs_no_dup)
         sampling_qregs.sort(key = self.qregs.index)
 
-        if sampling_method == 'blueqat' :
-            sampling_pool = sim.qubits.create_sampling_pool(sampling_qregs,
-                                                            BlueqatCompatibleSamplingPool)
-            # print(sampling_pool.prob)
-        else :
-            sampling_pool = sim.qubits.create_sampling_pool(sampling_qregs)
-        obs = sampling_pool.sample(shots)
+        sampler = QgateBackend.create_sampler(sim, sampling_qregs, sampling_method)
+        obs = sampler.sample(shots)
 
         # FIXME: faster conversion for bit representation
         hist = obs.histgram()
@@ -228,7 +303,7 @@ class QgateBackend(Backend) :
         return state_vector, strkey_hist
 
 # provided for compatiblity and tests
-class BlueqatCompatibleSamplingPool :
+class BlueqatCompatibleSampler_03 :
     def __init__(self, prob, empty_lanes, qreg_ordering) :
         #prob *= (1. / np.sum(prob))
         self.prob = prob
@@ -283,3 +358,42 @@ class BlueqatCompatibleSamplingPool :
             for shift in range(n_shifts) :
                 v_shifted |= (v << shift) & masks[shift]
             obs[idx] = v_shifted
+
+
+# provided for compatiblity and tests
+class BlueqatCompatibleSampler_04 :
+    def __init__(self, prob, qreg_ordering) :
+        self.prob = prob
+        self.qreg_ordering = qreg_ordering
+
+    def sample(self, n_samples) :
+        obs = np.empty([n_samples], np.int)
+        import random
+        for idx in range(n_samples) :
+            redprob = self.prob
+            v = 0
+            p_all = 1
+            for bitpos in range(len(self.qreg_ordering)) :
+                rnum = random.random()
+                p_zero = np.sum(redprob[::2])
+                if rnum < (p_zero / p_all) :
+                    redprob = redprob[::2]
+                    p_all = p_zero
+                else :
+                    redprob = redprob[1::2]
+                    p_all = p_all - p_zero
+                    v |= (1 << bitpos)
+
+            obs[idx] = v
+
+        obslist = qgate.simulator.observation.ObservationList(self.qreg_ordering, obs, 0)
+        return obslist
+
+
+class SamplingWrapper_04:
+    def __init__(self, qubits, qreg_ordering):
+        self.qubits = qubits
+        self.qreg_ordering = qreg_ordering
+
+    def sample(self, n_samples, randnums=None):
+        return self.qubits.sample(self.qreg_ordering, n_samples, randnums)
