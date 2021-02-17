@@ -98,7 +98,7 @@ jobs:
           no_output_timeout: 30m
           command: |
             . venv/bin/activate
-            python -m pytest tests/ --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
+            python -m pytest tests/ -v --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
 
       - run:
           name: twine check
