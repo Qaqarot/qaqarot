@@ -25,18 +25,21 @@ commands:
           - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
       - run:
-          name: install dependencies
+          name: Install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip setuptools
-            pip install pytest twine wheel
-            pip install -r requirements.txt -r optional-requirements.txt
+            pip --version
+            pip install -q -U pip setuptools
+            pip install -q pytest twine wheel
+            pip install -q -r requirements.txt -r optional-requirements.txt
 
       - when:
           condition: << parameters.qgate_url >>
           steps:
-            - run: pip install << parameters.qgate_url >>
+            - run:
+                name: Install qgate
+                command: pip3 install << parameters.qgate_url >>
 
       - save_cache:
           paths:
