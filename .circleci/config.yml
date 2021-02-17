@@ -13,6 +13,9 @@ executors:
 commands:
   install:
     parameters:
+      tag:
+        type: string
+
       qgate_url:
         type: string
         default: ""
@@ -22,7 +25,7 @@ commands:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+          - v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
       - run:
           name: Install dependencies
@@ -30,9 +33,10 @@ commands:
             python3 -m venv venv
             . venv/bin/activate
             pip --version
-            pip install -q -U pip setuptools
-            pip install -q pytest twine wheel
-            pip install -q -r requirements.txt -r optional-requirements.txt
+            pip install --progress-bar off -U pip setuptools
+            pip install --progress-bar off pytest twine wheel
+            pip install --progress-bar off -r requirements.txt
+            pip install --progress-bar off -r optional-requirements.txt
 
       - when:
           condition: << parameters.qgate_url >>
@@ -53,7 +57,8 @@ jobs:
       tag: "3.7.8"
 
     steps:
-      - install
+      - install:
+          tag: "3.7.8"
 
       - run:
           name: twine check
@@ -80,6 +85,7 @@ jobs:
 
     steps:
       - install:
+          tag: <<parameters.tag>>
           qgate_url: <<parameters.qgate_url>>
 
       - run:
