@@ -32,7 +32,6 @@ commands:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip --version
             pip install --progress-bar off -U pip setuptools
             pip install --progress-bar off pytest twine wheel
             pip install --progress-bar off -r requirements.txt
@@ -43,7 +42,9 @@ commands:
           steps:
             - run:
                 name: Install qgate
-                command: pip3 install << parameters.qgate_url >>
+                command: |
+                  . venv/bin/activate
+                  pip install << parameters.qgate_url >>
 
       - save_cache:
           paths:
