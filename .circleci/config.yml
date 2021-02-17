@@ -1,18 +1,28 @@
-version: 2
-jobs:
-  build:
-    docker:
-      - image: circleci/python:3.7.8
+# vim: set sw=2 :
+version: 2.1
+executors:
+    python:
+      parameters:
+        tag:
+          type: string
+      working_directory: ~/repo<< parameters.tag >>
+      docker:
+          - image: circleci/python:<< parameters.tag >>
 
-    working_directory: ~/repo
+
+commands:
+  install:
+    parameters:
+      qgate_url:
+        type: string
+        default: ""
 
     steps:
       - checkout
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          - v1-dependencies-
+          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
       - run:
           name: install dependencies
@@ -22,11 +32,52 @@ jobs:
             pip install --upgrade pip setuptools
             pip install pytest twine wheel
             pip install -r requirements.txt -r optional-requirements.txt
-            pip install https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp37-cp37m-manylinux1_x86_64.whl
+
+      - when:
+          condition: << parameters.qgate_url >>
+          steps:
+            - run: pip install << parameters.qgate_url >>
+
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+
+jobs:
+  doccheck:
+    executor:
+      name: python
+      tag: "3.7.8"
+
+    steps:
+      - install
+
+      - run:
+          name: twine check
+          command: |
+            . venv/bin/activate
+            python setup.py build sdist bdist_wheel
+
+  test_main:
+    parameters:
+      tag:
+        type: string
+
+      test_option:
+        type: string
+        default: "--add-backend qgate --add-backend numba"
+
+      qgate_url:
+        type: string
+        default: ""
+
+    executor:
+      name: python
+      tag: <<parameters.tag>>
+
+    steps:
+      - install:
+          qgate_url: <<parameters.qgate_url>>
 
       - run:
           name: create a result directory
@@ -36,7 +87,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/ --junitxml=test-reports/python/junit.xml --add-backend qgate --add-backend numba
+            python -m pytest tests/ --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
 
       - run:
           name: twine check
@@ -56,4 +107,18 @@ workflows:
   version: 2
   check_all:
     jobs:
-      - build
+      - doccheck
+      - test_main:
+          name: py3.7-qgate-0.2.2
+          tag: "3.7.8"
+          qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp37-cp37m-manylinux1_x86_64.whl
+
+      - test_main:
+          name: py3.8-qgate-0.2.2
+          tag: "3.8.7"
+          qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp38-cp38-manylinux1_x86_64.whl
+
+      - test_main:
+          name: py3.9
+          tag: "3.9.0"
+          test_option: "--add-backend numba"
