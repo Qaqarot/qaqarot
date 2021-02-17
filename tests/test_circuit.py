@@ -287,14 +287,14 @@ def test_controlled_gate_phase(backend):
 
 def test_measurement1(backend):
     c = Circuit().m[0]
-    cnt = c.run(backend=backend, shots=10000)
-    assert cnt.most_common(1) == [("0", 10000)]
+    cnt = c.run(backend=backend, shots=100)
+    assert cnt.most_common(1) == [("0", 100)]
 
 
 def test_measurement2(backend):
     c = Circuit().x[0].m[0]
-    cnt = c.run(backend=backend, shots=10000)
-    assert cnt.most_common(1) == [("1", 10000)]
+    cnt = c.run(backend=backend, shots=100)
+    assert cnt.most_common(1) == [("1", 100)]
 
 
 def test_measurement3(backend):
@@ -312,15 +312,15 @@ def test_measurement3(backend):
 
 def test_measurement_multiqubit1(backend):
     c = Circuit().x[0].m[1]
-    cnt = c.run(backend=backend, shots=10000)
+    cnt = c.run(backend=backend, shots=100)
     # 0-th qubit is also 0 because it is not measured.
-    assert cnt.most_common(1) == [("00", 10000)]
+    assert cnt.most_common(1) == [("00", 100)]
 
 
 def test_measurement_multiqubit2(backend):
     c = Circuit().x[0].m[1::-1]
-    cnt = c.run(backend=backend, shots=10000)
-    assert cnt.most_common(1) == [("10", 10000)]
+    cnt = c.run(backend=backend, shots=100)
+    assert cnt.most_common(1) == [("10", 100)]
 
 
 def test_measurement_entangled_state(backend):
