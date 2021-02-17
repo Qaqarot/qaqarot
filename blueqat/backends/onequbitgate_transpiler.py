@@ -6,7 +6,7 @@ from ..circuit import Circuit
 from ..gate import *
 from .backendbase import Backend
 
-_eye = np.eye(2, dtype=np.complex)
+_eye = np.eye(2, dtype=complex)
 
 class OneQubitGateCompactionTranspiler(Backend):
     """Merge one qubit gate."""

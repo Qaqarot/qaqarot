@@ -146,7 +146,7 @@ class XGate(OneQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[0, 1], [1, 0]], dtype=np.complex)
+        return np.array([[0, 1], [1, 0]], dtype=complex)
 
 
 class YGate(OneQubitGate):
@@ -168,7 +168,7 @@ class ZGate(OneQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[1, 0], [0, -1]], dtype=np.complex)
+        return np.array([[1, 0], [0, -1]], dtype=complex)
 
 
 class HGate(OneQubitGate):
@@ -179,7 +179,7 @@ class HGate(OneQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2)
+        return np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
 
 
 class RXGate(OneQubitGate):
@@ -197,7 +197,7 @@ class RXGate(OneQubitGate):
         t = self.theta * 0.5
         a = np.cos(t)
         b = -1j * np.sin(t)
-        return np.array([[a, b], [b, a]], dtype=np.complex)
+        return np.array([[a, b], [b, a]], dtype=complex)
 
 
 class RYGate(OneQubitGate):
@@ -215,7 +215,7 @@ class RYGate(OneQubitGate):
         t = self.theta * 0.5
         a = np.cos(t)
         b = np.sin(t)
-        return np.array([[a, -b], [b, a]], dtype=np.complex)
+        return np.array([[a, -b], [b, a]], dtype=complex)
 
 
 class RZGate(OneQubitGate):
@@ -231,7 +231,7 @@ class RZGate(OneQubitGate):
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0], [0, a]], dtype=np.complex)
+        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 
 class PhaseGate(OneQubitGate):
@@ -258,7 +258,7 @@ class PhaseGate(OneQubitGate):
         return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, self.theta)])
 
     def matrix(self):
-        return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=np.complex)
+        return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=complex)
 
 
 class TGate(OneQubitGate):
@@ -340,7 +340,7 @@ class U1Gate(OneQubitGate):
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0], [0, a]], dtype=np.complex)
+        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 
 class U2Gate(OneQubitGate):
@@ -364,7 +364,7 @@ class U2Gate(OneQubitGate):
         c = 1 / np.sqrt(2)
         a = np.exp(0.5j * (p + l)) * c
         b = np.exp(0.5j * (p - l)) * c
-        return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=np.complex)
+        return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=complex)
 
 
 class U3Gate(OneQubitGate):
@@ -384,7 +384,7 @@ class U3Gate(OneQubitGate):
         t, p, l = self.params
         a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
         b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[a.conjugate(), -b.conjugate()], [b, a]], dtype=np.complex)
+        return np.array([[a.conjugate(), -b.conjugate()], [b, a]], dtype=complex)
 
 
 class Mat1Gate(OneQubitGate):
@@ -415,7 +415,7 @@ class CXGate(TwoQubitGate):
 
     # TODO: Specification required: target \otimes control or control \otimes target
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=complex)
 
 
 class CZGate(TwoQubitGate):
@@ -426,7 +426,7 @@ class CZGate(TwoQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]], dtype=complex)
 
 
 class CYGate(TwoQubitGate):
@@ -444,7 +444,7 @@ class CYGate(TwoQubitGate):
                           SGate(t)])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]], dtype=complex)
 
 
 class CHGate(TwoQubitGate):
@@ -464,7 +464,7 @@ class CHGate(TwoQubitGate):
 
     def matrix(self):
         a = 1.0 / np.sqrt(2)
-        return np.array([[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]], dtype=complex)
 
 
 class CRXGate(TwoQubitGate):
@@ -490,7 +490,7 @@ class CRXGate(TwoQubitGate):
         t = self.theta * 0.5
         a = np.cos(t)
         b = -1j * np.sin(t)
-        return np.array([[1, 0, 0, 0], [0, a, 0, b], [0, 0, 1, 0], [0, b, 0, a]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a, 0, b], [0, 0, 1, 0], [0, b, 0, a]], dtype=complex)
 
 
 class CRYGate(TwoQubitGate):
@@ -516,7 +516,7 @@ class CRYGate(TwoQubitGate):
         t = self.theta * 0.5
         a = np.cos(t)
         b = np.sin(t)
-        return np.array([[1, 0, 0, 0], [0, a, 0, -b], [0, 0, 1, 0], [0, b, 0, a]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a, 0, -b], [0, 0, 1, 0], [0, b, 0, a]], dtype=complex)
 
 
 class CRZGate(TwoQubitGate):
@@ -540,7 +540,7 @@ class CRZGate(TwoQubitGate):
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0], [0, 0, 0, a]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0], [0, 0, 0, a]], dtype=complex)
 
 
 class CPhaseGate(TwoQubitGate):
@@ -561,7 +561,7 @@ class CPhaseGate(TwoQubitGate):
                           PhaseGate(c, self.theta / 2)])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=complex)
 
 
 class RXXGate(TwoQubitGate):
@@ -588,7 +588,7 @@ class RXXGate(TwoQubitGate):
     def matrix(self):
         a = np.cos(self.theta * 0.5)
         b = -1j * np.sin(self.theta * 0.5)
-        return np.array([[a, 0, 0, b], [0, a, b, 0], [0, b, a, 0], [a, 0, 0, b]], dtype=np.complex)
+        return np.array([[a, 0, 0, b], [0, a, b, 0], [0, b, a, 0], [a, 0, 0, b]], dtype=complex)
 
 
 class RYYGate(TwoQubitGate):
@@ -615,7 +615,7 @@ class RYYGate(TwoQubitGate):
     def matrix(self):
         a = np.cos(self.theta * 0.5)
         b = 1j * np.sin(self.theta * 0.5)
-        return np.array([[a, 0, 0, b], [0, a, -b, 0], [0, -b, a, 0], [a, 0, 0, b]], dtype=np.complex)
+        return np.array([[a, 0, 0, b], [0, a, -b, 0], [0, -b, a, 0], [a, 0, 0, b]], dtype=complex)
 
 
 class RZZGate(TwoQubitGate):
@@ -639,7 +639,7 @@ class RZZGate(TwoQubitGate):
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0, 0, 0], [0, a, 0, 0], [0, 0, a, 0], [0, 0, 0, a.conjugate()]], dtype=np.complex)
+        return np.array([[a.conjugate(), 0, 0, 0], [0, a, 0, 0], [0, 0, a, 0], [0, 0, 0, a.conjugate()]], dtype=complex)
 
 
 class SwapGate(TwoQubitGate):
@@ -714,7 +714,7 @@ class CU1Gate(TwoQubitGate):
             ])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=complex)
 
 
 class CU2Gate(TwoQubitGate):
@@ -738,7 +738,7 @@ class CU2Gate(TwoQubitGate):
         c = 1 / np.sqrt(2)
         a = np.exp(0.5j * (p + l)) * c
         b = np.exp(0.5j * (p - l)) * c
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=complex)
 
 
 class CU3Gate(TwoQubitGate):
@@ -768,7 +768,7 @@ class CU3Gate(TwoQubitGate):
         t, p, l = self.params
         a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
         b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=np.complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=complex)
 
 
 class ToffoliGate(Gate):
@@ -799,7 +799,7 @@ class ToffoliGate(Gate):
             [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0]], dtype=np.complex)
+            [0, 0, 0, 1, 0, 0, 0, 0]], dtype=complex)
 
 
 class CCZGate(Gate):
@@ -840,7 +840,7 @@ class CCZGate(Gate):
             [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, -1]], dtype=np.complex)
+            [0, 0, 0, 0, 0, 0, 0, -1]], dtype=complex)
 
 
 class CSwapGate(Gate):
@@ -870,7 +870,7 @@ class CSwapGate(Gate):
             [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1]], dtype=np.complex)
+            [0, 0, 0, 0, 0, 0, 0, 1]], dtype=complex)
 
 
 class Measurement(Operation):

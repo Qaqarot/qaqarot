@@ -6,7 +6,7 @@ from ..circuit import Circuit
 from ..gate import *
 from .backendbase import Backend
 
-_eye = np.eye(2, dtype=np.complex)
+_eye = np.eye(2, dtype=complex)
 
 # Dict[str, TwoQubitGate]
 BASIS_TABLE = {
@@ -18,18 +18,18 @@ BASIS_TABLE = {
 # Dict[str, Dict[str, Tuple[np.array, np.array, Tuple[Any], np.array, np.array]]]
 DECOMPOSE_TABLE = {
     'cx': {
-        'cz': (_eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2),
+        'cz': (_eye.copy(), np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2),
                (),
-               _eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2)),
+               _eye.copy(), np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)),
         'zz': (_eye.copy(), np.array([[1j, -1j], [1j, 1j]]) / np.sqrt(2),
                (),
                np.diag([1 - 1j, 1 + 1j]) / np.sqrt(2),
                np.array([[0.5 - 0.5j, 0.5 - 0.5j], [-0.5 - 0.5j, 0.5 + 0.5j]])),
     },
     'cz': {
-        'cx': (_eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2),
+        'cx': (_eye.copy(), np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2),
                (),
-               _eye.copy(), np.array([[1, 1], [1, -1]], dtype=np.complex) / np.sqrt(2)),
+               _eye.copy(), np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)),
         'zz': (_eye.copy(), np.array([[1j, 0], [0, -1j]]),
                (),
                np.diag([1 - 1j, 1 + 1j]) / np.sqrt(2),

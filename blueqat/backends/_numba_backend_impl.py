@@ -25,7 +25,7 @@ import numba
 from ..gate import *
 from .backendbase import Backend
 
-DEFAULT_DTYPE = np.complex128
+DEFAULT_DTYPE = complex
 FASTMATH = True
 
 # Typedef

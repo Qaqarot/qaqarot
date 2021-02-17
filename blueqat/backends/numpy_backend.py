@@ -23,7 +23,7 @@ from ..gate import *
 from ..utils import ignore_global_phase
 from .backendbase import Backend
 
-DEFAULT_DTYPE = np.complex128
+DEFAULT_DTYPE = complex
 
 
 class _NumPyBackendContext:
