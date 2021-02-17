@@ -95,6 +95,7 @@ jobs:
 
       - run:
           name: run tests
+          no_output_timeout: 30m
           command: |
             . venv/bin/activate
             python -m pytest tests/ --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
@@ -128,7 +129,8 @@ workflows:
           tag: "3.8.7"
           qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp38-cp38-manylinux1_x86_64.whl
 
-      - test_main:
-          name: py3.9
-          tag: "3.9.0"
-          test_option: "--add-backend numba"
+      # py3.9 is pending because some optional-dependencies are still not supported.
+      #- test_main:
+      #    name: py3.9
+      #    tag: "3.9.0"
+      #    test_option: "--add-backend numba"
