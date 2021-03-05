@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import Counter
+from typing import Optional, Union
 import math
 import random
 import warnings
@@ -29,19 +30,21 @@ DEFAULT_DTYPE = complex
 class _NumPyBackendContext:
     """This class is internally used in NumPyBackend"""
 
-    def __init__(self, n_qubits):
+    def __init__(self, n_qubits: int, cache: Optional[np.array], cache_idx: int):
         self.n_qubits = n_qubits
-        self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-        self.qubits_buf = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
-        self.indices = np.arange(2**n_qubits, dtype=np.uint32)
-        self.save_cache = True
+        self.qubits = np.zeros(2 ** n_qubits, dtype=DEFAULT_DTYPE)
+        self.qubits_buf = np.zeros(2 ** n_qubits, dtype=DEFAULT_DTYPE)
+        self.indices = np.arange(2 ** n_qubits, dtype=np.uint32)
+        self.save_ctx_cache = True
+        self.cache = cache
+        self.cache_idx = cache_idx
         self.shots_result = Counter()
         self.cregs = None
 
-    def prepare(self, cache):
+    def prepare(self):
         """Prepare to run next shot."""
-        if cache is not None:
-            np.copyto(self.qubits, cache)
+        if self.cache is not None:
+            np.copyto(self.qubits, self.cache)
         else:
             self.qubits.fill(0.0)
             self.qubits[0] = 1.0
@@ -73,7 +76,7 @@ class NumPyBackend(Backend):
         self.cache = None
         self.cache_idx = -1
 
-    def __clear_cache_if_invalid(self, n_qubits, dtype):
+    def __clear_cache_if_invalid(self, n_qubits: int, dtype: type):
         if self.cache is None:
             self.__clear_cache()
             return
@@ -84,8 +87,13 @@ class NumPyBackend(Backend):
             self.__clear_cache()
             return
 
-    def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, ignore_global=False, **_kwargs):
+    def run(self, gates, n_qubits,
+            shots: Optional[int] = None,
+            returns: Optional[str] = None, # Literal["statevector", "shots", "statevector_and_shots", _inner_ctx"]
+            ignore_global: bool = False,
+            save_cache: bool = False,
+            **kwargs):
+        def __parse_run_args(shots, returns, _kwargs):
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -100,12 +108,14 @@ class NumPyBackend(Backend):
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
                 warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns, ignore_global
+            if _kwargs:
+                warnings.warn(f"Unknown run arguments: {_kwargs}")
+            return shots, returns
 
-        shots, returns, ignore_global = __parse_run_args(*args, **kwargs)
+        shots, returns = __parse_run_args(shots, returns, kwargs)
 
         self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
-        ctx = _NumPyBackendContext(n_qubits)
+        ctx = _NumPyBackendContext(n_qubits, self.cache, self.cache_idx)
 
         def run_single_gate(gate):
             nonlocal ctx
@@ -117,12 +127,15 @@ class NumPyBackend(Backend):
                     run_single_gate(g)
 
         for _ in range(shots):
-            ctx.prepare(self.cache)
-            for gate in gates[self.cache_idx + 1:]:
+            ctx.prepare()
+            for gate in gates[ctx.cache_idx + 1:]:
                 run_single_gate(gate)
-                if ctx.save_cache:
-                    self.cache = ctx.qubits.copy()
-                    self.cache_idx += 1
+                if ctx.save_ctx_cache:
+                    ctx.cache = ctx.qubits.copy()
+                    ctx.cache_idx += 1
+                    if save_cache:
+                        self.cache = ctx.cache
+                        self.cache_idx = ctx.cache_idx
             if ctx.cregs:
                 ctx.store_shot()
 
@@ -131,7 +144,7 @@ class NumPyBackend(Backend):
         return self.__return_type[returns](ctx)
 
     def make_cache(self, gates, n_qubits):
-        self.run(gates, n_qubits)
+        self.run(gates, n_qubits, save_cache=True)
 
     def gate_x(self, gate, ctx):
         qubits = ctx.qubits
@@ -447,7 +460,7 @@ class NumPyBackend(Backend):
                 qubits[(i & (1 << target)) == 0] = 0.0
                 qubits /= np.sqrt(1.0 - p_zero)
                 ctx.cregs[target] = 1
-        ctx.save_cache = False
+        ctx.save_ctx_cache = False
         return ctx
 
     def gate_reset(self, gate, ctx):
@@ -465,5 +478,5 @@ class NumPyBackend(Backend):
                 qubits[(i & (1 << target)) == 0] = qubits[t1]
                 qubits[t1] = 0.0
                 qubits /= np.sqrt(1.0 - p_zero)
-        ctx.save_cache = False
+        ctx.save_ctx_cache = False
         return ctx
