@@ -525,7 +525,7 @@ def test_mat1(backend):
     a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
     a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
     a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
-    
+
     b1 = Circuit().mat1(a)[0].run(backend=backend)
     assert is_vec_same(a1, b1)
     b2 = Circuit().x[0].mat1(a)[0].run(backend=backend)
@@ -542,6 +542,18 @@ def test_mat1_2(backend):
     v1 = Circuit().mat1(a)[1:3].run(backend=backend)
     v2 = Circuit().ry(t * 2)[1:3].run(backend=backend)
     assert is_vec_same(v1, v2)
+
+
+def test_swap(backend):
+    p = random.random() * math.pi
+    q = random.random() * math.pi
+    r = random.random() * math.pi
+    s = random.random() * math.pi
+
+    c1 = Circuit().ry(p)[0].rz(q)[0].ry(r)[1].rz(s)[1]
+    c2 = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].swap[0, 1]
+
+    assert is_vec_same(c1.run(backend=backend), c2.run(backend=backend))
 
 
 def test_mat1_decomposite(backend):
