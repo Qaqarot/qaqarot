@@ -17,6 +17,7 @@ import math
 import random
 import warnings
 from collections import Counter
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 
 import numpy as np
 from numba import jit, njit, prange
@@ -42,14 +43,14 @@ _QSMask_dtype = _QSIdx_dtype
 class _NumbaBackendContext:
     """This class is internally used in NumbaBackend"""
 
-    def __init__(self, n_qubits, save_cache, dtype=DEFAULT_DTYPE):
+    def __init__(self, n_qubits: int, save_cache: bool, dtype=DEFAULT_DTYPE):
         self.n_qubits = n_qubits
         self.qubits = np.zeros(2**n_qubits, dtype)
         self.save_cache = save_cache
         self.shots_result = Counter()
         self.cregs = None
 
-    def prepare(self, cache):
+    def prepare(self, cache: np.array):
         """Prepare to run next shot."""
         if cache is not None:
             np.copyto(self.qubits, cache)
@@ -372,13 +373,13 @@ def _reset1(qubits, target, n_qubits, p0):
 
 class NumbaBackend(Backend):
     """Simulator backend which uses numba."""
-    __return_type = {
+    __return_type: Dict[str, Callable[[_NumbaBackendContext], Any]] = {
         "statevector": lambda ctx: ctx.qubits,
         "shots": lambda ctx: ctx.shots_result,
         "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
         "_inner_ctx": lambda ctx: ctx,
     }
-    DEFAULT_SHOTS = 1024
+    DEFAULT_SHOTS: int = 1024
 
     def __init__(self):
         self.cache = None
@@ -388,7 +389,7 @@ class NumbaBackend(Backend):
         self.cache = None
         self.cache_idx = -1
 
-    def __clear_cache_if_invalid(self, n_qubits, dtype):
+    def __clear_cache_if_invalid(self, n_qubits: int, dtype: type):
         if self.cache is None:
             self.__clear_cache()
             return
@@ -399,9 +400,10 @@ class NumbaBackend(Backend):
             self.__clear_cache()
             return
 
-    def run(self, gates, n_qubits, *args, **kwargs):
-        def __parse_run_args(shots=None, returns=None, enable_cache=True, ignore_global=False,
-                             dtype=DEFAULT_DTYPE, **_kwargs):
+    def run(self, gates: List[Operation], n_qubits: int, shots: Optional[int] = None,
+            returns: Optional[str] = None, enable_cache: bool = True, ignore_global: bool = False,
+            dtype: type = DEFAULT_DTYPE, **kwargs) -> Any:
+        def __parse_run_args(shots: Optional[int], returns: Optional[str], _kwargs) -> Tuple[int, str]:
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -416,9 +418,11 @@ class NumbaBackend(Backend):
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
                 warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns, dtype, enable_cache, ignore_global
+            if _kwargs:
+                warnings.warn(f"Unknown arguments {_kwargs}")
+            return shots, returns
 
-        shots, returns, dtype, enable_cache, ignore_global = __parse_run_args(*args, **kwargs)
+        shots, returns = __parse_run_args(shots, returns, kwargs)
 
         if enable_cache:
             self.__clear_cache_if_invalid(n_qubits, dtype)
@@ -666,7 +670,7 @@ class NumbaBackend(Backend):
 
 
 @njit(nogil=True, cache=True)
-def _ignore_global(qubits):
+def _ignore_global(qubits: np.array) -> np.array:
     for q in qubits:
         if abs(q) > 0.0000001:
             ang = abs(q) / q

@@ -4,7 +4,7 @@ This module is internally used.
 """
 
 import math
-from typing import List
+from typing import Callable, List, Optional
 
 import numpy as np
 
