@@ -120,6 +120,11 @@ workflows:
     jobs:
       - doccheck
       - test_main:
+          name: py3.6-qgate-0.2.2
+          tag: "3.6.13"
+          qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp36-cp36m-manylinux1_x86_64.whl
+
+      - test_main:
           name: py3.7-qgate-0.2.2
           tag: "3.7.8"
           qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp37-cp37m-manylinux1_x86_64.whl
