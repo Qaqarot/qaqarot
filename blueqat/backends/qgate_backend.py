@@ -73,10 +73,10 @@ class QgateBackend(Backend):
                 def get_target_04(gate):
                     return gate.target
 
-                def create_multi_qubit_gate_04(gate, typeinfo, targets):
+                def create_multi_qubit_gate_04(gate, typeinfo, ctrls, targets):
                     g = model.Gate(typeinfo[0](*gate.params))
                     if ctrls:
-                        q.set_controls(ctrls)
+                        g.set_controls(ctrls)
                     g.set_targets(targets)
                     return g
 
@@ -242,11 +242,10 @@ class QgateBackend(Backend):
         glist = list()
         n_ctrls = typeinfo[1]
         ctrls = gate.targets[:n_ctrls]
-        ctrl_qregs = (self.qregs[idx] for idx in ctrls)
-        targets = gate.targets[n_ctrls]
-        target_qregs = (self.qregs[idx] for idx in targets)
-        g = QgateBackend.create_multi_qubit_gate(gate, typeinfo, ctrls,
-                                                 targets)
+        ctrl_qregs = [self.qregs[idx] for idx in ctrls]
+        targets = gate.targets[n_ctrls:]
+        target_qregs = [self.qregs[idx] for idx in targets]
+        g = QgateBackend.create_multi_qubit_gate(gate, typeinfo, ctrl_qregs, target_qregs)
         glist.append(g)
         return glist
 
