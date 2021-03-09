@@ -29,12 +29,12 @@ DEFAULT_DTYPE = complex
 
 class _NumPyBackendContext:
     """This class is internally used in NumPyBackend"""
-
-    def __init__(self, n_qubits: int, cache: Optional[np.ndarray], cache_idx: int) -> None:
+    def __init__(self, n_qubits: int, cache: Optional[np.ndarray],
+                 cache_idx: int) -> None:
         self.n_qubits = n_qubits
-        self.qubits = np.zeros(2 ** n_qubits, dtype=DEFAULT_DTYPE)
-        self.qubits_buf = np.zeros(2 ** n_qubits, dtype=DEFAULT_DTYPE)
-        self.indices = np.arange(2 ** n_qubits, dtype=np.uint32)
+        self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
+        self.qubits_buf = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
+        self.indices = np.arange(2**n_qubits, dtype=np.uint32)
         self.save_ctx_cache = True
         self.cache = cache
         self.cache_idx = cache_idx
@@ -54,6 +54,7 @@ class _NumPyBackendContext:
         """Store current cregs to shots_result"""
         def to_str(cregs: List[int]) -> str:
             return ''.join(str(b) for b in cregs)
+
         key = to_str(self.cregs)
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
@@ -88,13 +89,19 @@ class NumPyBackend(Backend):
             self.__clear_cache()
             return
 
-    def run(self, gates: List[Operation], n_qubits,
+    def run(
+            self,
+            gates: List[Operation],
+            n_qubits,
             shots: Optional[int] = None,
-            returns: Optional[str] = None, # Literal["statevector", "shots", "statevector_and_shots", _inner_ctx"]
+            returns:
+        Optional[
+            str] = None,  # Literal["statevector", "shots", "statevector_and_shots", _inner_ctx"]
             ignore_global: bool = False,
             save_cache: bool = False,
             **kwargs) -> Any:
-        def __parse_run_args(shots: Optional[int], returns: Optional[str]) -> Tuple[int, str]:
+        def __parse_run_args(shots: Optional[int],
+                             returns: Optional[str]) -> Tuple[int, str]:
             if returns is None:
                 if shots is None:
                     returns = "statevector"
@@ -108,7 +115,8 @@ class NumPyBackend(Backend):
                 else:
                     shots = self.DEFAULT_SHOTS
             if returns == "statevector" and shots > 1:
-                warnings.warn("When `returns` = 'statevector', `shots` = 1 is enough.")
+                warnings.warn(
+                    "When `returns` = 'statevector', `shots` = 1 is enough.")
             return shots, returns
 
         shots, returns = __parse_run_args(shots, returns)
@@ -210,7 +218,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_rx(gate: RXGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_rx(gate: RXGate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of RX gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -230,7 +239,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_ry(gate: RYGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_ry(gate: RYGate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of RY gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -251,7 +261,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_rz(gate: RZGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_rz(gate: RZGate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of RZ gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -265,7 +276,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_phase(gate: PhaseGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_phase(gate: PhaseGate,
+                   ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of Phase gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -277,7 +289,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_t(gate: PhaseGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_t(gate: PhaseGate,
+               ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of T gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -300,17 +313,20 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_cz(gate: CZGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_cz(gate: CZGate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CZ gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for control, target in gate.control_target_iter(n_qubits):
-            qubits[((i & (1 << control)) != 0) & ((i & (1 << target)) != 0)] *= -1
+            qubits[((i & (1 << control)) != 0)
+                   & ((i & (1 << target)) != 0)] *= -1
         return ctx
 
     @staticmethod
-    def gate_cx(gate: CXGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_cx(gate: CXGate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CX gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -329,7 +345,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_crx(gate: CRXGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_crx(gate: CRXGate,
+                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CRX gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -351,7 +368,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_cry(gate: CRYGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_cry(gate: CRYGate,
+                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CRY gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -374,7 +392,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_crz(gate: CRZGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_crz(gate: CRZGate,
+                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CRZ gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -390,7 +409,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_cphase(gate: CPhaseGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_cphase(gate: CPhaseGate,
+                    ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CPhase gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -403,7 +423,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_ccz(gate: CCZGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_ccz(gate: CCZGate,
+                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CCZ gate."""
         c1, c2, t = gate.targets
         qubits = ctx.qubits
@@ -415,7 +436,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_ccx(gate: ToffoliGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_ccx(gate: ToffoliGate,
+                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of Toffoli gate."""
         _, _, t = gate.targets
         ctx = NumPyBackend.gate_h(HGate(t), ctx)
@@ -424,7 +446,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_u1(gate: U1Gate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_u1(gate: U1Gate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of U1 gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
@@ -438,7 +461,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_u3(gate: U3Gate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_u3(gate: U3Gate,
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of U3 gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -447,7 +471,8 @@ class NumPyBackend(Backend):
         theta = gate.theta
         phi = gate.phi
         lambd = gate.lambd
-        globalphase = complex(math.cos((-phi - lambd) * 0.5), math.sin((-phi - lambd) * 0.5))
+        globalphase = complex(math.cos((-phi - lambd) * 0.5),
+                              math.sin((-phi - lambd) * 0.5))
         a00 = math.cos(theta * 0.5) * globalphase
         a11 = a00 * complex(math.cos(phi + lambd), math.sin(phi + lambd))
         a01 = a10 = math.sin(theta * 0.5) * globalphase
@@ -467,7 +492,8 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_mat1(gate: Mat1Gate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_mat1(gate: Mat1Gate,
+                  ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of U3 gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -488,13 +514,14 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_measure(gate: Measurement, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_measure(gate: Measurement,
+                     ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of measurement operation."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0]) ** 2
+            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0])**2
             rand = random.random()
             if rand < p_zero:
                 qubits[(i & (1 << target)) != 0] = 0.0
@@ -508,13 +535,14 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_reset(gate: Reset, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_reset(gate: Reset,
+                   ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of measurement operation."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
         for target in gate.target_iter(n_qubits):
-            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0]) ** 2
+            p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0])**2
             rand = random.random()
             t1 = (i & (1 << target)) != 0
             if rand < p_zero:

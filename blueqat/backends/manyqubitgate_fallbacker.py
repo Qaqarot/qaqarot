@@ -16,17 +16,18 @@ from blueqat import Circuit
 from ..gate import *
 from .backendbase import Backend
 
+
 class ManyQubitGateFallbacker(Backend):
     """Decomposite more than 2 qubit gate by fallback system."""
     def _run_inner(self, gates, n_qubits) -> List[Operation]:
         decomposed = []
         for gate in gates:
             if gate.n_qargs > 2:
-                decomposed += self._run_inner(gate.fallback(n_qubits), n_qubits)
+                decomposed += self._run_inner(gate.fallback(n_qubits),
+                                              n_qubits)
             else:
                 decomposed.append(gate)
         return decomposed
-
 
     def run(self, gates, n_qubits, *args, **kwargs) -> Circuit:
         return Circuit(n_qubits, self._run_inner(gates, n_qubits))

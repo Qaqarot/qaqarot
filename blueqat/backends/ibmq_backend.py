@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This module provides IBM Q Backend via OpenQASM and Qiskit.
 
 To run this backend, call
@@ -40,13 +39,18 @@ from collections import Counter
 from .qasm_parser_backend_generator import generate_backend
 
 
-def _qasm_runner_qiskit(qasm, qiskit_backend=None, shots=None, returns=None, **kwargs):
+def _qasm_runner_qiskit(qasm,
+                        qiskit_backend=None,
+                        shots=None,
+                        returns=None,
+                        **kwargs):
     if returns is None:
         returns = "shots"
-    elif returns not in ("shots", "draw", "_exception",
-                         "qiskit_circuit", "qiskit_job", "qiskit_result"):
-        raise ValueError("`returns` shall be None, 'shots', 'draw', " +
-                         "'qiskit_circuit', 'qiskit_job', 'qiskit_result' or '_exception'")
+    elif returns not in ("shots", "draw", "_exception", "qiskit_circuit",
+                         "qiskit_job", "qiskit_result"):
+        raise ValueError(
+            "`returns` shall be None, 'shots', 'draw', " +
+            "'qiskit_circuit', 'qiskit_job', 'qiskit_result' or '_exception'")
 
     import_error = None
     try:
@@ -60,11 +64,13 @@ def _qasm_runner_qiskit(qasm, qiskit_backend=None, shots=None, returns=None, **k
         if returns == "_exception":
             return import_error
         if isinstance(import_error, ImportError):
-            raise ImportError("Cannot import qiskit. To use this backend, please install qiskit." +
-                              " `pip install qiskit`.")
+            raise ImportError(
+                "Cannot import qiskit. To use this backend, please install qiskit."
+                + " `pip install qiskit`.")
         else:
-            raise ValueError("Unknown error raised when importing qiskit. To get exception, " +
-                             'run this backend with arg `returns="_exception"`')
+            raise ValueError(
+                "Unknown error raised when importing qiskit. To get exception, "
+                + 'run this backend with arg `returns="_exception"`')
     else:
         if returns == "_exception":
             return None
@@ -77,13 +83,19 @@ def _qasm_runner_qiskit(qasm, qiskit_backend=None, shots=None, returns=None, **k
             shots = 1024
         if qiskit_backend is None:
             qiskit_backend = Aer.get_backend("qasm_simulator")
-        job = execute(qk_circuit, backend=qiskit_backend, shots=shots, **kwargs)
+        job = execute(qk_circuit,
+                      backend=qiskit_backend,
+                      shots=shots,
+                      **kwargs)
         if returns == "qiskit_job":
             return job
         result = job.result()
         if returns == "qiskit_result":
             return result
-        counts = Counter({bits[::-1]: val for bits, val in result.get_counts().items()})
+        counts = Counter(
+            {bits[::-1]: val
+             for bits, val in result.get_counts().items()})
         return counts
+
 
 ibmq_backend = generate_backend(_qasm_runner_qiskit)

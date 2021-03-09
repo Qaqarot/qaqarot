@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This module defines Circuit and the setting for circuit.
 """
@@ -70,6 +69,7 @@ GATE_SET = {
 
 GLOBAL_MACROS = {}
 
+
 class Circuit:
     """Store the gate operations and call the backends."""
     def __init__(self, n_qubits=0, ops=None):
@@ -79,7 +79,8 @@ class Circuit:
         self.n_qubits = n_qubits
 
     def __repr__(self):
-        return f'Circuit({self.n_qubits}).' + '.'.join(str(op) for op in self.ops)
+        return f'Circuit({self.n_qubits}).' + '.'.join(
+            str(op) for op in self.ops)
 
     def __get_backend(self, backend_name):
         try:
@@ -93,8 +94,10 @@ class Circuit:
 
     def __backend_runner_wrapper(self, backend_name):
         backend = self.__get_backend(backend_name)
+
         def runner(*args, **kwargs):
             return backend.run(self.ops, self.n_qubits, *args, **kwargs)
+
         return runner
 
     def __getattr__(self, name):
@@ -107,7 +110,8 @@ class Circuit:
             if backend_name in BACKENDS:
                 return self.__backend_runner_wrapper(backend_name)
             raise AttributeError(f"Backend '{backend_name}' is not exists.")
-        raise AttributeError(f"'circuit' object has no attribute or gate '{name}'")
+        raise AttributeError(
+            f"'circuit' object has no attribute or gate '{name}'")
 
     def __add__(self, other):
         if not isinstance(other, Circuit):
@@ -123,8 +127,11 @@ class Circuit:
         self.n_qubits = max(self.n_qubits, other.n_qubits)
         return self
 
-    def copy(self, copy_backends=True, copy_default_backend=True,
-             copy_cache=None, copy_history=None):
+    def copy(self,
+             copy_backends=True,
+             copy_default_backend=True,
+             copy_cache=None,
+             copy_history=None):
         """Copy the circuit.
 
         params:
@@ -139,14 +146,18 @@ class Circuit:
 
         # Warn for deprecated options
         if copy_cache is not None:
-            warnings.warn("copy_cache is deprecated. Use copy_backends instead.",
-                          DeprecationWarning)
+            warnings.warn(
+                "copy_cache is deprecated. Use copy_backends instead.",
+                DeprecationWarning)
         if copy_history is not None:
             warnings.warn("copy_history is deprecated.", DeprecationWarning)
 
         return copied
 
-    def dagger(self, ignore_measurement=False, copy_backends=False, copy_default_backend=True):
+    def dagger(self,
+               ignore_measurement=False,
+               copy_backends=False,
+               copy_default_backend=True):
         """Make Hermitian conjugate of the circuit.
 
         This feature is beta. Interface may be changed.
@@ -161,8 +172,9 @@ class Circuit:
                 ops.append(g.dagger())
             except ValueError:
                 if not ignore_measurement:
-                    raise ValueError('Cannot make the Hermitian conjugate of this circuit because '
-                                     'the circuit contains measurement.')
+                    raise ValueError(
+                        'Cannot make the Hermitian conjugate of this circuit because '
+                        'the circuit contains measurement.')
 
         copied = Circuit(self.n_qubits, ops)
         if copy_backends:
@@ -270,9 +282,11 @@ class _GateWrapper:
 
     def __getitem__(self, args):
         self.target = args
-        self.circuit.ops.append(self.gate(self.target, *self.args, **self.kwargs))
+        self.circuit.ops.append(
+            self.gate(self.target, *self.args, **self.kwargs))
         # ad-hoc
-        self.circuit.n_qubits = max(gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
+        self.circuit.n_qubits = max(
+            gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         return self.circuit
 
     def __str__(self):
@@ -286,10 +300,13 @@ class _GateWrapper:
             args_str = ""
         return self.name + args_str + " " + str(self.target)
 
+
 class BlueqatGlobalSetting:
     """Setting for Blueqat."""
     @staticmethod
-    def register_macro(name: str, func: Callable, allow_overwrite: bool = False) -> None:
+    def register_macro(name: str,
+                       func: Callable,
+                       allow_overwrite: bool = False) -> None:
         """Register new macro to Circuit.
 
         Args:
@@ -309,12 +326,15 @@ class BlueqatGlobalSetting:
                 raise ValueError(f"Circuit has attribute `{name}`.")
         if name.startswith("run_with_"):
             if allow_overwrite:
-                warnings.warn(f"Gate name `{name}` may conflict with run of backend.")
+                warnings.warn(
+                    f"Gate name `{name}` may conflict with run of backend.")
             else:
-                raise ValueError(f"Gate name `{name}` shall not start with 'run_with_'.")
+                raise ValueError(
+                    f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
             if name in GATE_SET:
-                raise ValueError(f"Gate '{name}' is already exists in gate set.")
+                raise ValueError(
+                    f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
                 raise ValueError(f"Macro '{name}' is already exists.")
         GLOBAL_MACROS[name] = func
@@ -354,12 +374,15 @@ class BlueqatGlobalSetting:
                 raise ValueError(f"Circuit has attribute `{name}`.")
         if name.startswith("run_with_"):
             if allow_overwrite:
-                warnings.warn(f"Gate name `{name}` may conflict with run of backend.")
+                warnings.warn(
+                    f"Gate name `{name}` may conflict with run of backend.")
             else:
-                raise ValueError(f"Gate name `{name}` shall not start with 'run_with_'.")
+                raise ValueError(
+                    f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
             if name in GATE_SET:
-                raise ValueError(f"Gate '{name}' is already exists in gate set.")
+                raise ValueError(
+                    f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
                 raise ValueError(f"Macro '{name}' is already exists.")
         GATE_SET[name] = gateclass
@@ -400,7 +423,8 @@ class BlueqatGlobalSetting:
                 raise ValueError(f"Circuit has attribute `run_with_{name}`.")
         if not allow_overwrite:
             if name in BACKENDS:
-                raise ValueError(f"Backend '{name}' is already registered as backend.")
+                raise ValueError(
+                    f"Backend '{name}' is already registered as backend.")
         BACKENDS[name] = backend
 
     @staticmethod
@@ -420,8 +444,9 @@ class BlueqatGlobalSetting:
     @staticmethod
     def remove_backend(name):
         """This method is deperecated. Use `unregister_backend` method."""
-        warnings.warn("remove_backend is deprecated. `unregister_backend` is recommended.",
-                      DeprecationWarning)
+        warnings.warn(
+            "remove_backend is deprecated. `unregister_backend` is recommended.",
+            DeprecationWarning)
         BlueqatGlobalSetting.unregister_backend(name)
 
     @staticmethod
@@ -446,5 +471,6 @@ class BlueqatGlobalSetting:
             str: The name of default backend.
         """
         return DEFAULT_BACKEND_NAME
+
 
 from .backends import BACKENDS, DEFAULT_BACKEND_NAME

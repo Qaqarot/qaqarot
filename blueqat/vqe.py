@@ -23,6 +23,7 @@ from scipy.optimize import minimize as scipy_minimizer
 from .circuit import Circuit
 from .utils import to_inttuple
 
+
 class AnsatzBase:
     def __init__(self, hamiltonian, n_params):
         self.hamiltonian = hamiltonian
@@ -81,6 +82,7 @@ class AnsatzBase:
             self.make_sparse()
         return obj_expect
 
+
 class QaoaAnsatz(AnsatzBase):
     """Ansatz for QAOA."""
     def __init__(self, hamiltonian, step=1, init_circuit=None, mixer=None):
@@ -109,12 +111,17 @@ class QaoaAnsatz(AnsatzBase):
                 self.n_qubits = init_circuit.n_qubits
         else:
             if mixer:
-                raise ValueError('init_circuit is required when mixer is not default.')
+                raise ValueError(
+                    'init_circuit is required when mixer is not default.')
             self.init_circuit = Circuit(self.n_qubits).h[:]
         self.mixer = mixer
         self.init_circuit.make_cache()
-        self.time_evolutions = [term.get_time_evolution() for term in self.hamiltonian]
-        self.mixer_time_evolutions = [term.get_time_evolution() for term in self.mixer] if mixer else []
+        self.time_evolutions = [
+            term.get_time_evolution() for term in self.hamiltonian
+        ]
+        self.mixer_time_evolutions = [
+            term.get_time_evolution() for term in self.mixer
+        ] if mixer else []
 
     def check_hamiltonian(self):
         """Check hamiltonian is commutable. This condition is required for QaoaAnsatz"""
@@ -145,13 +152,15 @@ class VqeResult:
         self._probs = None
 
     def most_common(self, n=1):
-        return tuple(sorted(self.get_probs().items(), key=lambda item: -item[1]))[:n]
+        return tuple(
+            sorted(self.get_probs().items(), key=lambda item: -item[1]))[:n]
 
     @property
     def probs(self):
         """Get probabilities. This property is obsoleted. Use get_probs()."""
-        warnings.warn("VqeResult.probs is obsoleted. " +
-                      "Use VqeResult.get_probs().", DeprecationWarning)
+        warnings.warn(
+            "VqeResult.probs is obsoleted. " + "Use VqeResult.get_probs().",
+            DeprecationWarning)
         return self.get_probs()
 
     def get_probs(self, sampler=None, rerun=None, store=True):
@@ -164,7 +173,8 @@ class VqeResult:
             sampler = self.vqe.sampler
 
         if sampler is None:
-            probs = expect(self.circuit.run(returns="statevector"), range(self.circuit.n_qubits))
+            probs = expect(self.circuit.run(returns="statevector"),
+                           range(self.circuit.n_qubits))
         else:
             probs = sampler(self.circuit, range(self.circuit.n_qubits))
         if store:
@@ -175,21 +185,26 @@ class VqeResult:
 class Vqe:
     def __init__(self, ansatz, minimizer=None, sampler=None):
         self.ansatz = ansatz
-        self.minimizer = minimizer or get_scipy_minimizer(
-            method="Powell",
-            options={"ftol": 5.0e-2, "xtol": 5.0e-2, "maxiter": 1000}
-        )
+        self.minimizer = minimizer or get_scipy_minimizer(method="Powell",
+                                                          options={
+                                                              "ftol": 5.0e-2,
+                                                              "xtol": 5.0e-2,
+                                                              "maxiter": 1000
+                                                          })
         self.sampler = sampler
 
     def run(self, verbose=False):
         objective = self.ansatz.get_objective(self.sampler)
         if verbose:
+
             def verbose_objective(objective):
                 def f(params):
                     val = objective(params)
                     print("params:", params, "val:", val)
                     return val
+
                 return f
+
             objective = verbose_objective(objective)
         params = self.minimizer(objective, self.ansatz.n_params)
         c = self.ansatz.get_circuit(params)
@@ -202,13 +217,16 @@ class Vqe:
                       DeprecationWarning)
         return self._result if self._result is not None else VqeResult()
 
+
 def get_scipy_minimizer(**kwargs):
     """Get minimizer which uses `scipy.optimize.minimize`"""
     def minimizer(objective, n_params):
         params = [random.random() for _ in range(n_params)]
         result = scipy_minimizer(objective, params, **kwargs)
         return result.x
+
     return minimizer
+
 
 def expect(qubits, meas):
     "For the VQE simulation without sampling."
@@ -217,7 +235,9 @@ def expect(qubits, meas):
     meas = tuple(meas)
 
     def to_mask(n):
-        return reduce(lambda acc, im: acc | (n & (1 << im[0])) << (im[1] - im[0]), enumerate(meas), 0)
+        return reduce(
+            lambda acc, im: acc | (n & (1 << im[0])) << (im[1] - im[0]),
+            enumerate(meas), 0)
 
     def to_key(k):
         return tuple(1 if k & (1 << i) else 0 for i in meas)
@@ -226,16 +246,18 @@ def expect(qubits, meas):
 
     cnt = defaultdict(float)
     for i, v in enumerate(qubits):
-        p = v.real ** 2 + v.imag ** 2
+        p = v.real**2 + v.imag**2
         if p != 0.0:
             cnt[i & mask] += p
     return {to_key(k): v for k, v in cnt.items()}
+
 
 def non_sampling_sampler(circuit, meas):
     """Calculate the expectations without sampling."""
     meas = tuple(meas)
     n_qubits = circuit.n_qubits
     return expect(circuit.run(returns="statevector"), meas)
+
 
 def get_measurement_sampler(n_sample, run_options=None):
     """Returns a function which get the expectations by sampling the measured circuit"""
@@ -250,10 +272,13 @@ def get_measurement_sampler(n_sample, run_options=None):
         meas = tuple(meas)
         circuit.measure[meas]
         counter = circuit.run(shots=n_sample, returns="shots", **run_options)
-        counts = Counter({reduce_bits(bits, meas): val for bits, val in counter.items()})
+        counts = Counter(
+            {reduce_bits(bits, meas): val
+             for bits, val in counter.items()})
         return {k: v / n_sample for k, v in counts.items()}
 
     return sampling_by_measurement
+
 
 def get_state_vector_sampler(n_sample):
     """Returns a function which get the expectations by sampling the state vector"""
@@ -263,7 +288,9 @@ def get_state_vector_sampler(n_sample):
         bits, probs = zip(*e.items())
         dists = np.random.multinomial(n_sample, probs) / n_sample
         return dict(zip(tuple(bits), dists))
+
     return sampling_by_measurement
+
 
 def get_qiskit_sampler(backend, **execute_kwargs):
     """Returns a function which get the expectation by sampling via Qiskit.
@@ -273,7 +300,9 @@ def get_qiskit_sampler(backend, **execute_kwargs):
     try:
         import qiskit
     except ImportError:
-        raise ImportError("blueqat.vqe.get_qiskit_sampler() requires qiskit. Please install before call this function.")
+        raise ImportError(
+            "blueqat.vqe.get_qiskit_sampler() requires qiskit. Please install before call this function."
+        )
     try:
         shots = execute_kwargs['shots']
     except KeyError:
@@ -302,7 +331,7 @@ print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts
         # This is workaround for this IBM's specifications.
         if bits.startswith("0x"):
             bits = int(bits, base=16)
-            bits = "0"*100 + format(bits, "b")
+            bits = "0" * 100 + format(bits, "b")
         bits = [int(x) for x in bits[::-1]]
         return tuple(bits[m] for m in meas)
 
@@ -311,8 +340,13 @@ print(execute(circ, IBMQ.get_backend('ibmq_qasm_simulator')).result().get_counts
         if not meas:
             return {}
         circuit.measure[meas]
-        result = circuit.run_with_ibmq(qiskit_backend=backend, returns="qiskit_result", **execute_kwargs)
-        counts = Counter({reduce_bits(bits, meas): val for bits, val in result.get_counts().items()})
+        result = circuit.run_with_ibmq(qiskit_backend=backend,
+                                       returns="qiskit_result",
+                                       **execute_kwargs)
+        counts = Counter({
+            reduce_bits(bits, meas): val
+            for bits, val in result.get_counts().items()
+        })
         return {k: v / shots for k, v in counts.items()}
 
     return sampling

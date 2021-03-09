@@ -13,7 +13,7 @@ class Operation:
     """Abstract quantum circuit operation class."""
 
     """Lower name of the operation."""
-    lowername: str = None
+    lowername: Optional[str] = None
 
     @property
     def uppername(self) -> str:
@@ -22,7 +22,8 @@ class Operation:
 
     def __init__(self, targets, params=(), **kwargs):
         if self.lowername is None:
-            raise ValueError(f"{self.__class__.__name__}.lowername is not defined.")
+            raise ValueError(
+                f"{self.__class__.__name__}.lowername is not defined.")
         self.params = params
         self.kwargs = kwargs
         self.targets = targets
@@ -33,11 +34,15 @@ class Operation:
 
     def fallback(self, n_qubits: int) -> List['Operation']:
         """Returns alternative operations to make equivalent circuit."""
-        raise NotImplementedError(f"The fallback of {self.__class__.__name__} operation is not defined.")
+        raise NotImplementedError(
+            f"The fallback of {self.__class__.__name__} operation is not defined."
+        )
 
     def dagger(self) -> 'Operation':
         """Returns the Hermitian conjugate of `self`."""
-        raise NotImplementedError(f"Hermitian conjugate of {self.__class__.__name__} operation is not provided.")
+        raise NotImplementedError(
+            f"Hermitian conjugate of {self.__class__.__name__} operation is not provided."
+        )
 
     def _str_args(self) -> str:
         """Returns printable string of args."""
@@ -79,11 +84,13 @@ class Gate(Operation):
 
     def fallback(self, n_qubits: int) -> List['Gate']:
         """Returns alternative gates to make equivalent circuit."""
-        raise NotImplementedError(f"The fallback of {self.__class__.__name__} gate is not defined.")
+        raise NotImplementedError(
+            f"The fallback of {self.__class__.__name__} gate is not defined.")
 
     def dagger(self) -> 'Gate':
         """Returns the Hermitian conjugate of `self`."""
-        raise NotImplementedError(f"Hermitian conjugate of this gate is not provided.")
+        raise NotImplementedError(
+            f"Hermitian conjugate of this gate is not provided.")
 
     def matrix(self) -> np.ndarray:
         """Returns the matrix of implementations.
@@ -187,7 +194,7 @@ class RXGate(OneQubitGate):
     lowername = "rx"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -205,7 +212,7 @@ class RYGate(OneQubitGate):
     lowername = "ry"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -223,7 +230,7 @@ class RZGate(OneQubitGate):
     lowername = "rz"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -247,7 +254,7 @@ class PhaseGate(OneQubitGate):
     lowername = "phase"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -255,7 +262,8 @@ class PhaseGate(OneQubitGate):
 
     def fallback(self, n_qubits):
         # If phase gate is not implemented in the backend, global phase is ignored.
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [RZGate(t, self.theta)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [RZGate(t, self.theta)])
 
     def matrix(self):
         return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=complex)
@@ -269,7 +277,8 @@ class TGate(OneQubitGate):
         return TDagGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
 
     def matrix(self):
         return np.array([[1, 0], [0, np.exp(np.pi * 0.25)]])
@@ -283,7 +292,8 @@ class TDagGate(OneQubitGate):
         return TGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
 
     def matrix(self):
         return np.array([[1, 0], [0, np.exp(np.pi * -0.25)]])
@@ -297,7 +307,8 @@ class SGate(OneQubitGate):
         return SDagGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
 
     def matrix(self):
         return np.array([[1, 0], [0, 1j]])
@@ -311,7 +322,8 @@ class SDagGate(OneQubitGate):
         return SGate(self.targets, self.params, **self.kwargs)
 
     def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
 
     def matrix(self):
         return np.array([[1, 0], [0, -1j]])
@@ -328,7 +340,7 @@ class U1Gate(OneQubitGate):
     lowername = "u1"
 
     def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd,), **kwargs)
+        super().__init__(targets, (lambd, ), **kwargs)
         self.lambd = lambd
 
     def dagger(self):
@@ -353,7 +365,8 @@ class U2Gate(OneQubitGate):
         self.lambd = lambd
 
     def dagger(self):
-        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
+        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
+                      **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
@@ -364,7 +377,8 @@ class U2Gate(OneQubitGate):
         c = 1.0 / np.sqrt(2)
         a = np.exp(0.5j * (p + l)) * c
         b = np.exp(0.5j * (p - l)) * c
-        return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=complex)
+        return np.array([[a.conjugate(), -b.conjugate()], [a, b]],
+                        dtype=complex)
 
 
 class U3Gate(OneQubitGate):
@@ -378,13 +392,15 @@ class U3Gate(OneQubitGate):
         self.lambd = lambd
 
     def dagger(self):
-        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
+        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
+                      **self.kwargs)
 
     def matrix(self):
         t, p, l = self.params
         a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
         b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[a.conjugate(), -b.conjugate()], [b, a]], dtype=complex)
+        return np.array([[a.conjugate(), -b.conjugate()], [b, a]],
+                        dtype=complex)
 
 
 class Mat1Gate(OneQubitGate):
@@ -396,7 +412,7 @@ class Mat1Gate(OneQubitGate):
     lowername = "mat1"
 
     def __init__(self, targets, mat: np.ndarray, **kwargs):
-        super().__init__(targets, (mat,), **kwargs)
+        super().__init__(targets, (mat, ), **kwargs)
         self.mat = mat
 
     def dagger(self):
@@ -415,7 +431,9 @@ class CXGate(TwoQubitGate):
 
     # TODO: Specification required: target \otimes control or control \otimes target
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]],
+            dtype=complex)
 
 
 class CZGate(TwoQubitGate):
@@ -426,7 +444,9 @@ class CZGate(TwoQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]],
+            dtype=complex)
 
 
 class CYGate(TwoQubitGate):
@@ -439,12 +459,13 @@ class CYGate(TwoQubitGate):
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
-            lambda c, t: [SDagGate(t),
-                          CXGate((c, t)),
-                          SGate(t)])
+            lambda c, t: [SDagGate(t), CXGate(
+                (c, t)), SGate(t)])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]],
+            dtype=complex)
 
 
 class CHGate(TwoQubitGate):
@@ -457,14 +478,16 @@ class CHGate(TwoQubitGate):
     def fallback(self, n_qubits):
         # Ignores global phase
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RYGate(t, math.pi / 4),
-                          CXGate((c, t)),
-                          RYGate(t, -math.pi / 4)])
+            n_qubits, lambda c, t:
+            [RYGate(t, math.pi / 4),
+             CXGate((c, t)),
+             RYGate(t, -math.pi / 4)])
 
     def matrix(self):
         a = 1.0 / np.sqrt(2)
-        return np.array([[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]],
+            dtype=complex)
 
 
 class CRXGate(TwoQubitGate):
@@ -472,7 +495,7 @@ class CRXGate(TwoQubitGate):
     lowername = "crx"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -480,17 +503,20 @@ class CRXGate(TwoQubitGate):
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RXGate(t, self.theta / 2),
-                          CZGate((c, t)),
-                          RXGate(t, -self.theta / 2),
-                          CZGate((c, t))])
+            n_qubits, lambda c, t: [
+                RXGate(t, self.theta / 2),
+                CZGate((c, t)),
+                RXGate(t, -self.theta / 2),
+                CZGate((c, t))
+            ])
 
     def matrix(self):
         t = self.theta * 0.5
         a = np.cos(t)
         b = -1j * np.sin(t)
-        return np.array([[1, 0, 0, 0], [0, a, 0, b], [0, 0, 1, 0], [0, b, 0, a]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, a, 0, b], [0, 0, 1, 0], [0, b, 0, a]],
+            dtype=complex)
 
 
 class CRYGate(TwoQubitGate):
@@ -498,7 +524,7 @@ class CRYGate(TwoQubitGate):
     lowername = "cry"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -506,17 +532,20 @@ class CRYGate(TwoQubitGate):
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RYGate(t, self.theta / 2),
-                          CXGate((c, t)),
-                          RYGate(t, -self.theta / 2),
-                          CXGate((c, t))])
+            n_qubits, lambda c, t: [
+                RYGate(t, self.theta / 2),
+                CXGate((c, t)),
+                RYGate(t, -self.theta / 2),
+                CXGate((c, t))
+            ])
 
     def matrix(self):
         t = self.theta * 0.5
         a = np.cos(t)
         b = np.sin(t)
-        return np.array([[1, 0, 0, 0], [0, a, 0, -b], [0, 0, 1, 0], [0, b, 0, a]], dtype=complex)
+        return np.array(
+            [[1, 0, 0, 0], [0, a, 0, -b], [0, 0, 1, 0], [0, b, 0, a]],
+            dtype=complex)
 
 
 class CRZGate(TwoQubitGate):
@@ -524,7 +553,7 @@ class CRZGate(TwoQubitGate):
     lowername = "crz"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -532,15 +561,18 @@ class CRZGate(TwoQubitGate):
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RZGate(t, self.theta / 2),
-                          CXGate((c, t)),
-                          RZGate(t, -self.theta / 2),
-                          CXGate((c, t))])
+            n_qubits, lambda c, t: [
+                RZGate(t, self.theta / 2),
+                CXGate((c, t)),
+                RZGate(t, -self.theta / 2),
+                CXGate((c, t))
+            ])
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0], [0, 0, 0, a]], dtype=complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0],
+                         [0, 0, 0, a]],
+                        dtype=complex)
 
 
 class CPhaseGate(TwoQubitGate):
@@ -548,7 +580,7 @@ class CPhaseGate(TwoQubitGate):
     lowername = "cphase"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -556,12 +588,14 @@ class CPhaseGate(TwoQubitGate):
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [CRZGate((c, t), self.theta),
-                          PhaseGate(c, self.theta / 2)])
+            n_qubits, lambda c, t:
+            [CRZGate((c, t), self.theta),
+             PhaseGate(c, self.theta / 2)])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=complex)
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
+                         [0, 0, 0, 0, np.exp(self.theta)]],
+                        dtype=complex)
 
 
 class RXXGate(TwoQubitGate):
@@ -569,7 +603,7 @@ class RXXGate(TwoQubitGate):
     lowername = "rxx"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -578,17 +612,20 @@ class RXXGate(TwoQubitGate):
     def fallback(self, n_qubits):
         # TODO: test
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [HGate(c),
-                          HGate(t),
-                          RZZGate((c, t), self.theta),
-                          HGate(c),
-                          HGate(t)])
+            n_qubits, lambda c, t: [
+                HGate(c),
+                HGate(t),
+                RZZGate((c, t), self.theta),
+                HGate(c),
+                HGate(t)
+            ])
 
     def matrix(self):
         a = np.cos(self.theta * 0.5)
         b = -1j * np.sin(self.theta * 0.5)
-        return np.array([[a, 0, 0, b], [0, a, b, 0], [0, b, a, 0], [a, 0, 0, b]], dtype=complex)
+        return np.array(
+            [[a, 0, 0, b], [0, a, b, 0], [0, b, a, 0], [a, 0, 0, b]],
+            dtype=complex)
 
 
 class RYYGate(TwoQubitGate):
@@ -596,7 +633,7 @@ class RYYGate(TwoQubitGate):
     lowername = "ryy"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -605,17 +642,20 @@ class RYYGate(TwoQubitGate):
     def fallback(self, n_qubits):
         # TODO: test
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [RXGate(c, -math.pi * 0.5),
-                          RXGate(t, -math.pi * 0.5),
-                          RZZGate((c, t), self.theta),
-                          RXGate(c, math.pi * 0.5),
-                          RXGate(t, math.pi * 0.5)])
+            n_qubits, lambda c, t: [
+                RXGate(c, -math.pi * 0.5),
+                RXGate(t, -math.pi * 0.5),
+                RZZGate((c, t), self.theta),
+                RXGate(c, math.pi * 0.5),
+                RXGate(t, math.pi * 0.5)
+            ])
 
     def matrix(self):
         a = np.cos(self.theta * 0.5)
         b = 1j * np.sin(self.theta * 0.5)
-        return np.array([[a, 0, 0, b], [0, a, -b, 0], [0, -b, a, 0], [a, 0, 0, b]], dtype=complex)
+        return np.array(
+            [[a, 0, 0, b], [0, a, -b, 0], [0, -b, a, 0], [a, 0, 0, b]],
+            dtype=complex)
 
 
 class RZZGate(TwoQubitGate):
@@ -623,7 +663,7 @@ class RZZGate(TwoQubitGate):
     lowername = "rzz"
 
     def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta,), **kwargs)
+        super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
     def dagger(self):
@@ -632,14 +672,16 @@ class RZZGate(TwoQubitGate):
     def fallback(self, n_qubits):
         # TODO: test
         return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [CXGate((c, t)),
-                          RZGate(t, self.theta),
-                          CXGate((c, t))])
+            n_qubits, lambda c, t:
+            [CXGate(
+                (c, t)), RZGate(t, self.theta),
+             CXGate((c, t))])
 
     def matrix(self):
         a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0, 0, 0], [0, a, 0, 0], [0, 0, a, 0], [0, 0, 0, a.conjugate()]], dtype=complex)
+        return np.array([[a.conjugate(), 0, 0, 0], [0, a, 0, 0], [0, 0, a, 0],
+                         [0, 0, 0, a.conjugate()]],
+                        dtype=complex)
 
 
 class SwapGate(TwoQubitGate):
@@ -652,10 +694,13 @@ class SwapGate(TwoQubitGate):
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
-            lambda c, t: [CXGate((c, t)), CXGate((t, c)), CXGate((c, t))])
+            lambda c, t: [CXGate(
+                (c, t)), CXGate(
+                    (t, c)), CXGate((c, t))])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+        return np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0],
+                         [0, 0, 0, 1]])
 
 
 class ZZGate(TwoQubitGate):
@@ -675,12 +720,12 @@ class ZZGate(TwoQubitGate):
     def fallback(self, n_qubits):
         # Ignoring global phase.
         return self._make_fallback_for_control_target_iter(
-                n_qubits, lambda c, t: [
-                    RYGate(t, math.pi * 0.5),
-                    CXGate((c, t)),
-                    RZGate(c, math.pi * 0.5),
-                    U3Gate(t, -math.pi * 0.5, math.pi * 0.5, 0),
-                ])
+            n_qubits, lambda c, t: [
+                RYGate(t, math.pi * 0.5),
+                CXGate((c, t)),
+                RZGate(c, math.pi * 0.5),
+                U3Gate(t, -math.pi * 0.5, math.pi * 0.5, 0),
+            ])
 
         def matrix(self):
             return np.diag([1, 1j, 1j, 1])
@@ -697,7 +742,7 @@ class CU1Gate(TwoQubitGate):
     lowername = "cu1"
 
     def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd,), **kwargs)
+        super().__init__(targets, (lambd, ), **kwargs)
         self.lambd = lambd
 
     def dagger(self):
@@ -714,7 +759,9 @@ class CU1Gate(TwoQubitGate):
             ])
 
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0, np.exp(self.theta)]], dtype=complex)
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
+                         [0, 0, 0, 0, np.exp(self.theta)]],
+                        dtype=complex)
 
 
 class CU2Gate(TwoQubitGate):
@@ -727,18 +774,22 @@ class CU2Gate(TwoQubitGate):
         self.lambd = lambd
 
     def dagger(self):
-        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi, **self.kwargs)
+        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
+                       **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
+            n_qubits,
+            lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
 
     def matrix(self):
         p, l = self.params
         c = 1 / np.sqrt(2)
         a = np.exp(0.5j * (p + l)) * c
         b = np.exp(0.5j * (p - l)) * c
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
+                         [0, 0, 1, 0], [0, a, 0, b]],
+                        dtype=complex)
 
 
 class CU3Gate(TwoQubitGate):
@@ -752,7 +803,8 @@ class CU3Gate(TwoQubitGate):
         self.lambd = lambd
 
     def dagger(self):
-        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi, **self.kwargs)
+        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
+                       **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -768,7 +820,9 @@ class CU3Gate(TwoQubitGate):
         t, p, l = self.params
         a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
         b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()], [0, 0, 1, 0], [0, a, 0, b]], dtype=complex)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
+                         [0, 0, 1, 0], [0, a, 0, b]],
+                        dtype=complex)
 
 
 class ToffoliGate(Gate):
@@ -791,15 +845,11 @@ class ToffoliGate(Gate):
         ]
 
     def matrix(self):
-        return np.array([
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0]], dtype=complex)
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 1, 0, 0, 0, 0]],
+                        dtype=complex)
 
 
 class CCZGate(Gate):
@@ -832,15 +882,11 @@ class CCZGate(Gate):
         return self
 
     def matrix(self):
-        return np.array([
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, -1]], dtype=complex)
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, -1]],
+                        dtype=complex)
 
 
 class CSwapGate(Gate):
@@ -857,20 +903,14 @@ class CSwapGate(Gate):
     def fallback(self, n_qubits):
         # TODO: test
         c, t1, t2 = self.targets
-        return [CXGate((t2, t1)),
-                ToffoliGate((c, t1, t2)),
-                CXGate((t2, t1))]
+        return [CXGate((t2, t1)), ToffoliGate((c, t1, t2)), CXGate((t2, t1))]
 
     def matrix(self):
-        return np.array([
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1]], dtype=complex)
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]],
+                        dtype=complex)
 
 
 class Measurement(Operation):
@@ -910,7 +950,8 @@ def slicing_singlevalue(arg, length):
         try:
             i = arg.__index__()
         except AttributeError:
-            raise TypeError("indices must be integers or slices, not " + arg.__class__.__name__)
+            raise TypeError("indices must be integers or slices, not " +
+                            arg.__class__.__name__)
         if i < 0:
             i += length
         yield i
@@ -934,10 +975,12 @@ def qubit_pairs(args, length):
     controls = list(slicing(args[0], length))
     targets = list(slicing(args[1], length))
     if len(controls) != len(targets):
-        raise ValueError("The number of control qubits and target qubits are must be same.")
+        raise ValueError(
+            "The number of control qubits and target qubits are must be same.")
     for c, z in zip(controls, targets):
         if c == z:
-            raise ValueError("Control qubit and target qubit are must be different.")
+            raise ValueError(
+                "Control qubit and target qubit are must be different.")
     return zip(controls, targets)
 
 
@@ -954,6 +997,7 @@ def get_maximum_index(indices):
             return max(start, stop - 1)
         else:
             return idx.__index__()
+
     if isinstance(indices, tuple):
         return max((_maximum_idx_single(i) for i in indices), default=-1)
     else:

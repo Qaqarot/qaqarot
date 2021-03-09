@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 `gate` module implements quantum gate operations.
 This module is internally used.
@@ -21,6 +20,7 @@ import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..gate import Operation
+
 
 class Backend:
     """Abstract quantum gate processor backend class."""
@@ -32,11 +32,8 @@ class Backend:
         """
         return copy.deepcopy(self)
 
-    def _preprocess_run(self,
-                        gates: List[Operation],
-                        n_qubits: int,
-                        args: Tuple[Any],
-                        kwargs: Dict[Any, Any]) -> Any:
+    def _preprocess_run(self, gates: List[Operation], n_qubits: int,
+                        args: Tuple[Any], kwargs: Dict[Any, Any]) -> Any:
         """Preprocess of backend run.
         Backend developer can override this function.
         """
@@ -48,7 +45,8 @@ class Backend:
         """
         return None
 
-    def _run_gates(self, gates: List[Operation], n_qubits: int, ctx: Any) -> Any:
+    def _run_gates(self, gates: List[Operation], n_qubits: int,
+                   ctx: Any) -> Any:
         """Iterate gates and call backend's action for each gates"""
         for gate in gates:
             action = self._get_action(gate)
@@ -58,7 +56,8 @@ class Backend:
                 ctx = self._run_gates(gate.fallback(n_qubits), n_qubits, ctx)
         return ctx
 
-    def _run(self, gates: List[Operation], n_qubits: int, args: Tuple[Any], kwargs: Dict[Any, Any]) -> Any:
+    def _run(self, gates: List[Operation], n_qubits: int, args: Tuple[Any],
+             kwargs: Dict[Any, Any]) -> Any:
         """Default implementation of `Backend.run`.
         Backend developer shouldn't override this function, but override `run` instead of this.
 
@@ -98,12 +97,14 @@ class Backend:
     def _has_action(self, gate: Operation) -> bool:
         return hasattr(self, "gate_" + gate.lowername)
 
-    def _resolve_fallback(self, gates: Operation, n_qubits: int) -> List[Operation]:
+    def _resolve_fallback(self, gates: Operation,
+                          n_qubits: int) -> List[Operation]:
         """Resolve fallbacks and flatten gates."""
         flattened = []
         for g in gates:
             if self._has_action(g):
                 flattened.append(g)
             else:
-                flattened += self._resolve_fallback(g.fallback(n_qubits), n_qubits)
+                flattened += self._resolve_fallback(g.fallback(n_qubits),
+                                                    n_qubits)
         return flattened

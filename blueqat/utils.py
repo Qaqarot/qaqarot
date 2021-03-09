@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utilities for convenient."""
 from collections import Counter
 from typing import Union, Tuple
@@ -19,7 +18,8 @@ from typing import Union, Tuple
 import numpy as np
 
 
-def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
+def to_inttuple(
+        bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
     """Convert from bit string likes '01011' to int tuple likes (0, 1, 0, 1, 1)
 
     Args:
@@ -37,7 +37,9 @@ def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter,
     if isinstance(bitstr, str):
         return tuple(int(b) for b in bitstr)
     if isinstance(bitstr, Counter):
-        return Counter({tuple(int(b) for b in k): v for k, v in bitstr.items()})
+        return Counter(
+            {tuple(int(b) for b in k): v
+             for k, v in bitstr.items()})
     if isinstance(bitstr, dict):
         return {tuple(int(b) for b in k): v for k, v in bitstr.items()}
     raise ValueError("bitstr type shall be `str`, `Counter` or `dict`")
