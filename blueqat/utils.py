@@ -43,14 +43,14 @@ def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter,
     raise ValueError("bitstr type shall be `str`, `Counter` or `dict`")
 
 
-def ignore_global_phase(statevec: np.array) -> np.array:
+def ignore_global_phase(statevec: np.ndarray) -> np.ndarray:
     """Multiple e^-iθ to `statevec` where θ is a phase of first non-zero element.
 
     Args:
-        statevec np.array: Statevector.
+        statevec np.ndarray: Statevector.
 
     Returns:
-        np.array: `statevec` is returned.
+        np.ndarray: `statevec` is returned.
     """
     for q in statevec:
         if abs(q) > 0.0000001:
@@ -60,7 +60,7 @@ def ignore_global_phase(statevec: np.array) -> np.array:
     return statevec
 
 
-def check_unitarity(mat: np.array) -> bool:
+def check_unitarity(mat: np.ndarray) -> bool:
     """Check whether mat is a unitary matrix."""
     shape = mat.shape
     if len(shape) != 2 or shape[0] != shape[1]:
