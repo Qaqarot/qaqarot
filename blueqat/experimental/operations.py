@@ -43,6 +43,7 @@ GATE_SET = {
 
 GLOBAL_MACROS = {}
 
+
 class Ops(NamedTuple):
     """Immutable type operations"""
     n_qubits: int = 0
@@ -56,7 +57,8 @@ class Ops(NamedTuple):
             return _GateWrapper(self, name, GATE_SET[name])
         if name in GLOBAL_MACROS:
             return partial(GLOBAL_MACROS[name], self)
-        raise AttributeError(f"'circuit' object has no attribute or gate '{name}'")
+        raise AttributeError(
+            f"'circuit' object has no attribute or gate '{name}'")
 
     def __add__(self, other):
         if not isinstance(other, Ops):
@@ -65,7 +67,8 @@ class Ops(NamedTuple):
 
     def dagger(self):
         """Get Hamiltonian conjugate of `self`."""
-        return Ops(self.n_qubits, tuple(g.dagger() for g in reversed(self.ops)))
+        return Ops(self.n_qubits,
+                   tuple(g.dagger() for g in reversed(self.ops)))
 
     def to_circuit(self):
         return Circuit(self.n_qubits, list(self.ops))
@@ -88,7 +91,8 @@ class _GateWrapper:
     def __getitem__(self, args):
         self.target = args
         n_qubits = max(self.ops.n_qubits, gate.get_maximum_index(args) + 1)
-        ops = self.ops.ops + (self.gate(self.target, *self.args, **self.kwargs),)
+        ops = self.ops.ops + (self.gate(self.target, *self.args, **
+                                        self.kwargs), )
         return Ops(n_qubits, ops)
 
     def __str__(self):

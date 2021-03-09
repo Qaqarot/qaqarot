@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-import random
-import numpy as np
 from ..gate import *
 from .backendbase import Backend
+
 
 class QasmOutputBackend(Backend):
     """Backend for OpenQASM output."""
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
         def _parse_run_args(output_prologue=True, **_kwargs):
-            return { 'output_prologue': output_prologue }
+            return {'output_prologue': output_prologue}
 
         args = _parse_run_args(*args, **kwargs)
         if args['output_prologue']:
@@ -83,17 +81,21 @@ class QasmOutputBackend(Backend):
 
     def gate_u2(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.phi},{gate.lambd}) q[{idx}];")
+            ctx[0].append(
+                f"{gate.lowername}({gate.phi},{gate.lambd}) q[{idx}];")
         return ctx
 
     def gate_u3(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{idx}];")
+            ctx[0].append(
+                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{idx}];"
+            )
         return ctx
 
     def gate_phase(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(f"u1({gate.theta}) q[{idx}]; // Global phase is ignored.")
+            ctx[0].append(
+                f"u1({gate.theta}) q[{idx}]; // Global phase is ignored.")
         return ctx
 
     def gate_cu1(self, gate, ctx):
@@ -103,12 +105,15 @@ class QasmOutputBackend(Backend):
 
     def gate_cu2(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.phi},{gate.lambd}) q[{c}],q[{t}];")
+            ctx[0].append(
+                f"{gate.lowername}({gate.phi},{gate.lambd}) q[{c}],q[{t}];")
         return ctx
 
     def gate_cu3(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{c}],q[{t}];")
+            ctx[0].append(
+                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{c}],q[{t}];"
+            )
         return ctx
 
     def gate_cphase(self, gate, ctx):

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utilities for convenient."""
 from collections import Counter
 from typing import Union, Tuple
@@ -19,7 +18,8 @@ from typing import Union, Tuple
 import numpy as np
 
 
-def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
+def to_inttuple(
+        bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
     """Convert from bit string likes '01011' to int tuple likes (0, 1, 0, 1, 1)
 
     Args:
@@ -37,20 +37,22 @@ def to_inttuple(bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter,
     if isinstance(bitstr, str):
         return tuple(int(b) for b in bitstr)
     if isinstance(bitstr, Counter):
-        return Counter({tuple(int(b) for b in k): v for k, v in bitstr.items()})
+        return Counter(
+            {tuple(int(b) for b in k): v
+             for k, v in bitstr.items()})
     if isinstance(bitstr, dict):
         return {tuple(int(b) for b in k): v for k, v in bitstr.items()}
     raise ValueError("bitstr type shall be `str`, `Counter` or `dict`")
 
 
-def ignore_global_phase(statevec: np.array) -> np.array:
+def ignore_global_phase(statevec: np.ndarray) -> np.ndarray:
     """Multiple e^-iθ to `statevec` where θ is a phase of first non-zero element.
 
     Args:
-        statevec np.array: Statevector.
+        statevec np.ndarray: Statevector.
 
     Returns:
-        np.array: `statevec` is returned.
+        np.ndarray: `statevec` is returned.
     """
     for q in statevec:
         if abs(q) > 0.0000001:
@@ -60,7 +62,7 @@ def ignore_global_phase(statevec: np.array) -> np.array:
     return statevec
 
 
-def check_unitarity(mat: np.array) -> bool:
+def check_unitarity(mat: np.ndarray) -> bool:
     """Check whether mat is a unitary matrix."""
     shape = mat.shape
     if len(shape) != 2 or shape[0] != shape[1]:

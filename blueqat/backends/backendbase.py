@@ -11,18 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 `gate` module implements quantum gate operations.
 This module is internally used.
 """
 
-from abc import ABC
 import copy
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-class Backend(ABC):
+from ..gate import Operation
+
+
+class Backend:
     """Abstract quantum gate processor backend class."""
-    def copy(self):
+    def copy(self) -> "Backend":
         """Returns (deep)copy of Backend.
 
         Backend developer must support `copy` method.
@@ -30,19 +32,21 @@ class Backend(ABC):
         """
         return copy.deepcopy(self)
 
-    def _preprocess_run(self, gates, n_qubits, args, kwargs):
+    def _preprocess_run(self, gates: List[Operation], n_qubits: int,
+                        args: Tuple[Any], kwargs: Dict[Any, Any]) -> Any:
         """Preprocess of backend run.
         Backend developer can override this function.
         """
         return gates, None
 
-    def _postprocess_run(self, ctx):
+    def _postprocess_run(self, ctx: Any) -> Any:
         """Postprocess of backend run
         Backend developer can override this function.
         """
         return None
 
-    def _run_gates(self, gates, n_qubits, ctx):
+    def _run_gates(self, gates: List[Operation], n_qubits: int,
+                   ctx: Any) -> Any:
         """Iterate gates and call backend's action for each gates"""
         for gate in gates:
             action = self._get_action(gate)
@@ -52,7 +56,8 @@ class Backend(ABC):
                 ctx = self._run_gates(gate.fallback(n_qubits), n_qubits, ctx)
         return ctx
 
-    def _run(self, gates, n_qubits, args, kwargs):
+    def _run(self, gates: List[Operation], n_qubits: int, args: Tuple[Any],
+             kwargs: Dict[Any, Any]) -> Any:
         """Default implementation of `Backend.run`.
         Backend developer shouldn't override this function, but override `run` instead of this.
 
@@ -72,32 +77,34 @@ class Backend(ABC):
         self._run_gates(gates, n_qubits, ctx)
         return self._postprocess_run(ctx)
 
-    def make_cache(self, gates, n_qubits):
+    def make_cache(self, gates: List[Operation], n_qubits: int):
         """Make internal cache to reduce the time of running the circuit.
 
         Some backends may implement this method. Otherwise, this method do nothing.
         This is a temporary API and may changed or deprecated in future."""
         return None
 
-    def run(self, gates, n_qubits, *args, **kwargs):
+    def run(self, gates: List[Operation], n_qubits: int, *args, **kwargs):
         """Run the backend."""
         return self._run(gates, n_qubits, args, kwargs)
 
-    def _get_action(self, gate):
+    def _get_action(self, gate: Operation) -> Optional[Callable]:
         try:
             return getattr(self, "gate_" + gate.lowername)
         except AttributeError:
             return None
 
-    def _has_action(self, gate):
+    def _has_action(self, gate: Operation) -> bool:
         return hasattr(self, "gate_" + gate.lowername)
 
-    def _resolve_fallback(self, gates, n_qubits):
+    def _resolve_fallback(self, gates: Operation,
+                          n_qubits: int) -> List[Operation]:
         """Resolve fallbacks and flatten gates."""
         flattened = []
         for g in gates:
             if self._has_action(g):
                 flattened.append(g)
             else:
-                flattened += self._resolve_fallback(g.fallback(n_qubits), n_qubits)
+                flattened += self._resolve_fallback(g.fallback(n_qubits),
+                                                    n_qubits)
         return flattened

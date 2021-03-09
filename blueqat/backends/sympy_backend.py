@@ -37,42 +37,69 @@ def _angle_simplify(ang):
 class _SympyBackendContext:
     def __init__(self, n_qubits, ignore_global):
         self.n_qubits = n_qubits
-        self.matrix_of_circuit = eye(2 ** n_qubits)
+        self.matrix_of_circuit = eye(2**n_qubits)
         self.ignore_global = ignore_global
 
 
 class SympyBackend(Backend):
-
     def __init__(self):
         try:
             lazy_import()
         except ImportError:
-            raise ImportError('sympy_unitary requires sympy. Please install before call this option.')
+            raise ImportError(
+                'sympy_unitary requires sympy. Please install before call this option.'
+            )
         theta, phi, lambd = symbols('theta phi lambd')
         self.theta = theta
         self.phi = phi
         self.lambd = lambd
         self.SYMPY_GATE = {
-            '_C0': Matrix([[1, 0], [0, 0]]),
-            '_C1': Matrix([[0, 0], [0, 1]]),
-            'X': Matrix([[0, 1], [1, 0]]),
-            'Y': Matrix([[0, -I], [I, 0]]),
-            'Z': Matrix([[1, 0], [0, -1]]),
-            'H': Matrix([[1, 1], [1, -1]]) / sqrt(2),
-            'RX': Matrix([[cos(theta / 2), -I * sin(theta / 2)], [-I * sin(theta / 2), cos(theta / 2)]]),
-            'RY': Matrix([[cos(theta / 2), -sin(theta / 2)], [sin(theta / 2), cos(theta / 2)]]),
-            'RZ': Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
-            'PHASE': Matrix([[1, 0], [0, exp(I * theta)]]),
-            'U1': Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
-            'U2': Matrix([
-                [exp(-I * (phi + lambd) / 2) / sqrt(2), -exp(-I * (phi - lambd) / 2) / sqrt(2)],
-                [exp(I * (phi - lambd) / 2) / sqrt(2), exp(I * (phi + lambd) / 2) / sqrt(2)]]),
-            'U3': Matrix([
-                [exp(-I * (phi + lambd) / 2) * cos(theta / 2), -exp(-I * (phi - lambd) / 2) * sin(theta / 2)],
-                [exp(I * (phi - lambd) / 2) * sin(theta / 2), exp(I * (phi + lambd) / 2) * cos(theta / 2)]]),
+            '_C0':
+            Matrix([[1, 0], [0, 0]]),
+            '_C1':
+            Matrix([[0, 0], [0, 1]]),
+            'X':
+            Matrix([[0, 1], [1, 0]]),
+            'Y':
+            Matrix([[0, -I], [I, 0]]),
+            'Z':
+            Matrix([[1, 0], [0, -1]]),
+            'H':
+            Matrix([[1, 1], [1, -1]]) / sqrt(2),
+            'RX':
+            Matrix([[cos(theta / 2), -I * sin(theta / 2)],
+                    [-I * sin(theta / 2), cos(theta / 2)]]),
+            'RY':
+            Matrix([[cos(theta / 2), -sin(theta / 2)],
+                    [sin(theta / 2), cos(theta / 2)]]),
+            'RZ':
+            Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
+            'PHASE':
+            Matrix([[1, 0], [0, exp(I * theta)]]),
+            'U1':
+            Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
+            'U2':
+            Matrix([[
+                exp(-I * (phi + lambd) / 2) / sqrt(2),
+                -exp(-I * (phi - lambd) / 2) / sqrt(2)
+            ],
+                    [
+                        exp(I * (phi - lambd) / 2) / sqrt(2),
+                        exp(I * (phi + lambd) / 2) / sqrt(2)
+                    ]]),
+            'U3':
+            Matrix([[
+                exp(-I * (phi + lambd) / 2) * cos(theta / 2),
+                -exp(-I * (phi - lambd) / 2) * sin(theta / 2)
+            ],
+                    [
+                        exp(I * (phi - lambd) / 2) * sin(theta / 2),
+                        exp(I * (phi + lambd) / 2) * cos(theta / 2)
+                    ]]),
         }
 
-    def _create_matrix_of_one_qubit_gate(self, n_qubits, targets, matrix_of_gate):
+    def _create_matrix_of_one_qubit_gate(self, n_qubits, targets,
+                                         matrix_of_gate):
         targets = [idx for idx in targets]
         gates = []
         for idx in range(n_qubits):
@@ -82,20 +109,26 @@ class SympyBackend(Backend):
                 gates.append(eye(2))
         return reduce(TensorProduct, reversed(gates))
 
-    def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx, matrix_of_gate):
+    def _create_matrix_of_one_qubit_gate_circuit(self, gate, ctx,
+                                                 matrix_of_gate):
         n_qubits = ctx.n_qubits
-        m = self._create_matrix_of_one_qubit_gate(n_qubits, gate.target_iter(n_qubits), matrix_of_gate)
+        m = self._create_matrix_of_one_qubit_gate(n_qubits,
+                                                  gate.target_iter(n_qubits),
+                                                  matrix_of_gate)
         ctx.matrix_of_circuit = m * ctx.matrix_of_circuit
         return ctx
 
     def _one_qubit_gate_noargs(self, gate, ctx):
         matrix_of_gate = self.SYMPY_GATE[gate.uppername]
-        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
+        return self._create_matrix_of_one_qubit_gate_circuit(
+            gate, ctx, matrix_of_gate)
 
     def _one_qubit_gate_args_theta(self, gate, ctx):
         theta = _angle_simplify(gate.theta)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, theta)
-        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
+            self.theta, theta)
+        return self._create_matrix_of_one_qubit_gate_circuit(
+            gate, ctx, matrix_of_gate)
 
     gate_x = _one_qubit_gate_noargs
     gate_y = _one_qubit_gate_noargs
@@ -116,26 +149,31 @@ class SympyBackend(Backend):
         else:
             phi = theta = 0
         lambd = _angle_simplify(gate.lambd)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs([
-            (self.lambd, lambd),
-            (self.phi, phi),
-            (self.theta, theta)], simultaneous=True)
-        return self._create_matrix_of_one_qubit_gate_circuit(gate, ctx, matrix_of_gate)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
+            [(self.lambd, lambd), (self.phi, phi), (self.theta, theta)],
+            simultaneous=True)
+        return self._create_matrix_of_one_qubit_gate_circuit(
+            gate, ctx, matrix_of_gate)
 
     gate_u1 = _one_qubit_gate_ugate
     gate_u2 = _one_qubit_gate_ugate
     gate_u3 = _one_qubit_gate_ugate
 
-    def _create_matrix_of_two_qubit_gate(self, n_qubits, gate, control, target):
-        c0 = self._create_matrix_of_one_qubit_gate(n_qubits, [control], self.SYMPY_GATE['_C0'])
-        c1 = self._create_matrix_of_one_qubit_gate(n_qubits, [control], self.SYMPY_GATE['_C1'])
-        tgt = self._create_matrix_of_one_qubit_gate(n_qubits, [target], self.SYMPY_GATE[gate.uppername[1:]])
+    def _create_matrix_of_two_qubit_gate(self, n_qubits, gate, control,
+                                         target):
+        c0 = self._create_matrix_of_one_qubit_gate(n_qubits, [control],
+                                                   self.SYMPY_GATE['_C0'])
+        c1 = self._create_matrix_of_one_qubit_gate(n_qubits, [control],
+                                                   self.SYMPY_GATE['_C1'])
+        tgt = self._create_matrix_of_one_qubit_gate(
+            n_qubits, [target], self.SYMPY_GATE[gate.uppername[1:]])
         return c0 + tgt * c1
 
     def _two_qubit_gate_noargs(self, gate, ctx):
         n_qubits = ctx.n_qubits
         for control, target in gate.control_target_iter(n_qubits):
-            m = self._create_matrix_of_two_qubit_gate(n_qubits, gate, control, target)
+            m = self._create_matrix_of_two_qubit_gate(n_qubits, gate, control,
+                                                      target)
             ctx.matrix_of_circuit = m * ctx.matrix_of_circuit
         return ctx
 
@@ -144,14 +182,18 @@ class SympyBackend(Backend):
 
     def _two_qubit_gate_args_theta(self, gate, ctx):
         theta = _angle_simplify(gate.theta)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(self.theta, theta)
+        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
+            self.theta, theta)
         for control, target in gate.control_target_iter(ctx.n_qubits):
-            control_gate_of_matrix = self._create_matrix_of_two_qubit_gate(gate, ctx, control, target)
+            control_gate_of_matrix = self._create_matrix_of_two_qubit_gate(
+                gate, ctx, control, target)
             ctx.matrix_of_circuit = control_gate_of_matrix * ctx.matrix_of_circuit
         return ctx
 
     def _warn_unavailable_operation(self, gate, ctx):
-        warnings.warn(f'`{gate.uppername}` operation is ignored because unavailable in this backend.')
+        warnings.warn(
+            f'`{gate.uppername}` operation is ignored because unavailable in this backend.'
+        )
         return ctx
 
     gate_measure = _warn_unavailable_operation
@@ -164,7 +206,7 @@ class SympyBackend(Backend):
     def _postprocess_run(self, ctx):
         if ctx.ignore_global:
             mat = ctx.matrix_of_circuit
-            for i in range(2 ** ctx.n_qubits):
+            for i in range(2**ctx.n_qubits):
                 if mat[i, i] != 0:
                     return mat * (abs(mat[i, i]) / mat[i, i])
         return ctx.matrix_of_circuit

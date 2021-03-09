@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """The module for calculate Pauli matrices."""
 
 from bisect import bisect_left
@@ -27,25 +26,22 @@ import scipy.sparse
 _PauliTuple = namedtuple("_PauliTuple", "n")
 half_pi = pi / 2
 
-
 _sparse_types = {
-        'bsr': scipy.sparse.bsr_matrix,
-        'coo': scipy.sparse.coo_matrix,
-        'csc': scipy.sparse.csc_matrix,
-        'csr': scipy.sparse.csr_matrix,
-        'dia': scipy.sparse.dia_matrix,
-        'dok': scipy.sparse.dok_matrix,
-        'lil': scipy.sparse.lil_matrix,
+    'bsr': scipy.sparse.bsr_matrix,
+    'coo': scipy.sparse.coo_matrix,
+    'csc': scipy.sparse.csc_matrix,
+    'csr': scipy.sparse.csr_matrix,
+    'dia': scipy.sparse.dia_matrix,
+    'dok': scipy.sparse.dok_matrix,
+    'lil': scipy.sparse.lil_matrix,
 }
-
 
 _matrix = {
-        'I': np.array([[1, 0], [0, 1]], dtype=complex),
-        'X': np.array([[0, 1], [1, 0]], dtype=complex),
-        'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
-        'Z': np.array([[1, 0], [0, -1]], dtype=complex)
+    'I': np.array([[1, 0], [0, 1]], dtype=complex),
+    'X': np.array([[0, 1], [1, 0]], dtype=complex),
+    'Y': np.array([[0, -1j], [1j, 0]], dtype=complex),
+    'Z': np.array([[1, 0], [0, -1]], dtype=complex)
 }
-
 
 _mul_map = {
     ('X', 'X'): (1.0, 'I'),
@@ -59,9 +55,9 @@ _mul_map = {
     ('Z', 'Z'): (1.0, 'I'),
 }
 
-
 _sparse_matrix = {
-    ty: {ch: fn(mat, dtype=complex) for ch, mat in _matrix.items()}
+    ty: {ch: fn(mat, dtype=complex)
+         for ch, mat in _matrix.items()}
     for ty, fn in _sparse_types.items()
 }
 
@@ -87,7 +83,8 @@ def _kron_1d_rec(krons, cumsum, lo, hi):
     mid = bisect_left(cumsum, (cumsum[lo] + cumsum[hi - 1]) // 2, lo, hi)
     if mid == lo:
         return _kron_1d(krons[lo], _kron_1d_rec(krons, cumsum, lo + 1, hi))
-    return _kron_1d(_kron_1d_rec(krons, cumsum, lo, mid), _kron_1d_rec(krons, cumsum, mid, hi))
+    return _kron_1d(_kron_1d_rec(krons, cumsum, lo, mid),
+                    _kron_1d_rec(krons, cumsum, mid, hi))
 
 
 def _term_to_dataarray(term, n_qubits, rowmajor):
@@ -105,7 +102,7 @@ def _term_to_dataarray(term, n_qubits, rowmajor):
         elif g == 'Z':
             data_list += [np.array([1, -1], dtype=complex) for _ in range(n)]
         else:
-            data_list.append(np.repeat(np.array([1], dtype=complex), 2 ** n))
+            data_list.append(np.repeat(np.array([1], dtype=complex), 2**n))
     t = min(data_list, key=len)
     t *= term.coeff
     data_list.reverse()
@@ -210,21 +207,24 @@ def is_commutable(expr1, expr2, eps=0.00000001):
     Args:
         | expr1 (Expr, Term or Pauli operator): Pauli's expression.
         | expr2 (Expr, Term or Pauli operator): Pauli's expression.
-        | eps (float, optional): Machine epsilon.  
+        | eps (float, optional): Machine epsilon.
             If | \[expr1, expr2 \]| < eps, consider it is commutable.
 
     Returns:
         bool: if expr1 and expr2 are commutable, returns True, otherwise False.
     """
-    return sum((x * x.conjugate()).real for x in commutator(expr1, expr2).coeffs()) < eps
+    return sum((x * x.conjugate()).real
+               for x in commutator(expr1, expr2).coeffs()) < eps
 
 
 # To avoid pylint error
 def _n(pauli):
     return pauli.n
 
+
 def _GetItem(self_, n):
     return type(self_)(n)
+
 
 class _PauliImpl:
     @property
@@ -321,14 +321,18 @@ class _PauliImpl:
         """Convert to the matrix."""
         return self.to_term().to_matrix(n_qubits, sparse=sparse)
 
+
 class _X(_PauliImpl, _PauliTuple):
     """Pauli's X operator"""
+
 
 class _Y(_PauliImpl, _PauliTuple):
     """Pauli's Y operator"""
 
+
 class _Z(_PauliImpl, _PauliTuple):
     """Pauli's Z operator"""
+
 
 class _PauliCtor:
     def __init__(self, ty):
@@ -345,9 +349,11 @@ class _PauliCtor:
         """Matrix reprentation of this operator."""
         return _matrix[self.ty.__name__[-1]].copy()
 
+
 X = _PauliCtor(_X)
 Y = _PauliCtor(_Y)
 Z = _PauliCtor(_Z)
+
 
 class _I(_PauliImpl, namedtuple("_I", "")):
     """Identity operator"""
@@ -359,8 +365,10 @@ class _I(_PauliImpl, namedtuple("_I", "")):
         """Matrix reprentation of this operator."""
         return _matrix['I'].copy()
 
+
 I = _I()
 _TermTuple = namedtuple("_TermTuple", "ops coeff")
+
 
 class Term(_TermTuple):
     """Multiplication of Pauli matrices with coefficient.
@@ -374,14 +382,14 @@ class Term(_TermTuple):
     @staticmethod
     def from_paulipair(pauli1, pauli2):
         """Make new Term from two Pauli operator."""
-        return Term(Term.join_ops((pauli1,), (pauli2,)), 1.0)
+        return Term(Term.join_ops((pauli1, ), (pauli2, )), 1.0)
 
     @staticmethod
     def from_pauli(pauli, coeff=1.0):
         """Make new Term from an Pauli operator"""
         if pauli.is_identity or coeff == 0:
             return Term((), coeff)
-        return Term((pauli,), coeff)
+        return Term((pauli, ), coeff)
 
     @staticmethod
     def from_ops_iter(ops, coeff):
@@ -402,7 +410,9 @@ class Term(_TermTuple):
         Raises:
             ValueError: When chars conteins the character which is "X", "Y", "Z" nor "I".
         """
-        paulis = [pauli_from_char(c, n) for n, c in enumerate(chars) if c != "I"]
+        paulis = [
+            pauli_from_char(c, n) for n, c in enumerate(chars) if c != "I"
+        ]
         if not paulis:
             return 1.0 * I
         if len(paulis) == 1:
@@ -437,7 +447,7 @@ class Term(_TermTuple):
         if isinstance(other, _PauliImpl):
             if other.is_identity:
                 return self
-            return Term(Term.join_ops(self.ops, (other,)), self.coeff)
+            return Term(Term.join_ops(self.ops, (other, )), self.coeff)
         return NotImplemented
 
     def __rmul__(self, other):
@@ -446,7 +456,7 @@ class Term(_TermTuple):
         if isinstance(other, _PauliImpl):
             if other.is_identity:
                 return self
-            return Term(Term.join_ops((other,), self.ops), self.coeff)
+            return Term(Term.join_ops((other, ), self.ops), self.coeff)
         return NotImplemented
 
     def __truediv__(self, other):
@@ -459,11 +469,12 @@ class Term(_TermTuple):
     def __pow__(self, n):
         if isinstance(n, Integral):
             if n < 0:
-                raise ValueError("`pauli_term ** n` or `pow(pauli_term, n)`: " +
-                                 "n shall not be negative value.")
+                raise ValueError(
+                    "`pauli_term ** n` or `pow(pauli_term, n)`: " +
+                    "n shall not be negative value.")
             if n == 0:
                 return Term.from_pauli(I)
-            return Term(self.ops * n, self.coeff ** n)
+            return Term(self.ops * n, self.coeff**n)
         return NotImplemented
 
     def __add__(self, other):
@@ -593,6 +604,7 @@ class Term(_TermTuple):
         if coeff.imag:
             raise ValueError("Not a real coefficient.")
         ops = term.ops
+
         def append_to_circuit(circuit, t):
             if not ops:
                 return
@@ -603,16 +615,17 @@ class Term(_TermTuple):
                 elif op.op == "Y":
                     circuit.rx(-half_pi)[n]
             for i in range(1, len(ops)):
-                circuit.cx[ops[i-1].n, ops[i].n]
+                circuit.cx[ops[i - 1].n, ops[i].n]
             circuit.rz(-2 * coeff * t)[ops[-1].n]
-            for i in range(len(ops)-1, 0, -1):
-                circuit.cx[ops[i-1].n, ops[i].n]
+            for i in range(len(ops) - 1, 0, -1):
+                circuit.cx[ops[i - 1].n, ops[i].n]
             for op in ops:
                 n = op.n
                 if op.op == "X":
                     circuit.h[n]
                 elif op.op == "Y":
                     circuit.rx(half_pi)[n]
+
         return append_to_circuit
 
     def to_matrix(self, n_qubits=-1, *, sparse=None):
@@ -626,16 +639,20 @@ class Term(_TermTuple):
             if sparse is None:
                 return m
             return _sparse_types[sparse](m)
-        dim = 2 ** n_qubits
+        dim = 2**n_qubits
         term = self.simplify()
         data = _term_to_dataarray(term, n_qubits, sparse == 'csr')
         dtype_idx = np.int32 if n_qubits < 31 else np.int64
         if sparse == 'csc':
             indices = _term_to_indices(term, dim, dtype_idx, False)
-            return scipy.sparse.csc_matrix((data, indices, np.arange(dim + 1, dtype=dtype_idx)), shape=(dim, dim))
+            return scipy.sparse.csc_matrix(
+                (data, indices, np.arange(dim + 1, dtype=dtype_idx)),
+                shape=(dim, dim))
         if sparse == 'csr':
             indices = _term_to_indices(term, dim, dtype_idx, False)
-            return scipy.sparse.csr_matrix((data, indices, np.arange(dim + 1, dtype=dtype_idx)), shape=(dim, dim))
+            return scipy.sparse.csr_matrix(
+                (data, indices, np.arange(dim + 1, dtype=dtype_idx)),
+                shape=(dim, dim))
         row, col = _term_to_indices(term, dim, dtype_idx, True)
         m = scipy.sparse.coo_matrix((data, (row, col)), shape=(dim, dim))
         if sparse is None:
@@ -644,6 +661,8 @@ class Term(_TermTuple):
 
 
 _ExprTuple = namedtuple("_ExprTuple", "terms")
+
+
 class Expr(_ExprTuple):
     @staticmethod
     def from_number(num):
@@ -656,7 +675,7 @@ class Expr(_ExprTuple):
     def from_term(term):
         """Make new Expr from a Term"""
         if term.coeff:
-            return Expr((term,))
+            return Expr((term, ))
         return Expr.zero()
 
     @staticmethod
@@ -683,13 +702,16 @@ class Expr(_ExprTuple):
         """If `self` is I, returns True, otherwise False."""
         if not self.terms:
             return True
-        return len(self.terms) == 1 and not self.terms[0].ops and self.terms[0].coeff == 1.0
+        return len(
+            self.terms
+        ) == 1 and not self.terms[0].ops and self.terms[0].coeff == 1.0
 
     def __eq__(self, other):
         if isinstance(other, (_PauliImpl, Term)):
             other = other.to_expr()
         if isinstance(other, Expr):
-            return self.terms == other.terms or self.simplify().terms == other.simplify().terms
+            return self.terms == other.terms or self.simplify(
+            ).terms == other.simplify().terms
         return NotImplemented
 
     def __ne__(self, other):
@@ -750,7 +772,8 @@ class Expr(_ExprTuple):
         if isinstance(other, Number):
             if other == 0:
                 return Expr.from_number(0.0)
-            return Expr.from_terms_iter(Term(op, coeff * other) for op, coeff in self.terms)
+            return Expr.from_terms_iter(
+                Term(op, coeff * other) for op, coeff in self.terms)
         if isinstance(other, _PauliImpl):
             other = other.to_term()
         if isinstance(other, Term):
@@ -767,7 +790,8 @@ class Expr(_ExprTuple):
         if isinstance(other, Number):
             if other == 0:
                 return Expr.from_number(0.0)
-            return Expr.from_terms_iter(Term(op, coeff * other) for op, coeff in self.terms)
+            return Expr.from_terms_iter(
+                Term(op, coeff * other) for op, coeff in self.terms)
         if isinstance(other, _PauliImpl):
             other = other.to_term()
         if isinstance(other, Term):
@@ -784,8 +808,9 @@ class Expr(_ExprTuple):
     def __pow__(self, n):
         if isinstance(n, Integral):
             if n < 0:
-                raise ValueError("`pauli_expr ** n` or `pow(pauli_expr, n)`: " +
-                                 "n shall not be negative value.")
+                raise ValueError(
+                    "`pauli_expr ** n` or `pow(pauli_expr, n)`: " +
+                    "n shall not be negative value.")
             if n == 0:
                 return Expr.from_number(1.0)
             val = self
@@ -815,7 +840,7 @@ class Expr(_ExprTuple):
         return " ".join(s_terms)
 
     def __getnewargs__(self):
-        return (self.terms,)
+        return (self.terms, )
 
     def to_expr(self):
         """Do nothing. This method is prepared to avoid TypeError."""
@@ -877,9 +902,12 @@ class Expr(_ExprTuple):
             return _sparse_types[sparse](m)
         expr = self.simplify()
         grpkey = lambda pau: sum(1 << op.n for op in pau.ops if op.op in 'XY')
-        dim = 2 ** n_qubits
+        dim = 2**n_qubits
         is_csr = sparse == 'csr'
-        gr_terms = [list(g) for _, g in groupby(sorted(expr.terms, key=grpkey), key=grpkey)]
+        gr_terms = [
+            list(g)
+            for _, g in groupby(sorted(expr.terms, key=grpkey), key=grpkey)
+        ]
         n_groups = len(gr_terms)
         n_vals = n_groups * dim
         dtype_idx = np.int32 if n_qubits < 31 else np.int64
@@ -887,14 +915,19 @@ class Expr(_ExprTuple):
         inds = np.empty(n_vals, dtype=dtype_idx)
         for i_grp, grp in enumerate(gr_terms):
             val_acc = _term_to_dataarray(grp[0], n_qubits, is_csr)
-            inds[i_grp::n_groups] = _term_to_indices(grp[0], dim, dtype_idx, False)
+            inds[i_grp::n_groups] = _term_to_indices(grp[0], dim, dtype_idx,
+                                                     False)
             for term in grp[1:]:
                 val_acc += _term_to_dataarray(term, n_qubits, is_csr)
             vals[i_grp::n_groups] = val_acc
         if not is_csr:
-            m = scipy.sparse.csc_matrix((vals, inds, np.arange(0, n_vals + 1, n_groups)), shape=(dim, dim))
+            m = scipy.sparse.csc_matrix(
+                (vals, inds, np.arange(0, n_vals + 1, n_groups)),
+                shape=(dim, dim))
         else:
-            m = scipy.sparse.csr_matrix((vals, inds, np.arange(0, n_vals + 1, n_groups)), shape=(dim, dim))
+            m = scipy.sparse.csr_matrix(
+                (vals, inds, np.arange(0, n_vals + 1, n_groups)),
+                shape=(dim, dim))
         m.eliminate_zeros()
         if sparse is None:
             return m.toarray()
@@ -910,4 +943,4 @@ def qubo_bit(n):
     Returns:
         Expr: Pauli expression of QUBO bit.
     """
-    return 0.5 - 0.5*Z[n]
+    return 0.5 - 0.5 * Z[n]

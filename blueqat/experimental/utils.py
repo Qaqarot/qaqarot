@@ -15,6 +15,7 @@
 import numpy as np
 from blueqat import Circuit
 
+
 def circuit_to_unitary(circ: Circuit, *runargs, **runkwargs):
     runkwargs.setdefault('returns', 'statevector')
     runkwargs.setdefault('ignore_global', False)
