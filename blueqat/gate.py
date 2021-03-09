@@ -85,7 +85,7 @@ class Gate(Operation):
         """Returns the Hermitian conjugate of `self`."""
         raise NotImplementedError(f"Hermitian conjugate of this gate is not provided.")
 
-    def matrix(self) -> np.array:
+    def matrix(self) -> np.ndarray:
         """Returns the matrix of implementations.
 
         (Non-abstract) subclasses of Gate must implement this method.
@@ -361,7 +361,7 @@ class U2Gate(OneQubitGate):
 
     def matrix(self):
         p, l = self.params
-        c = 1 / np.sqrt(2)
+        c = 1.0 / np.sqrt(2)
         a = np.exp(0.5j * (p + l)) * c
         b = np.exp(0.5j * (p - l)) * c
         return np.array([[a.conjugate(), -b.conjugate()], [a, b]], dtype=complex)
@@ -395,7 +395,7 @@ class Mat1Gate(OneQubitGate):
     """
     lowername = "mat1"
 
-    def __init__(self, targets, mat: np.array, **kwargs):
+    def __init__(self, targets, mat: np.ndarray, **kwargs):
         super().__init__(targets, (mat,), **kwargs)
         self.mat = mat
 
