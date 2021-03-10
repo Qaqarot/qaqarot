@@ -13,7 +13,7 @@ executors:
       parameters:
         tag:
           type: string
-      working_directory: ~/repo<< parameters.tag >>
+      working_directory: ~/miniconda3-<< parameters.tag >>
       docker:
         - image: continuumio/miniconda3:4.9.2
 
@@ -114,7 +114,7 @@ jobs:
         default: ""
 
     executor:
-      name: python
+      name: miniconda
       tag: <<parameters.tag>>
 
     steps:
