@@ -19,7 +19,6 @@ from sympy import eye, diag, zeros, symbols, simplify, sin, cos, exp, pi, sqrt, 
 from sympy.physics.quantum import TensorProduct
 
 from blueqat import Circuit
-from test_circuit import is_vec_same
 
 def test_sympy_backend_for_one_qubit_gate():
     E = eye(2)
@@ -139,7 +138,7 @@ def test_u1_realvalue():
         if actual_2[i] != 0:
             actual_2 *= expected_2[i] / actual_2[i]
             break
-    assert is_vec_same(actual_2, expected_2, ignore_global='')
+    assert np.allclose(actual_2, expected_2)
 
     actual_3 = Circuit().x[0].u1(lambd.evalf())[0].run_with_numpy()
     expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
@@ -148,7 +147,7 @@ def test_u1_realvalue():
         if actual_3[i] != 0:
             actual_3 *= expected_3[i] / actual_3[i]
             break
-    assert is_vec_same(actual_3, expected_3, ignore_global='')
+    assert np.allclose(actual_3, expected_3)
 
 
 def test_u2():
@@ -184,13 +183,13 @@ def test_u3_realvalue():
     expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
     # ignore global phase
     actual_2 *= expected_2[0] / actual_2[0]
-    assert is_vec_same(actual_2, expected_2, ignore_global='')
+    assert np.allclose(actual_2, expected_2)
 
     actual_3 = Circuit().x[0].u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
     expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
     # ignore global phase
     actual_3 *= expected_3[0] / actual_3[0]
-    assert is_vec_same(actual_3, expected_3, ignore_global='')
+    assert np.allclose(actual_3, expected_3)
 
 
 def test_cu1():
