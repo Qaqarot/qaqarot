@@ -296,7 +296,7 @@ def test_measurement2(backend):
 def test_measurement3(backend):
     # 75% |0> + 25% |1>
     c = Circuit().rx(math.pi / 3)[0].m[0]
-    n = 200
+    n = 500
     cnt = c.run(backend=backend, shots=n)
     most_common = cnt.most_common(1)[0]
     assert most_common[0] == "0"
@@ -329,7 +329,7 @@ def test_measurement_entangled_state(backend):
 
 
 def test_measurement_hadamard1(backend):
-    n = 200
+    n = 500
     c = Circuit().h[0].m[0]
     cnt = c.run(backend=backend, shots=n)
     a, b = cnt.most_common(2)
