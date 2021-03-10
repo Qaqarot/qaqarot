@@ -14,6 +14,8 @@ executors:
         tag:
           type: string
       working_directory: ~/repo<< parameters.tag >>
+      docker:
+        - image: continuumio/miniconda3:4.9.2
 
 
 commands:
