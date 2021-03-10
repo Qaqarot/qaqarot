@@ -24,7 +24,6 @@ from blueqat import Circuit, BlueqatGlobalSetting
 from blueqat.backends.onequbitgate_decomposer import u3_decomposer
 from blueqat.utils import ignore_global_phase
 
-
 EPS = 1e-16
 
 
@@ -34,7 +33,8 @@ def vec_distsq(a, b):
 
 
 def test_hgate1(backend):
-    assert np.allclose(Circuit().h[1].h[0].run(backend=backend), np.array([0.5, 0.5, 0.5, 0.5]))
+    assert np.allclose(Circuit().h[1].h[0].run(backend=backend),
+                       np.array([0.5, 0.5, 0.5, 0.5]))
 
 
 def test_hgate2(backend):
@@ -48,18 +48,21 @@ def test_hgate3(backend):
 
 
 def test_pauli1(backend):
-    assert np.allclose(ignore_global_phase(Circuit().x[0].y[0].run(backend=backend)),
-                       Circuit().z[0].run(backend=backend))
+    assert np.allclose(
+        ignore_global_phase(Circuit().x[0].y[0].run(backend=backend)),
+        Circuit().z[0].run(backend=backend))
 
 
 def test_pauli2(backend):
-    assert np.allclose(ignore_global_phase(Circuit().y[0].z[0].run(backend=backend)),
-                       Circuit().x[0].run(backend=backend))
+    assert np.allclose(
+        ignore_global_phase(Circuit().y[0].z[0].run(backend=backend)),
+        Circuit().x[0].run(backend=backend))
 
 
 def test_pauli3(backend):
-    assert np.allclose(Circuit().z[0].x[0].run(backend=backend),
-                       ignore_global_phase(Circuit().y[0].run(backend=backend)))
+    assert np.allclose(
+        Circuit().z[0].x[0].run(backend=backend),
+        ignore_global_phase(Circuit().y[0].run(backend=backend)))
 
 
 def test_cx1(backend):
@@ -69,15 +72,15 @@ def test_cx1(backend):
 
 
 def test_cx2(backend):
-    assert np.allclose(
-        Circuit().x[2].cx[:4:2, 1:4:2].run(backend=backend),
-        Circuit().x[2:4].run(backend=backend))
+    assert np.allclose(Circuit().x[2].cx[:4:2, 1:4:2].run(backend=backend),
+                       Circuit().x[2:4].run(backend=backend))
 
 
 def test_cx3(backend):
     '''Refer issues #76 (https://github.com/Blueqat/Blueqat/issues/76)'''
     c = Circuit().z[2].x[0].cx[0, 1]
-    assert np.allclose(c.run(backend=backend), np.array([0., 0., 0., 1., 0., 0., 0., 0.]))
+    assert np.allclose(c.run(backend=backend),
+                       np.array([0., 0., 0., 1., 0., 0., 0., 0.]))
 
 
 def test_cx4(backend):
@@ -105,32 +108,37 @@ def test_cx6(backend):
 
 
 def test_rz1(backend):
-    assert np.allclose(ignore_global_phase(Circuit().h[0].rz(math.pi)[0].run(backend=backend)),
-                       Circuit().x[0].h[0].run(backend=backend))
+    assert np.allclose(
+        ignore_global_phase(Circuit().h[0].rz(
+            math.pi)[0].run(backend=backend)),
+        Circuit().x[0].h[0].run(backend=backend))
     assert np.allclose(Circuit().h[0].r(math.pi)[0].run(backend=backend),
                        Circuit().x[0].h[0].run(backend=backend))
 
 
 def test_rz2(backend):
     assert np.allclose(
-        Circuit().h[0].rz(math.pi / 3)[0].h[1].rz(math.pi / 3)[1].run(backend=backend),
-        Circuit().h[0, 1].rz(math.pi / 3)[:].run(backend=backend)
-    )
+        Circuit().h[0].rz(math.pi / 3)[0].h[1].rz(math.pi /
+                                                  3)[1].run(backend=backend),
+        Circuit().h[0, 1].rz(math.pi / 3)[:].run(backend=backend))
 
 
 def test_tgate(backend):
-    assert np.allclose(Circuit().t[0].run(backend=backend),
-                       ignore_global_phase(Circuit().rz(math.pi / 4)[0].run(backend=backend)))
+    assert np.allclose(
+        Circuit().t[0].run(backend=backend),
+        ignore_global_phase(Circuit().rz(math.pi / 4)[0].run(backend=backend)))
 
 
 def test_sgate(backend):
-    assert np.allclose(Circuit().s[0].run(backend=backend),
-                       ignore_global_phase(Circuit().rz(math.pi / 2)[0].run(backend=backend)))
+    assert np.allclose(
+        Circuit().s[0].run(backend=backend),
+        ignore_global_phase(Circuit().rz(math.pi / 2)[0].run(backend=backend)))
 
 
 def test_tdg_gate(backend):
-    assert np.allclose(ignore_global_phase(Circuit().s[1].tdg[1].tdg[1].run(backend=backend)),
-                       Circuit().i[1].run(backend=backend))
+    assert np.allclose(
+        ignore_global_phase(Circuit().s[1].tdg[1].tdg[1].run(backend=backend)),
+        Circuit().i[1].run(backend=backend))
 
 
 def test_sdg_gate(backend):
@@ -156,13 +164,15 @@ def test_toffoli_gate(bits, backend):
 
 
 def test_u3_gate(backend):
-    assert np.allclose(Circuit().u3(1.23, 4.56, -5.43)[1].run(backend=backend),
-                       Circuit().rz(-5.43)[1].ry(1.23)[1].rz(4.56)[1].run(backend=backend))
+    assert np.allclose(
+        Circuit().u3(1.23, 4.56, -5.43)[1].run(backend=backend),
+        Circuit().rz(-5.43)[1].ry(1.23)[1].rz(4.56)[1].run(backend=backend))
 
 
 def test_u2_gate(backend):
-    assert np.allclose(Circuit().u2(-1.23, 4.56)[1].run(backend=backend),
-                       Circuit().u3(math.pi / 2, -1.23, 4.56)[1].run(backend=backend))
+    assert np.allclose(
+        Circuit().u2(-1.23, 4.56)[1].run(backend=backend),
+        Circuit().u3(math.pi / 2, -1.23, 4.56)[1].run(backend=backend))
 
 
 def test_u1_gate(backend):
@@ -172,18 +182,24 @@ def test_u1_gate(backend):
 
 def test_rotation1(backend):
     assert np.allclose(
-        Circuit().ry(-math.pi / 2)[0].rz(math.pi / 6)[0].ry(math.pi / 2)[0].run(backend=backend),
+        Circuit().ry(-math.pi / 2)[0].rz(math.pi / 6)[0].ry(
+            math.pi / 2)[0].run(backend=backend),
         Circuit().rx(math.pi / 6)[0].run(backend=backend))
 
 
 def test_crotation(backend):
-    assert np.allclose(Circuit().cu3(1.23, 4.56, -5.43)[3, 1].run(backend=backend),
-                       Circuit().crz(-5.43)[3, 1].cry(1.23)[3, 1].crz(4.56)[3, 1].run(backend=backend))
+    assert np.allclose(
+        Circuit().cu3(1.23, 4.56, -5.43)[3, 1].run(backend=backend),
+        Circuit().crz(-5.43)[3,
+                             1].cry(1.23)[3,
+                                          1].crz(4.56)[3,
+                                                       1].run(backend=backend))
 
 
 def test_crotation2(backend):
-    assert np.allclose(Circuit().crx(1.23)[1, 3].run(backend=backend),
-                       Circuit().h[3].crz(1.23)[1, 3].h[3].run(backend=backend))
+    assert np.allclose(
+        Circuit().crx(1.23)[1, 3].run(backend=backend),
+        Circuit().h[3].crz(1.23)[1, 3].h[3].run(backend=backend))
 
 
 def test_crotation3(backend):
@@ -327,7 +343,9 @@ def test_measurement_hadamard1(backend):
 def test_measurement_after_qubits1(backend):
     for _ in range(50):
         c = Circuit().h[0].m[0]
-        a, cnt = c.run(backend=backend, shots=1, returns="statevector_and_shots")
+        a, cnt = c.run(backend=backend,
+                       shots=1,
+                       returns="statevector_and_shots")
         if cnt.most_common(1)[0] == ('0', 1):
             assert np.allclose(a, np.array([1, 0]))
         else:
@@ -347,8 +365,10 @@ def test_copy_empty(backend):
     cc = c.copy(copy_backends=True)
     assert c.ops == cc.ops and c.ops is not cc.ops
     if backend in ['numpy', 'numba']:
-        assert c._backends[backend].cache is None and cc._backends[backend].cache is None
-        assert c._backends[backend].cache_idx == cc._backends[backend].cache_idx == -1
+        assert c._backends[backend].cache is None and cc._backends[
+            backend].cache is None
+        assert c._backends[backend].cache_idx == cc._backends[
+            backend].cache_idx == -1
 
 
 def test_cache_then_append(backend):
@@ -357,7 +377,8 @@ def test_cache_then_append(backend):
     c.run()
     c.h[0]
     c.run()
-    assert np.allclose(c.run(backend=backend), Circuit().x[0].h[0].run(backend=backend))
+    assert np.allclose(c.run(backend=backend),
+                       Circuit().x[0].h[0].run(backend=backend))
 
 
 def test_concat_circuit1(backend):
@@ -368,7 +389,8 @@ def test_concat_circuit1(backend):
     c2.h[1]
     c2.run()
     c1 += c2
-    assert np.allclose(c1.run(backend=backend), Circuit().h[0].h[1].run(backend=backend))
+    assert np.allclose(c1.run(backend=backend),
+                       Circuit().h[0].h[1].run(backend=backend))
 
 
 def test_concat_circuit2(backend):
@@ -379,7 +401,8 @@ def test_concat_circuit2(backend):
     c2.h[0]
     c2.run()
     c1 += c2
-    assert np.allclose(c1.run(backend=backend), Circuit().h[1].h[0].run(backend=backend))
+    assert np.allclose(c1.run(backend=backend),
+                       Circuit().h[1].h[0].run(backend=backend))
 
 
 def test_concat_circuit3(backend):
@@ -388,13 +411,15 @@ def test_concat_circuit3(backend):
     c2 = Circuit()
     c2.h[0]
     c1 += c2
-    assert np.allclose(c1.run(backend=backend), Circuit().x[0].h[0].run(backend=backend))
+    assert np.allclose(c1.run(backend=backend),
+                       Circuit().x[0].h[0].run(backend=backend))
     c1 = Circuit()
     c1.h[0]
     c2 = Circuit()
     c2.x[0]
     c1 += c2
-    assert np.allclose(c1.run(backend=backend), Circuit().h[0].x[0].run(backend=backend))
+    assert np.allclose(c1.run(backend=backend),
+                       Circuit().h[0].x[0].run(backend=backend))
 
 
 def test_concat_circuit4(backend):
@@ -404,9 +429,12 @@ def test_concat_circuit4(backend):
     c2.h[0]
     c = c1 + c2
     c.run()
-    assert np.allclose(c.run(backend=backend), Circuit().x[0].h[0].run(backend=backend))
-    assert np.allclose(c1.run(backend=backend), Circuit().x[0].run(backend=backend))
-    assert np.allclose(c2.run(backend=backend), Circuit().h[0].run(backend=backend))
+    assert np.allclose(c.run(backend=backend),
+                       Circuit().x[0].h[0].run(backend=backend))
+    assert np.allclose(c1.run(backend=backend),
+                       Circuit().x[0].run(backend=backend))
+    assert np.allclose(c2.run(backend=backend),
+                       Circuit().h[0].run(backend=backend))
 
 
 def test_complicated_circuit(backend):
@@ -438,15 +466,20 @@ def test_complicated_circuit(backend):
     c.rx(1.5707963267948966)[1]
     c.cx[0, 3].u3(0.23, 1.24, -0.65)[3].cx[3, 1].cx[3, 0]
     vec = c.run(backend=backend)
-    assert np.allclose(ignore_global_phase(vec), np.array(
-            [ 5.88423813e-01+0.00000000e+00j, -3.82057626e-02-5.70122617e-02j,
-             -2.52821022e-17-5.09095967e-17j, -1.21188626e-11+5.63063568e-10j,
-             -2.19604047e-01-2.85449458e-01j, -2.59211189e-03+4.58219688e-02j,
-              3.08617333e-09-3.56619861e-09j,  4.48946755e-18-3.62425819e-19j,
-              4.64439684e-09-1.48402425e-09j,  4.61321871e-18-4.67197922e-18j,
-             -3.59382904e-01+4.73135946e-01j,  2.20759589e-02+6.42836440e-02j,
-             -1.55912415e-17-3.57403200e-17j,  5.05381446e-10+2.03362289e-10j,
-              3.82475330e-01-1.07620677e-01j,  2.29456407e-02-3.47003613e-02j]))
+    assert np.allclose(
+        ignore_global_phase(vec),
+        np.array([
+            5.88423813e-01 + 0.00000000e+00j, -3.82057626e-02 -
+            5.70122617e-02j, -2.52821022e-17 - 5.09095967e-17j,
+            -1.21188626e-11 + 5.63063568e-10j, -2.19604047e-01 -
+            2.85449458e-01j, -2.59211189e-03 + 4.58219688e-02j,
+            3.08617333e-09 - 3.56619861e-09j, 4.48946755e-18 - 3.62425819e-19j,
+            4.64439684e-09 - 1.48402425e-09j, 4.61321871e-18 - 4.67197922e-18j,
+            -3.59382904e-01 + 4.73135946e-01j, 2.20759589e-02 +
+            6.42836440e-02j, -1.55912415e-17 - 3.57403200e-17j,
+            5.05381446e-10 + 2.03362289e-10j, 3.82475330e-01 - 1.07620677e-01j,
+            2.29456407e-02 - 3.47003613e-02j
+        ]))
 
 
 def test_switch_backend1():
@@ -459,7 +492,8 @@ def test_switch_backend1():
     # Different instance of QasmOutputBackend is used.
     # Lhs is owned by Circuit, rhs is passed as argument. But in this case same result.
     from blueqat.backends.qasm_output_backend import QasmOutputBackend
-    assert c.run(output_prologue=False) == c.run(False, backend=QasmOutputBackend())
+    assert c.run(output_prologue=False) == c.run(False,
+                                                 backend=QasmOutputBackend())
 
     BlueqatGlobalSetting.set_default_backend("numpy")
     assert c.run(shots=5) == c.run_with_numpy(shots=5)
@@ -468,6 +502,7 @@ def test_switch_backend1():
 def test_macro():
     def macro(c, i):
         return c.h[i]
+
     BlueqatGlobalSetting.register_macro('foo', macro)
     try:
         assert np.allclose(Circuit().foo(1).run(), Circuit().h[1].run())
@@ -482,13 +517,15 @@ def test_macro():
 def test_reset1(backend, pair):
     if backend == 'qgate':
         pytest.xfail('Reset gate for qgate is unimplemented.')
-    assert np.allclose(pair[0].run(backend=backend), pair[1].run(backend=backend))
+    assert np.allclose(pair[0].run(backend=backend),
+                       pair[1].run(backend=backend))
 
 
 def test_reset2(backend):
     if backend == 'qgate':
         pytest.xfail('Reset gate for qgate is unimplemented.')
-    common = Circuit().h[0].cx[0, 1].cx[0, 2].reset[1].m[:].run(backend=backend, shots=100).most_common(3)
+    common = Circuit().h[0].cx[0, 1].cx[0, 2].reset[1].m[:].run(
+        backend=backend, shots=100).most_common(3)
     assert len(common) == 2
     a, b = common
     assert a[0] in ('000', '101')
@@ -515,9 +552,7 @@ def test_mat1_2(backend):
     if backend == 'qgate':
         pytest.xfail('mat1 gate for qgate is unimplemented.')
     t = random.random() * math.pi
-    a = np.array([
-        [math.cos(t), -math.sin(t)],
-        [math.sin(t), math.cos(t)]])
+    a = np.array([[math.cos(t), -math.sin(t)], [math.sin(t), math.cos(t)]])
     v1 = Circuit().mat1(a)[1:3].run(backend=backend)
     v2 = Circuit().ry(t * 2)[1:3].run(backend=backend)
     assert np.allclose(v1, v2)
@@ -547,7 +582,8 @@ def test_mat1_decomposite(backend):
 
     c = Circuit().mat1(a)[2, 4]
     v1 = c.run(backend=backend)
-    v2 = c.run_with_2q_decomposition(basis='cx', mat1_decomposer=u3_decomposer).run(backend=backend)
+    v2 = c.run_with_2q_decomposition(
+        basis='cx', mat1_decomposer=u3_decomposer).run(backend=backend)
     assert np.allclose(v1, v2)
 
 
@@ -558,7 +594,8 @@ def test_decomposite1(basis):
     r = random.random()
     s = random.random()
 
-    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[3].rz(s)[3].cz[3, 1].h[2].ry(r)[3].rz(s)[3].ry(p)[1].rz(q)[1]
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[3].rz(s)[3].cz[3, 1].h[2].ry(
+        r)[3].rz(s)[3].ry(p)[1].rz(q)[1]
     v1 = c.run()
     v2 = c.run_with_2q_decomposition(basis=basis).run()
     assert np.allclose(ignore_global_phase(v1), ignore_global_phase(v2))
@@ -571,7 +608,8 @@ def test_decomposite2(basis):
     r = random.random()
     s = random.random()
 
-    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].cx[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].cx[0, 1].h[2].ry(
+        r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
     v1 = c.run()
     v2 = c.run_with_2q_decomposition(basis=basis).run()
     assert np.allclose(ignore_global_phase(v1), ignore_global_phase(v2))
@@ -584,7 +622,24 @@ def test_decomposite3(basis):
     r = random.random()
     s = random.random()
 
-    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].zz[0, 1].h[2].ry(r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
+    c = Circuit().ry(p)[1].rz(q)[1].ry(r)[0].rz(s)[0].zz[0, 1].h[2].ry(
+        r)[0].rz(s)[0].ry(p)[1].rz(q)[1]
     v1 = c.run()
     v2 = c.run_with_2q_decomposition(basis=basis).run()
     assert np.allclose(ignore_global_phase(v1), ignore_global_phase(v2))
+
+
+def test_initial_vec(backend):
+    if backend == 'qgate':
+        pytest.xfail('initial vector insertion for qgate is unimplemented.')
+    c = Circuit().h[0]
+    v1 = c.run()
+    assert np.allclose(c.run(backend=backend, initial=v1), Circuit(1).run())
+
+
+def test_initial_vec2(backend):
+    if backend == 'qgate':
+        pytest.xfail('initial vector insertion for qgate is unimplemented.')
+    v = Circuit().x[1].run()
+    cnt = Circuit().x[0].m[0, 1].run(backend=backend, initial=v, shots=100)
+    assert cnt == Counter({'11': 100})
