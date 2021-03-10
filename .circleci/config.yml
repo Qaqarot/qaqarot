@@ -9,8 +9,42 @@ executors:
       docker:
           - image: circleci/python:<< parameters.tag >>
 
+    miniconda:
+      parameters:
+        tag:
+          type: string
+      working_directory: ~/miniconda3-<< parameters.tag >>
+      docker:
+        - image: continuumio/miniconda3:4.9.2
+
 
 commands:
+  install_for_doctest:
+    parameters:
+      tag:
+        type: string
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --progress-bar off -U pip setuptools
+            pip install --progress-bar off pytest twine wheel
+            pip install --progress-bar off -r requirements.txt
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}
+
   install:
     parameters:
       tag:
@@ -25,15 +59,16 @@ commands:
 
       - restore_cache:
           keys:
-          - v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+          - v1-conda-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
       - run:
           name: Install dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --progress-bar off -U pip setuptools
-            pip install --progress-bar off pytest twine wheel
+            conda init bash
+            . ~/.bashrc
+            conda create -qy --name py<<parameters.tag>> python=<<parameters.tag>>
+            conda activate py<<parameters.tag>>
+            conda install -qy numpy scipy numba pytest twine wheel setuptools
             pip install --progress-bar off -r requirements.txt
             pip install --progress-bar off -r optional-requirements.txt
 
@@ -43,13 +78,15 @@ commands:
             - run:
                 name: Install qgate
                 command: |
-                  . venv/bin/activate
+                  conda init bash
+                  . ~/.bashrc
+                  conda activate py<<parameters.tag>>
                   pip install << parameters.qgate_url >>
 
       - save_cache:
           paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+            - /opt/conda/envs/py<<parameters.tag>>
+          key: v1-conda-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
 jobs:
   doccheck:
@@ -58,7 +95,7 @@ jobs:
       tag: "3.7.8"
 
     steps:
-      - install:
+      - install_for_doctest:
           tag: "3.7.8"
 
       - run:
@@ -81,7 +118,7 @@ jobs:
         default: ""
 
     executor:
-      name: python
+      name: miniconda
       tag: <<parameters.tag>>
 
     steps:
@@ -95,17 +132,11 @@ jobs:
 
       - run:
           name: run tests
-          no_output_timeout: 30m
           command: |
-            . venv/bin/activate
+            conda init bash
+            . ~/.bashrc
+            conda activate py<<parameters.tag>>
             python -m pytest tests/ -v --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
-
-      - run:
-          name: twine check
-          command: |
-            . venv/bin/activate
-            python setup.py build sdist bdist_wheel
-            twine check dist/*
 
       - store_test_results:
           path: test-reports
@@ -126,12 +157,12 @@ workflows:
 
       - test_main:
           name: py3.7-qgate-0.2.2
-          tag: "3.7.8"
+          tag: "3.7.9"
           qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp37-cp37m-manylinux1_x86_64.whl
 
       - test_main:
           name: py3.8-qgate-0.2.2
-          tag: "3.8.7"
+          tag: "3.8.8"
           qgate_url: https://github.com/shinmorino/qgate/raw/gh-pages/packages/0.2/qgate-0.2.2-cp38-cp38-manylinux1_x86_64.whl
 
       # py3.9 is pending because some optional-dependencies are still not supported.
