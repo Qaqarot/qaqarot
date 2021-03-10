@@ -41,10 +41,12 @@ class _NumPyBackendContext:
         self.shots_result = Counter()
         self.cregs = [0] * self.n_qubits
 
-    def prepare(self) -> None:
+    def prepare(self, initial: Optional[np.ndarray]) -> None:
         """Prepare to run next shot."""
         if self.cache is not None:
             np.copyto(self.qubits, self.cache)
+        elif initial is not None:
+            np.copyto(self.qubits, initial)
         else:
             self.qubits.fill(0.0)
             self.qubits[0] = 1.0
@@ -94,9 +96,8 @@ class NumPyBackend(Backend):
             gates: List[Operation],
             n_qubits,
             shots: Optional[int] = None,
-            returns:
-        Optional[
-            str] = None,  # Literal["statevector", "shots", "statevector_and_shots", _inner_ctx"]
+            initial: Optional[np.ndarray] = None,
+            returns: Optional[str] = None,
             ignore_global: bool = False,
             save_cache: bool = False,
             **kwargs) -> Any:
@@ -123,7 +124,20 @@ class NumPyBackend(Backend):
         if kwargs:
             warnings.warn(f"Unknown run arguments: {kwargs}")
 
-        self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
+        if initial is not None:
+            if not isinstance(initial, np.ndarray):
+                raise ValueError(f"`initial` must be a np.ndarray, but {type(initial)}")
+            if initial.shape != (2**n_qubits,):
+                raise ValueError(f"`initial.shape` is not matched. Expected: {(2**n_qubits,)}, Actual: {initial.shape}")
+            if initial.dtype != DEFAULT_DTYPE:
+                initial = initial.astype(DEFAULT_DTYPE)
+            if save_cache:
+                warnings.warn("When initial is not None, saving cache is disabled.")
+                save_cache = False
+            self.__clear_cache()
+        else:
+            self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
+
         ctx = _NumPyBackendContext(n_qubits, self.cache, self.cache_idx)
 
         def run_single_gate(gate: Operation) -> None:
@@ -136,7 +150,7 @@ class NumPyBackend(Backend):
                     run_single_gate(g)
 
         for _ in range(shots):
-            ctx.prepare()
+            ctx.prepare(initial)
             for gate in gates[ctx.cache_idx + 1:]:
                 run_single_gate(gate)
                 if ctx.save_ctx_cache:
