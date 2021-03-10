@@ -403,10 +403,12 @@ class _NumbaBackendContext:
         self.cache: Optional[np.ndarray] = cache
         self.cache_idx: int = cache_idx
 
-    def prepare(self) -> None:
+    def prepare(self, initial: Optional[np.ndarray]) -> None:
         """Prepare to run next shot."""
         if self.cache is not None:
             np.copyto(self.qubits, self.cache)
+        elif initial is not None:
+            np.copyto(self.qubits, initial)
         else:
             self.qubits.fill(0.0)
             self.qubits[0] = 1.0
@@ -455,6 +457,7 @@ class NumbaBackend(Backend):
             n_qubits: int,
             shots: Optional[int] = None,
             returns: Optional[str] = None,
+            initial: Optional[np.ndarray] = None,
             save_cache: bool = False,
             ignore_global: bool = False,
             dtype: type = DEFAULT_DTYPE,
@@ -480,15 +483,29 @@ class NumbaBackend(Backend):
             return shots, returns
 
         shots, returns = __parse_shots_returns(shots, returns)
+
         if enable_ctx_cache is None:
             enable_ctx_cache = shots > 1
+        elif enable_ctx_cache is False:
+            self.__clear_cache()
+
         if kwargs:
             warnings.warn(f"Unknown arguments {kwargs}")
 
-        if enable_ctx_cache:
-            self.__clear_cache_if_invalid(n_qubits, dtype)
-        else:
+        if initial is not None:
+            if not isinstance(initial, np.ndarray):
+                raise ValueError(f"`initial` must be a np.ndarray, but {type(initial)}")
+            if initial.shape != (2**n_qubits,):
+                raise ValueError(f"`initial.shape` is not matched. Expected: {(2**n_qubits,)}, Actual: {initial.shape}")
+            if initial.dtype != DEFAULT_DTYPE:
+                initial = initial.astype(DEFAULT_DTYPE)
+            if save_cache:
+                warnings.warn("When initial is not None, saving cache is disabled.")
+                save_cache = False
             self.__clear_cache()
+
+        self.__clear_cache_if_invalid(n_qubits, dtype)
+
         ctx = _NumbaBackendContext(n_qubits, enable_ctx_cache, self.cache,
                                    self.cache_idx, dtype)
 
@@ -502,7 +519,7 @@ class NumbaBackend(Backend):
                     run_single_gate(g)
 
         for _ in range(shots):
-            ctx.prepare()
+            ctx.prepare(initial)
             cache_idx = ctx.cache_idx
             for gate in gates[cache_idx + 1:]:
                 run_single_gate(gate)

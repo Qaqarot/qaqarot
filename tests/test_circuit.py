@@ -632,8 +632,6 @@ def test_decomposite3(basis):
 def test_initial_vec(backend):
     if backend == 'qgate':
         pytest.xfail('initial vector insertion for qgate is unimplemented.')
-    if backend == 'numba':
-        pytest.xfail('initial vector insertion is unimplemented.')
     c = Circuit().h[0]
     v1 = c.run()
     assert np.allclose(c.run(backend=backend, initial=v1), Circuit(1).run())
@@ -642,8 +640,6 @@ def test_initial_vec(backend):
 def test_initial_vec2(backend):
     if backend == 'qgate':
         pytest.xfail('initial vector insertion for qgate is unimplemented.')
-    if backend == 'numba':
-        pytest.xfail('initial vector insertion is unimplemented.')
     v = Circuit().x[1].run()
     cnt = Circuit().x[0].m[0, 1].run(backend=backend, initial=v, shots=100)
     assert cnt == Counter({'11': 100})
