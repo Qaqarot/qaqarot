@@ -9,8 +9,40 @@ executors:
       docker:
           - image: circleci/python:<< parameters.tag >>
 
+    miniconda:
+      parameters:
+        tag:
+          type: string
+      working_directory: ~/repo<< parameters.tag >>
+
 
 commands:
+  install_for_doctest:
+    parameters:
+      tag:
+        type: string
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --progress-bar off -U pip setuptools
+            pip install --progress-bar off pytest twine wheel
+            pip install --progress-bar off -r requirements.txt
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}
+
   install:
     parameters:
       tag:
@@ -25,15 +57,14 @@ commands:
 
       - restore_cache:
           keys:
-          - v1-dependencies-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+          - v1-conda-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
       - run:
           name: Install dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --progress-bar off -U pip setuptools
-            pip install --progress-bar off pytest twine wheel
+            conda create -qy --name py<<parameters.tag>> python=<<parameters.tag>>
+            conda activate py<<parameters.tag>>
+            conda install -qy numpy scipy numba pytest twine wheel setuptools
             pip install --progress-bar off -r requirements.txt
             pip install --progress-bar off -r optional-requirements.txt
 
@@ -43,13 +74,13 @@ commands:
             - run:
                 name: Install qgate
                 command: |
-                  . venv/bin/activate
+                  conda activate py<<parameters.tag>>
                   pip install << parameters.qgate_url >>
 
       - save_cache:
           paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
+            - /opt/conda/envs/py<<parameters.tag>>
+          key: v1-conda-<<parameters.tag>>-{{ checksum "requirements.txt" }}-{{ checksum "optional-requirements.txt" }}
 
 jobs:
   doccheck:
@@ -58,7 +89,7 @@ jobs:
       tag: "3.7.8"
 
     steps:
-      - install:
+      - install_for_doctest:
           tag: "3.7.8"
 
       - run:
@@ -95,7 +126,6 @@ jobs:
 
       - run:
           name: run tests
-          no_output_timeout: 30m
           command: |
             . venv/bin/activate
             python -m pytest tests/ -v --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
