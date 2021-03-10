@@ -65,6 +65,7 @@ commands:
           name: Install dependencies
           command: |
             conda init bash
+            . ~/.bashrc
             conda create -qy --name py<<parameters.tag>> python=<<parameters.tag>>
             conda activate py<<parameters.tag>>
             conda install -qy numpy scipy numba pytest twine wheel setuptools
@@ -77,6 +78,8 @@ commands:
             - run:
                 name: Install qgate
                 command: |
+                  conda init bash
+                  . ~/.bashrc
                   conda activate py<<parameters.tag>>
                   pip install << parameters.qgate_url >>
 
@@ -131,6 +134,7 @@ jobs:
           name: run tests
           command: |
             conda init bash
+            . ~/.bashrc
             conda activate py<<parameters.tag>>
             python -m pytest tests/ -v --junitxml=test-reports/python/junit.xml <<parameters.test_option>>
 
