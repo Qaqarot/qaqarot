@@ -59,7 +59,8 @@ class QgateBackend(Backend):
 
             if hasattr(
                     qgate,
-                    '__version__') and qgate.__version__.startswith('0.4.0'):
+                    '__version__') and qgate.__version__.startswith('0.4.'):
+                this.version = qgate.__version__
                 # register new gate types in Qgate 0.4
                 QgateBackend.gatetypes['rxx'] = (gtype.RXX, 0, 2)
                 QgateBackend.gatetypes['ryy'] = (gtype.RYY, 0, 2)
@@ -102,6 +103,7 @@ class QgateBackend(Backend):
                 QgateBackend.create_simulator = create_simulator_04
                 QgateBackend.create_sampler = create_sampler_04
             else:
+                this.version = ''
                 # wrappers to absorb interface changes for Qgate 0.3 or older
                 def set_qregs_03(gate, qreg, controls):
                     gate.set_qreg(qreg)

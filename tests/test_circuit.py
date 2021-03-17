@@ -630,18 +630,39 @@ def test_decomposite3(basis):
 
 
 def test_initial_vec(backend):
+    if backend == 'qgate':
+        import qgate
+        try:
+            qgate.__version__
+        except AttributeError:
+            pytest.xfail("This version of qgate doesn't support initial vec.")
+
     c = Circuit().h[0]
     v1 = c.run(backend=backend)
     assert np.allclose(c.run(backend=backend, initial=v1), Circuit(1).run(backend=backend))
 
 
 def test_initial_vec2(backend):
+    if backend == 'qgate':
+        import qgate
+        try:
+            qgate.__version__
+        except AttributeError:
+            pytest.xfail("This version of qgate doesn't support initial vec.")
+
     v = Circuit().x[1].run(backend=backend)
     cnt = Circuit().x[0].m[0, 1].run(backend=backend, initial=v, shots=100)
     assert cnt == Counter({'11': 100})
 
 
 def test_initial_vec3(backend):
+    if backend == 'qgate':
+        import qgate
+        try:
+            qgate.__version__
+        except AttributeError:
+            pytest.xfail("This version of qgate doesn't support initial vec.")
+
     v = Circuit(4).h[3].run(backend=backend)
     v2 = Circuit(4).run(backend=backend, initial=v)
     assert np.allclose(v, v2)
