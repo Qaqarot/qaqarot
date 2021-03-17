@@ -1,7 +1,10 @@
 from collections import Counter
+from typing import Any, List, Optional
+
+import numpy as np
+
 from .backendbase import Backend
 import blueqat.gate as bqgate
-import numpy as np
 
 
 class QgateBackend(Backend):
@@ -146,23 +149,21 @@ class QgateBackend(Backend):
                 QgateBackend.create_simulator = create_simulator_03
                 QgateBackend.create_sampler = create_sampler_03
 
-    def run(self, gates, n_qubits, *args, **kwargs):
+    def run(self,
+            gates: List[bqgate.Operation],
+            n_qubits: int,
+            returns: Optional[str] = None,
+            shots: Optional[int] = None,
+            sampling: str = 'qgate',
+            initial: Optional[np.ndarray] = None,
+            **kwargs) -> Any:
         self.n_qubits = n_qubits
-        # returns
-        r = kwargs.get('returns', '')
-        sampling = kwargs.get('sampling', 'qgate')
-        shots = kwargs.get('shots', 0)
+        r = returns or ''
+        shots = shots or 0
         if shots != 0 and r == '':
             r = 'shots'
         elif r == '':
             r = 'statevector'
-
-        if 'returns' in kwargs:
-            del kwargs['returns']
-        if 'sampling' in kwargs:
-            del kwargs['sampling']
-        if 'shots' in kwargs:
-            del kwargs['shots']
 
         sim = QgateBackend.create_simulator(kwargs)
 
@@ -170,6 +171,8 @@ class QgateBackend(Backend):
         self.qregs = [model.Qreg() for _ in range(n_qubits)]
         self.refs = [model.Reference() for _ in range(n_qubits)]
         sim.qubits.set_ordering(self.qregs)
+        if initial is not None:
+            sim.qubits.add_qreg_group(self.qregs, initial)
 
         ops = self.convert_operators(gates)
         # qgate.dump(ops)
@@ -184,7 +187,7 @@ class QgateBackend(Backend):
             vec, shots = self.get_state_vector_and_sample(sim, ops)
             return vec, Counter(shots)
         else:
-            raise RuntimeError('Unkown returns token, {}.'.format(r))
+            raise RuntimeError('Unknown returns token, {}.'.format(r))
 
     def convert_operators(self, gates):
         ops = list()
@@ -245,7 +248,8 @@ class QgateBackend(Backend):
         ctrl_qregs = [self.qregs[idx] for idx in ctrls]
         targets = gate.targets[n_ctrls:]
         target_qregs = [self.qregs[idx] for idx in targets]
-        g = QgateBackend.create_multi_qubit_gate(gate, typeinfo, ctrl_qregs, target_qregs)
+        g = QgateBackend.create_multi_qubit_gate(gate, typeinfo, ctrl_qregs,
+                                                 target_qregs)
         glist.append(g)
         return glist
 
