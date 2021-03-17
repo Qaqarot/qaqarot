@@ -13,13 +13,14 @@
 # limitations under the License.
 """Utilities for convenient."""
 from collections import Counter
-from typing import Union, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 
 
 def to_inttuple(
-        bitstr: Union[str, Counter, dict]) -> Union[Tuple[int], Counter, dict]:
+    bitstr: Union[str, Counter, Dict[str, int]]
+) -> Union[Tuple, Counter, Dict[Tuple, int]]:
     """Convert from bit string likes '01011' to int tuple likes (0, 1, 0, 1, 1)
 
     Args:
