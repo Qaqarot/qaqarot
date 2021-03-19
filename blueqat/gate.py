@@ -4,7 +4,7 @@ This module is internally used.
 """
 
 import math
-from typing import Callable, List, Optional
+from typing import Callable, Iterable, Iterator, List, Optional, SupportsIndex, Tuple, Union
 
 import numpy as np
 
@@ -12,15 +12,14 @@ import numpy as np
 class Operation:
     """Abstract quantum circuit operation class."""
 
-    """Lower name of the operation."""
     lowername: Optional[str] = None
-
+    """Lower name of the operation."""
     @property
     def uppername(self) -> str:
         """Upper name of the gate."""
         return self.lowername.upper()
 
-    def __init__(self, targets, params=(), **kwargs):
+    def __init__(self, targets, params=(), **kwargs) -> None:
         if self.lowername is None:
             raise ValueError(
                 f"{self.__class__.__name__}.lowername is not defined.")
@@ -28,7 +27,7 @@ class Operation:
         self.kwargs = kwargs
         self.targets = targets
 
-    def target_iter(self, n_qubits):
+    def target_iter(self, n_qubits: int) -> Iterator[int]:
         """The generator which yields the target qubits."""
         return slicing(self.targets, n_qubits)
 
@@ -104,10 +103,12 @@ class Gate(Operation):
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
     @property
-    def n_qargs(self):
+    def n_qargs(self) -> int:
         return 1
 
-    def _make_fallback_for_target_iter(self, n_qubits, fallback):
+    def _make_fallback_for_target_iter(
+            self, n_qubits: int,
+            fallback: Callable[[int], List['Gate']]) -> List['Gate']:
         gates = []
         for t in self.target_iter(n_qubits):
             gates += fallback(t)
@@ -120,15 +121,29 @@ class TwoQubitGate(Gate):
     def n_qargs(self):
         return 2
 
-    def control_target_iter(self, n_qubits):
+    def control_target_iter(
+            self, n_qubits: int) -> Iterator[Tuple[int, int]]:
         """The generator which yields the tuples of (control, target) qubits."""
         return qubit_pairs(self.targets, n_qubits)
 
-    def _make_fallback_for_control_target_iter(self, n_qubits, fallback):
+    def _make_fallback_for_control_target_iter(
+            self, n_qubits: int,
+            fallback: Callable[[int, int], List['Gate']]) -> List['Gate']:
         gates = []
         for c, t in self.control_target_iter(n_qubits):
             gates += fallback(c, t)
         return gates
+
+
+class HGate(OneQubitGate):
+    """Hadamard gate"""
+    lowername = "h"
+
+    def dagger(self):
+        return self
+
+    def matrix(self):
+        return np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
 
 
 class IGate(OneQubitGate):
@@ -143,6 +158,272 @@ class IGate(OneQubitGate):
 
     def matrix(self):
         return np.eye(2)
+
+
+class Mat1Gate(OneQubitGate):
+    """Arbitrary 2x2 matrix gate
+
+    `mat` is expected a 2x2 unitary matrix, but not checked.
+    (If unexpected matrix is given, backend may raises error or returns weird result)
+    """
+    lowername = "mat1"
+
+    def __init__(self, targets, mat: np.ndarray, **kwargs):
+        super().__init__(targets, (mat, ), **kwargs)
+        self.mat = mat
+
+    def dagger(self):
+        return Mat1Gate(self.targets, self.mat.T.conjugate(), **self.kwargs)
+
+    def matrix(self):
+        return self.mat
+
+
+class PhaseGate(OneQubitGate):
+    """Rotate-Z gate but global phase is different.
+
+    Global phase doesn't makes any difference of measured result.
+    You may use RZ gate or U1 gate instead, but distinguishing these gates
+    may better for debugging or future improvement.
+
+    furthermore, phase gate may efficient for simulating.
+    (It depends on backend implementation.
+    But matrix of phase gate is simpler than RZ gate or U1 gate.)"""
+    lowername = "phase"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta, ), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return PhaseGate(self.targets, -self.theta, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        # If phase gate is not implemented in the backend, global phase is ignored.
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [RZGate(t, self.theta)])
+
+    def matrix(self):
+        return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=complex)
+
+
+class RXGate(OneQubitGate):
+    """Rotate-X gate"""
+    lowername = "rx"
+
+    def __init__(self, targets, theta: float, **kwargs):
+        super().__init__(targets, (theta, ), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RXGate(self.targets, -self.theta, **self.kwargs)
+
+    def matrix(self):
+        t = self.theta * 0.5
+        a = np.cos(t)
+        b = -1j * np.sin(t)
+        return np.array([[a, b], [b, a]], dtype=complex)
+
+
+class RYGate(OneQubitGate):
+    """Rotate-Y gate"""
+    lowername = "ry"
+
+    def __init__(self, targets, theta: float, **kwargs):
+        super().__init__(targets, (theta, ), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RYGate(self.targets, -self.theta, **self.kwargs)
+
+    def matrix(self):
+        t = self.theta * 0.5
+        a = np.cos(t)
+        b = np.sin(t)
+        return np.array([[a, -b], [b, a]], dtype=complex)
+
+
+class RZGate(OneQubitGate):
+    """Rotate-Z gate"""
+    lowername = "rz"
+
+    def __init__(self, targets, theta: float, **kwargs):
+        super().__init__(targets, (theta, ), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return RZGate(self.targets, -self.theta, **self.kwargs)
+
+    def matrix(self):
+        a = np.exp(0.5j * self.theta)
+        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
+
+
+class SGate(OneQubitGate):
+    """S gate"""
+    lowername = "s"
+
+    def dagger(self):
+        return SDagGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
+
+    def matrix(self):
+        return np.array([[1, 0], [0, 1j]])
+
+
+class SDagGate(OneQubitGate):
+    """Dagger of S gate"""
+    lowername = "sdg"
+
+    def dagger(self):
+        return SGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
+
+    def matrix(self):
+        return np.array([[1, 0], [0, -1j]])
+
+
+class TGate(OneQubitGate):
+    """T ($\\pi/8$) gate"""
+    lowername = "t"
+
+    def dagger(self):
+        return TDagGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
+
+    def matrix(self):
+        return np.array([[1, 0], [0, np.exp(np.pi * 0.25)]])
+
+
+class TDagGate(OneQubitGate):
+    """Dagger of T ($\\pi/8$) gate"""
+    lowername = "tdg"
+
+    def dagger(self):
+        return TGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
+
+    def matrix(self):
+        return np.array([[1, 0], [0, np.exp(np.pi * -0.25)]])
+
+
+class ToffoliGate(Gate):
+    """Toffoli (CCX) gate"""
+    lowername = "ccx"
+
+    @property
+    def n_qargs(self):
+        return 3
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        c1, c2, t = self.targets
+        return [
+            HGate(t),
+            CCZGate((c1, c2, t)),
+            HGate(t),
+        ]
+
+    def matrix(self):
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 1, 0, 0, 0, 0]],
+                        dtype=complex)
+
+
+class U1Gate(OneQubitGate):
+    """U1 gate of old version Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    CRZ gate (crz) or CPhase gate (cr) are alternative choice.
+    """
+    lowername = "u1"
+
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd, ), **kwargs)
+        self.lambd = lambd
+
+    def dagger(self):
+        return U1Gate(self.targets, -self.lambd, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
+
+    def matrix(self):
+        a = np.exp(0.5j * self.theta)
+        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
+
+
+class U2Gate(OneQubitGate):
+    """U2 gate of old version of Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    CU gate is an alternative.
+    """
+    lowername = "u2"
+
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
+                      **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
+
+    def matrix(self):
+        p, l = self.params
+        c = 1.0 / np.sqrt(2)
+        a = np.exp(0.5j * (p + l)) * c
+        b = np.exp(0.5j * (p - l)) * c
+        return np.array([[a.conjugate(), -b.conjugate()], [a, b]],
+                        dtype=complex)
+
+
+class U3Gate(OneQubitGate):
+    """U3 gate of old version of Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    CU gate is an alternative.
+    """
+    lowername = "u3"
+
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
+                      **self.kwargs)
+
+    def matrix(self):
+        t, p, l = self.params
+        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
+        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
+        return np.array([[a.conjugate(), -b.conjugate()], [b, a]],
+                        dtype=complex)
 
 
 class XGate(OneQubitGate):
@@ -178,294 +459,41 @@ class ZGate(OneQubitGate):
         return np.array([[1, 0], [0, -1]], dtype=complex)
 
 
-class HGate(OneQubitGate):
-    """Hadamard gate"""
-    lowername = "h"
+class CCZGate(Gate):
+    """2-Controlled Z gate"""
+    lowername = "ccz"
+
+    @property
+    def n_qargs(self):
+        return 3
+
+    def fallback(self, n_qubits):
+        c1, c2, t = self.targets
+        return [
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(t),
+            CXGate((c2, t)),
+            TDagGate(t),
+            CXGate((c1, t)),
+            TGate(c2),
+            TGate(t),
+            CXGate((c1, c2)),
+            TGate(c1),
+            TDagGate(c2),
+            CXGate((c1, c2)),
+        ]
 
     def dagger(self):
         return self
 
     def matrix(self):
-        return np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
-
-
-class RXGate(OneQubitGate):
-    """Rotate-X gate"""
-    lowername = "rx"
-
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
-        self.theta = theta
-
-    def dagger(self):
-        return RXGate(self.targets, -self.theta, **self.kwargs)
-
-    def matrix(self):
-        t = self.theta * 0.5
-        a = np.cos(t)
-        b = -1j * np.sin(t)
-        return np.array([[a, b], [b, a]], dtype=complex)
-
-
-class RYGate(OneQubitGate):
-    """Rotate-Y gate"""
-    lowername = "ry"
-
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
-        self.theta = theta
-
-    def dagger(self):
-        return RYGate(self.targets, -self.theta, **self.kwargs)
-
-    def matrix(self):
-        t = self.theta * 0.5
-        a = np.cos(t)
-        b = np.sin(t)
-        return np.array([[a, -b], [b, a]], dtype=complex)
-
-
-class RZGate(OneQubitGate):
-    """Rotate-Z gate"""
-    lowername = "rz"
-
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
-        self.theta = theta
-
-    def dagger(self):
-        return RZGate(self.targets, -self.theta, **self.kwargs)
-
-    def matrix(self):
-        a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
-
-
-class PhaseGate(OneQubitGate):
-    """Rotate-Z gate but global phase is different.
-
-    Global phase doesn't makes any difference of measured result.
-    You may use RZ gate or U1 gate instead, but distinguishing these gates
-    may better for debugging or future improvement.
-
-    furthermore, phase gate may efficient for simulating.
-    (It depends on backend implementation.
-    But matrix of phase gate is simpler than RZ gate or U1 gate.)"""
-    lowername = "phase"
-
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
-        self.theta = theta
-
-    def dagger(self):
-        return PhaseGate(self.targets, -self.theta, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        # If phase gate is not implemented in the backend, global phase is ignored.
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [RZGate(t, self.theta)])
-
-    def matrix(self):
-        return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=complex)
-
-
-class TGate(OneQubitGate):
-    """T ($\\pi/8$) gate"""
-    lowername = "t"
-
-    def dagger(self):
-        return TDagGate(self.targets, self.params, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
-
-    def matrix(self):
-        return np.array([[1, 0], [0, np.exp(np.pi * 0.25)]])
-
-
-class TDagGate(OneQubitGate):
-    """Dagger of T ($\\pi/8$) gate"""
-    lowername = "tdg"
-
-    def dagger(self):
-        return TGate(self.targets, self.params, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
-
-    def matrix(self):
-        return np.array([[1, 0], [0, np.exp(np.pi * -0.25)]])
-
-
-class SGate(OneQubitGate):
-    """S gate"""
-    lowername = "s"
-
-    def dagger(self):
-        return SDagGate(self.targets, self.params, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [PhaseGate(t, math.pi / 2)])
-
-    def matrix(self):
-        return np.array([[1, 0], [0, 1j]])
-
-
-class SDagGate(OneQubitGate):
-    """Dagger of S gate"""
-    lowername = "sdg"
-
-    def dagger(self):
-        return SGate(self.targets, self.params, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [PhaseGate(t, -math.pi / 2)])
-
-    def matrix(self):
-        return np.array([[1, 0], [0, -1j]])
-
-
-class U1Gate(OneQubitGate):
-    """U1 gate
-
-    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
-    It is because for compatibility with IBM's implementations.
-
-    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
-    """
-    lowername = "u1"
-
-    def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd, ), **kwargs)
-        self.lambd = lambd
-
-    def dagger(self):
-        return U1Gate(self.targets, -self.lambd, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
-
-    def matrix(self):
-        a = np.exp(0.5j * self.theta)
-        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
-
-
-class U2Gate(OneQubitGate):
-    """U2 gate"""
-    lowername = "u2"
-
-    def __init__(self, targets, phi, lambd, **kwargs):
-        super().__init__(targets, (phi, lambd), **kwargs)
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
-                      **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_target_iter(
-            n_qubits, lambda t: [U3Gate(t, math.pi / 2, self.phi, self.lambd)])
-
-    def matrix(self):
-        p, l = self.params
-        c = 1.0 / np.sqrt(2)
-        a = np.exp(0.5j * (p + l)) * c
-        b = np.exp(0.5j * (p - l)) * c
-        return np.array([[a.conjugate(), -b.conjugate()], [a, b]],
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, -1]],
                         dtype=complex)
-
-
-class U3Gate(OneQubitGate):
-    """U3 gate"""
-    lowername = "u3"
-
-    def __init__(self, targets, theta, phi, lambd, **kwargs):
-        super().__init__(targets, (theta, phi, lambd), **kwargs)
-        self.theta = theta
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
-                      **self.kwargs)
-
-    def matrix(self):
-        t, p, l = self.params
-        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
-        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[a.conjugate(), -b.conjugate()], [b, a]],
-                        dtype=complex)
-
-
-class Mat1Gate(OneQubitGate):
-    """Arbitrary 2x2 matrix gate
-
-    `mat` is expected a 2x2 unitary matrix, but not checked.
-    (If unexpected matrix is given, backend may raises error or returns weird result)
-    """
-    lowername = "mat1"
-
-    def __init__(self, targets, mat: np.ndarray, **kwargs):
-        super().__init__(targets, (mat, ), **kwargs)
-        self.mat = mat
-
-    def dagger(self):
-        return Mat1Gate(self.targets, self.mat.T.conjugate(), **self.kwargs)
-
-    def matrix(self):
-        return self.mat
-
-
-class CXGate(TwoQubitGate):
-    """Controlled-X (CNOT) gate"""
-    lowername = "cx"
-
-    def dagger(self):
-        return self
-
-    # TODO: Specification required: target \otimes control or control \otimes target
-    def matrix(self):
-        return np.array(
-            [[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]],
-            dtype=complex)
-
-
-class CZGate(TwoQubitGate):
-    """Controlled-Z gate"""
-    lowername = "cz"
-
-    def dagger(self):
-        return self
-
-    def matrix(self):
-        return np.array(
-            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]],
-            dtype=complex)
-
-
-class CYGate(TwoQubitGate):
-    """Controlled-Y gate"""
-    lowername = "cy"
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [SDagGate(t), CXGate(
-                (c, t)), SGate(t)])
-
-    def matrix(self):
-        return np.array(
-            [[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]],
-            dtype=complex)
 
 
 class CHGate(TwoQubitGate):
@@ -488,6 +516,29 @@ class CHGate(TwoQubitGate):
         return np.array(
             [[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]],
             dtype=complex)
+
+
+class CPhaseGate(TwoQubitGate):
+    """Rotate-Z gate but phase is different."""
+    lowername = "cphase"
+
+    def __init__(self, targets, theta, **kwargs):
+        super().__init__(targets, (theta, ), **kwargs)
+        self.theta = theta
+
+    def dagger(self):
+        return CPhaseGate(self.targets, -self.theta, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t:
+            [CRZGate((c, t), self.theta),
+             PhaseGate(c, self.theta / 2)])
+
+    def matrix(self):
+        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
+                         [0, 0, 0, 0, np.exp(self.theta)]],
+                        dtype=complex)
 
 
 class CRXGate(TwoQubitGate):
@@ -575,27 +626,174 @@ class CRZGate(TwoQubitGate):
                         dtype=complex)
 
 
-class CPhaseGate(TwoQubitGate):
-    """Rotate-Z gate but phase is different."""
-    lowername = "cphase"
+class CSwapGate(Gate):
+    """Controlled SWAP gate"""
+    lowername = "cswap"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
-        self.theta = theta
+    @property
+    def n_qargs(self):
+        return 3
 
     def dagger(self):
-        return CPhaseGate(self.targets, -self.theta, **self.kwargs)
+        return self
+
+    def fallback(self, n_qubits):
+        # TODO: test
+        c, t1, t2 = self.targets
+        return [CXGate((t2, t1)), ToffoliGate((c, t1, t2)), CXGate((t2, t1))]
+
+    def matrix(self):
+        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]],
+                        dtype=complex)
+
+
+class CU1Gate(TwoQubitGate):
+    """Controlled U1 gate of old version Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    RZ gate (rz) or Phase gate (r) are alternative choice.
+    """
+    lowername = "cu1"
+
+    def __init__(self, targets, lambd, **kwargs):
+        super().__init__(targets, (lambd, ), **kwargs)
+        self.lambd = lambd
+
+    def dagger(self):
+        return CU1Gate(self.targets, -self.lambd, **self.kwargs)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t:
-            [CRZGate((c, t), self.theta),
-             PhaseGate(c, self.theta / 2)])
+            n_qubits, lambda c, t: [
+                U1Gate(c, self.lambd / 2),
+                CXGate((c, t)),
+                U1Gate(t, -self.lambd / 2),
+                CXGate((c, t)),
+                U1Gate(t, self.lambd / 2),
+            ])
 
     def matrix(self):
         return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
                          [0, 0, 0, 0, np.exp(self.theta)]],
                         dtype=complex)
+
+
+class CU2Gate(TwoQubitGate):
+    """Controlled U2 gate of old version Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    CU gate is an alternative.
+    """
+    lowername = "cu2"
+
+    def __init__(self, targets, phi, lambd, **kwargs):
+        super().__init__(targets, (phi, lambd), **kwargs)
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
+                       **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
+
+    def matrix(self):
+        p, l = self.params
+        c = 1 / np.sqrt(2)
+        a = np.exp(0.5j * (p + l)) * c
+        b = np.exp(0.5j * (p - l)) * c
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
+                         [0, 0, 1, 0], [0, a, 0, b]],
+                        dtype=complex)
+
+
+class CU3Gate(TwoQubitGate):
+    """Controlled U3 gate of old version Qiskit.
+
+    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
+    CU gate is an alternative.
+    """
+    lowername = "cu3"
+
+    def __init__(self, targets, theta, phi, lambd, **kwargs):
+        super().__init__(targets, (theta, phi, lambd), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lambd = lambd
+
+    def dagger(self):
+        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
+                       **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t: [
+                U1Gate(t, (self.lambd - self.phi) / 2),
+                CXGate((c, t)),
+                U3Gate(t, -self.theta / 2, 0, -(self.phi + self.lambd) / 2),
+                CXGate((c, t)),
+                U3Gate(t, self.theta / 2, self.phi, 0),
+            ])
+
+    def matrix(self):
+        t, p, l = self.params
+        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
+        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
+        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
+                         [0, 0, 1, 0], [0, a, 0, b]],
+                        dtype=complex)
+
+
+class CXGate(TwoQubitGate):
+    """Controlled-X (CNOT) gate"""
+    lowername = "cx"
+
+    def dagger(self):
+        return self
+
+    # TODO: Specification required: target \otimes control or control \otimes target
+    def matrix(self):
+        return np.array(
+            [[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]],
+            dtype=complex)
+
+
+class CYGate(TwoQubitGate):
+    """Controlled-Y gate"""
+    lowername = "cy"
+
+    def dagger(self):
+        return self
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_control_target_iter(
+            n_qubits,
+            lambda c, t: [SDagGate(t), CXGate(
+                (c, t)), SGate(t)])
+
+    def matrix(self):
+        return np.array(
+            [[1, 0, 0, 0], [0, 0, -1j, 0], [0, 0, 1, 0], [0, 1j, 0, 0]],
+            dtype=complex)
+
+
+class CZGate(TwoQubitGate):
+    """Controlled-Z gate"""
+    lowername = "cz"
+
+    def dagger(self):
+        return self
+
+    def matrix(self):
+        return np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]],
+            dtype=complex)
 
 
 class RXXGate(TwoQubitGate):
@@ -727,190 +925,8 @@ class ZZGate(TwoQubitGate):
                 U3Gate(t, -math.pi * 0.5, math.pi * 0.5, 0),
             ])
 
-        def matrix(self):
-            return np.diag([1, 1j, 1j, 1])
-
-
-class CU1Gate(TwoQubitGate):
-    """Controlled U1 gate
-
-    U1 gate is as same as RZ gate and CU1 gate is as same as CPhase gate.
-    It is because for compatibility with IBM's implementations.
-
-    You should probably use RZ/CRZ gates or Phase/CPhase gates instead of U1/CU1 gates.
-    """
-    lowername = "cu1"
-
-    def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd, ), **kwargs)
-        self.lambd = lambd
-
-    def dagger(self):
-        return CU1Gate(self.targets, -self.lambd, **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [
-                U1Gate(c, self.lambd / 2),
-                CXGate((c, t)),
-                U1Gate(t, -self.lambd / 2),
-                CXGate((c, t)),
-                U1Gate(t, self.lambd / 2),
-            ])
-
     def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
-                         [0, 0, 0, 0, np.exp(self.theta)]],
-                        dtype=complex)
-
-
-class CU2Gate(TwoQubitGate):
-    """Controlled U2 gate"""
-    lowername = "cu2"
-
-    def __init__(self, targets, phi, lambd, **kwargs):
-        super().__init__(targets, (phi, lambd), **kwargs)
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
-                       **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [CU3Gate((c, t), math.pi / 2, self.phi, self.lambd)])
-
-    def matrix(self):
-        p, l = self.params
-        c = 1 / np.sqrt(2)
-        a = np.exp(0.5j * (p + l)) * c
-        b = np.exp(0.5j * (p - l)) * c
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
-                         [0, 0, 1, 0], [0, a, 0, b]],
-                        dtype=complex)
-
-
-class CU3Gate(TwoQubitGate):
-    """Controlled U3 gate"""
-    lowername = "cu3"
-
-    def __init__(self, targets, theta, phi, lambd, **kwargs):
-        super().__init__(targets, (theta, phi, lambd), **kwargs)
-        self.theta = theta
-        self.phi = phi
-        self.lambd = lambd
-
-    def dagger(self):
-        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
-                       **self.kwargs)
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [
-                U1Gate(t, (self.lambd - self.phi) / 2),
-                CXGate((c, t)),
-                U3Gate(t, -self.theta / 2, 0, -(self.phi + self.lambd) / 2),
-                CXGate((c, t)),
-                U3Gate(t, self.theta / 2, self.phi, 0),
-            ])
-
-    def matrix(self):
-        t, p, l = self.params
-        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
-        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
-                         [0, 0, 1, 0], [0, a, 0, b]],
-                        dtype=complex)
-
-
-class ToffoliGate(Gate):
-    """Toffoli (CCX) gate"""
-    lowername = "ccx"
-
-    @property
-    def n_qargs(self):
-        return 3
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        c1, c2, t = self.targets
-        return [
-            HGate(t),
-            CCZGate((c1, c2, t)),
-            HGate(t),
-        ]
-
-    def matrix(self):
-        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1],
-                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 1, 0, 0, 0, 0]],
-                        dtype=complex)
-
-
-class CCZGate(Gate):
-    """2-Controlled Z gate"""
-    lowername = "ccz"
-
-    @property
-    def n_qargs(self):
-        return 3
-
-    def fallback(self, n_qubits):
-        c1, c2, t = self.targets
-        return [
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(t),
-            CXGate((c2, t)),
-            TDagGate(t),
-            CXGate((c1, t)),
-            TGate(c2),
-            TGate(t),
-            CXGate((c1, c2)),
-            TGate(c1),
-            TDagGate(c2),
-            CXGate((c1, c2)),
-        ]
-
-    def dagger(self):
-        return self
-
-    def matrix(self):
-        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, -1]],
-                        dtype=complex)
-
-
-class CSwapGate(Gate):
-    """Controlled SWAP gate"""
-    lowername = "cswap"
-
-    @property
-    def n_qargs(self):
-        return 3
-
-    def dagger(self):
-        return self
-
-    def fallback(self, n_qubits):
-        # TODO: test
-        c, t1, t2 = self.targets
-        return [CXGate((t2, t1)), ToffoliGate((c, t1, t2)), CXGate((t2, t1))]
-
-    def matrix(self):
-        return np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
-                         [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]],
-                        dtype=complex)
+        return np.diag([1, 1j, 1j, 1])
 
 
 class Measurement(Operation):
@@ -933,7 +949,8 @@ class Reset(Operation):
         return slicing(self.targets, n_qubits)
 
 
-def slicing_singlevalue(arg, length):
+def slicing_singlevalue(arg: Union[slice, SupportsIndex],
+                        length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(arg, slice):
         start, stop, step = arg.indices(length)
@@ -951,13 +968,14 @@ def slicing_singlevalue(arg, length):
             i = arg.__index__()
         except AttributeError:
             raise TypeError("indices must be integers or slices, not " +
-                            arg.__class__.__name__)
+                            arg.__class__.__name__) from None
         if i < 0:
             i += length
         yield i
 
 
-def slicing(args, length):
+def slicing(args: Tuple[Union[slice, SupportsIndex], ...],
+            length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(args, tuple):
         for arg in args:
@@ -966,7 +984,9 @@ def slicing(args, length):
         yield from slicing_singlevalue(args, length)
 
 
-def qubit_pairs(args, length):
+def qubit_pairs(args: Tuple[Tuple[Union[slice, SupportsIndex], ...],
+                            Tuple[Union[slice, SupportsIndex], ...]],
+                length: int) -> Iterator[Tuple[int, int]]:
     """Internally used."""
     if not isinstance(args, tuple):
         raise ValueError("Control and target qubits pair(s) are required.")
@@ -984,9 +1004,10 @@ def qubit_pairs(args, length):
     return zip(controls, targets)
 
 
-def get_maximum_index(indices):
+def get_maximum_index(
+        indices: Union[Tuple[SupportsIndex, ...], SupportsIndex]) -> int:
     """Internally used."""
-    def _maximum_idx_single(idx):
+    def _maximum_idx_single(idx: SupportsIndex):
         if isinstance(idx, slice):
             start = -1
             stop = 0
@@ -995,15 +1016,13 @@ def get_maximum_index(indices):
             if idx.stop is not None:
                 stop = idx.stop.__index__()
             return max(start, stop - 1)
-        else:
-            return idx.__index__()
+        return idx.__index__()
 
     if isinstance(indices, tuple):
         return max((_maximum_idx_single(i) for i in indices), default=-1)
-    else:
-        return _maximum_idx_single(indices)
+    return _maximum_idx_single(indices)
 
 
-def find_n_qubits(gates):
+def find_n_qubits(gates: Iterable[Operation]) -> int:
     """Find n_qubits from gates"""
     return max((get_maximum_index(g.targets) for g in gates), default=-1) + 1
