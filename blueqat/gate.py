@@ -286,6 +286,39 @@ class SDagGate(OneQubitGate):
         return np.array([[1, 0], [0, -1j]])
 
 
+class SXGate(OneQubitGate):
+    """sqrt(X) gate
+
+    This is equivalent as (1 + i) * RX(π/2)."""
+    lowername = "sx"
+
+    def dagger(self):
+        return SXDagGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [Mat1Gate(t, self.matrix())])
+
+    def matrix(self):
+        return np.array([[1 + 1j, 1 - 1j], [1 - 1j, 1 + 1j]])
+
+
+class SXDagGate(OneQubitGate):
+    """sqrt(X)† gate"""
+    lowername = "sxdg"
+
+    def dagger(self):
+        return SXGate(self.targets, self.params, **self.kwargs)
+
+    def fallback(self, n_qubits):
+        return self._make_fallback_for_target_iter(
+            n_qubits, lambda t: [Mat1Gate(t, self.matrix())])
+
+    def matrix(self):
+        return np.array([[1 - 1j, 1 + 1j], [1 + 1j, 1 - 1j]])
+
+
+
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
@@ -396,7 +429,7 @@ class U1Gate(OneQubitGate):
             n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
 
     def matrix(self):
-        a = cmath.exp(0.5j * self.theta)
+        a = cmath.exp(0.5j * self.lambd)
         return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 

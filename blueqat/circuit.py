@@ -34,6 +34,8 @@ GATE_SET = {
     "rz": gate.RZGate,
     "s": gate.SGate,
     "sdg": gate.SDagGate,
+    "sx": gate.SXGate,
+    "sxdg": gate.SXDagGate,
     "t": gate.TGate,
     "tdg": gate.TDagGate,
     "u": gate.UGate,
