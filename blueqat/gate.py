@@ -5,7 +5,7 @@ This module is internally used.
 
 import math
 import cmath
-from typing import Callable, Iterable, Iterator, List, Optional, SupportsIndex, Tuple, Union
+from typing import Callable, Iterable, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -1017,7 +1017,7 @@ class Reset(Operation):
         return slicing(self.targets, n_qubits)
 
 
-def slicing_singlevalue(arg: Union[slice, SupportsIndex],
+def slicing_singlevalue(arg: Union[slice, int],
                         length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(arg, slice):
@@ -1042,7 +1042,7 @@ def slicing_singlevalue(arg: Union[slice, SupportsIndex],
         yield i
 
 
-def slicing(args: Tuple[Union[slice, SupportsIndex], ...],
+def slicing(args: Tuple[Union[slice, int], ...],
             length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(args, tuple):
@@ -1052,8 +1052,8 @@ def slicing(args: Tuple[Union[slice, SupportsIndex], ...],
         yield from slicing_singlevalue(args, length)
 
 
-def qubit_pairs(args: Tuple[Tuple[Union[slice, SupportsIndex], ...],
-                            Tuple[Union[slice, SupportsIndex], ...]],
+def qubit_pairs(args: Tuple[Tuple[Union[slice, int], ...],
+                            Tuple[Union[slice, int], ...]],
                 length: int) -> Iterator[Tuple[int, int]]:
     """Internally used."""
     if not isinstance(args, tuple):
@@ -1073,9 +1073,9 @@ def qubit_pairs(args: Tuple[Tuple[Union[slice, SupportsIndex], ...],
 
 
 def get_maximum_index(
-        indices: Union[Tuple[SupportsIndex, ...], SupportsIndex]) -> int:
+        indices: Union[Tuple[int, ...], int]) -> int:
     """Internally used."""
-    def _maximum_idx_single(idx: SupportsIndex):
+    def _maximum_idx_single(idx: int):
         if isinstance(idx, slice):
             start = -1
             stop = 0
