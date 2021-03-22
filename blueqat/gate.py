@@ -4,6 +4,7 @@ This module is internally used.
 """
 
 import math
+import cmath
 from typing import Callable, Iterable, Iterator, List, Optional, SupportsIndex, Tuple, Union
 
 import numpy as np
@@ -57,16 +58,13 @@ class Operation:
                 stop = '' if obj.stop is None else str(obj.stop.__index__())
                 if obj.step is None:
                     return f'{start}:{stop}'
-                else:
-                    step = str(obj.step.__index__())
-                    return f'{start}:{stop}:{step}'
-            else:
-                return str(obj.__index__())
+                step = str(obj.step.__index__())
+                return f'{start}:{stop}:{step}'
+            return str(obj.__index__())
 
         if isinstance(self.targets, tuple):
             return f"[{', '.join(_slice_to_str(target) for target in self.targets)}]"
-        else:
-            return f"[{_slice_to_str(self.targets)}]"
+        return f"[{_slice_to_str(self.targets)}]"
 
     def __str__(self) -> str:
         str_args = self._str_args()
@@ -121,8 +119,7 @@ class TwoQubitGate(Gate):
     def n_qargs(self):
         return 2
 
-    def control_target_iter(
-            self, n_qubits: int) -> Iterator[Tuple[int, int]]:
+    def control_target_iter(self, n_qubits: int) -> Iterator[Tuple[int, int]]:
         """The generator which yields the tuples of (control, target) qubits."""
         return qubit_pairs(self.targets, n_qubits)
 
@@ -143,7 +140,7 @@ class HGate(OneQubitGate):
         return self
 
     def matrix(self):
-        return np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
+        return np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)
 
 
 class IGate(OneQubitGate):
@@ -204,7 +201,7 @@ class PhaseGate(OneQubitGate):
             n_qubits, lambda t: [RZGate(t, self.theta)])
 
     def matrix(self):
-        return np.array([[1, 0], [0, np.exp(self.theta)]], dtype=complex)
+        return np.array([[1, 0], [0, math.exp(self.theta)]], dtype=complex)
 
 
 class RXGate(OneQubitGate):
@@ -220,8 +217,8 @@ class RXGate(OneQubitGate):
 
     def matrix(self):
         t = self.theta * 0.5
-        a = np.cos(t)
-        b = -1j * np.sin(t)
+        a = math.cos(t)
+        b = -1j * math.sin(t)
         return np.array([[a, b], [b, a]], dtype=complex)
 
 
@@ -238,8 +235,8 @@ class RYGate(OneQubitGate):
 
     def matrix(self):
         t = self.theta * 0.5
-        a = np.cos(t)
-        b = np.sin(t)
+        a = math.cos(t)
+        b = math.sin(t)
         return np.array([[a, -b], [b, a]], dtype=complex)
 
 
@@ -255,7 +252,7 @@ class RZGate(OneQubitGate):
         return RZGate(self.targets, -self.theta, **self.kwargs)
 
     def matrix(self):
-        a = np.exp(0.5j * self.theta)
+        a = cmath.exp(0.5j * self.theta)
         return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 
@@ -301,7 +298,7 @@ class TGate(OneQubitGate):
             n_qubits, lambda t: [PhaseGate(t, math.pi / 4)])
 
     def matrix(self):
-        return np.array([[1, 0], [0, np.exp(np.pi * 0.25)]])
+        return np.array([[1, 0], [0, math.exp(math.pi * 0.25)]])
 
 
 class TDagGate(OneQubitGate):
@@ -316,7 +313,7 @@ class TDagGate(OneQubitGate):
             n_qubits, lambda t: [PhaseGate(t, -math.pi / 4)])
 
     def matrix(self):
-        return np.array([[1, 0], [0, np.exp(np.pi * -0.25)]])
+        return np.array([[1, 0], [0, math.exp(math.pi * -0.25)]])
 
 
 class ToffoliGate(Gate):
@@ -346,6 +343,39 @@ class ToffoliGate(Gate):
                         dtype=complex)
 
 
+class UGate(OneQubitGate):
+    """Arbitrary 1 qubit unitary gate."""
+    lowername = "u"
+
+    def __init__(self,
+                 targets,
+                 theta: float,
+                 phi: float,
+                 lam: float,
+                 gamma: float = 0.0,
+                 **kwargs):
+        super().__init__(targets, (theta, phi, lam, gamma), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lam = lam
+        self.gamma = gamma
+
+    def dagger(self):
+        return UGate(self.targets, -self.theta, -self.lam, -self.phi,
+                     -self.gamma, **self.kwargs)
+
+    def matrix(self):
+        t, p, l, g = self.params
+        gphase = cmath.exp(g)
+        cos_t = math.cos(0.5 * t)
+        sin_t = math.sin(0.5 * t)
+        return np.array(
+            [[cos_t, -cmath.exp(1j * l) * sin_t],
+             [cmath.exp(1j * p) * sin_t,
+              cmath.exp(1j * (p + l)) * cos_t]],
+            dtype=complex) * gphase
+
+
 class U1Gate(OneQubitGate):
     """U1 gate of old version Qiskit.
 
@@ -366,7 +396,7 @@ class U1Gate(OneQubitGate):
             n_qubits, lambda t: [U3Gate(t, 0.0, 0.0, self.lambd)])
 
     def matrix(self):
-        a = np.exp(0.5j * self.theta)
+        a = cmath.exp(0.5j * self.theta)
         return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 
@@ -393,9 +423,9 @@ class U2Gate(OneQubitGate):
 
     def matrix(self):
         p, l = self.params
-        c = 1.0 / np.sqrt(2)
-        a = np.exp(0.5j * (p + l)) * c
-        b = np.exp(0.5j * (p - l)) * c
+        c = 1.0 / math.sqrt(2)
+        a = cmath.exp(0.5j * (p + l)) * c
+        b = cmath.exp(0.5j * (p - l)) * c
         return np.array([[a.conjugate(), -b.conjugate()], [a, b]],
                         dtype=complex)
 
@@ -420,8 +450,8 @@ class U3Gate(OneQubitGate):
 
     def matrix(self):
         t, p, l = self.params
-        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
-        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
+        a = cmath.exp(0.5j * (p + l)) * math.cos(t * 0.5)
+        b = cmath.exp(0.5j * (p - l)) * math.sin(t * 0.5)
         return np.array([[a.conjugate(), -b.conjugate()], [b, a]],
                         dtype=complex)
 
@@ -512,7 +542,7 @@ class CHGate(TwoQubitGate):
              RYGate(t, -math.pi / 4)])
 
     def matrix(self):
-        a = 1.0 / np.sqrt(2)
+        a = 1.0 / math.sqrt(2)
         return np.array(
             [[1, 0, 0, 0], [0, a, 0, a], [0, 0, 1, 0], [0, a, 0, -a]],
             dtype=complex)
@@ -537,7 +567,7 @@ class CPhaseGate(TwoQubitGate):
 
     def matrix(self):
         return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
-                         [0, 0, 0, 0, np.exp(self.theta)]],
+                         [0, 0, 0, 0, math.exp(self.theta)]],
                         dtype=complex)
 
 
@@ -563,8 +593,8 @@ class CRXGate(TwoQubitGate):
 
     def matrix(self):
         t = self.theta * 0.5
-        a = np.cos(t)
-        b = -1j * np.sin(t)
+        a = math.cos(t)
+        b = -1j * math.sin(t)
         return np.array(
             [[1, 0, 0, 0], [0, a, 0, b], [0, 0, 1, 0], [0, b, 0, a]],
             dtype=complex)
@@ -592,8 +622,8 @@ class CRYGate(TwoQubitGate):
 
     def matrix(self):
         t = self.theta * 0.5
-        a = np.cos(t)
-        b = np.sin(t)
+        a = math.cos(t)
+        b = math.sin(t)
         return np.array(
             [[1, 0, 0, 0], [0, a, 0, -b], [0, 0, 1, 0], [0, b, 0, a]],
             dtype=complex)
@@ -620,7 +650,7 @@ class CRZGate(TwoQubitGate):
             ])
 
     def matrix(self):
-        a = np.exp(0.5j * self.theta)
+        a = cmath.exp(0.5j * self.theta)
         return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0],
                          [0, 0, 0, a]],
                         dtype=complex)
@@ -647,6 +677,44 @@ class CSwapGate(Gate):
                          [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
                          [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]],
+                        dtype=complex)
+
+
+class CUGate(TwoQubitGate):
+    """Controlled-U gate."""
+    lowername = "cu"
+
+    def __init__(self,
+                 targets,
+                 theta: float,
+                 phi: float,
+                 lam: float,
+                 gamma: float = 0.0,
+                 **kwargs):
+        super().__init__(targets, (theta, phi, lam, gamma), **kwargs)
+        self.theta = theta
+        self.phi = phi
+        self.lam = lam
+        self.gamma = gamma
+
+    def dagger(self):
+        return CUGate(self.targets, -self.theta, -self.lam, -self.phi,
+                      -self.gamma, **self.kwargs)
+
+    def matrix(self):
+        t, p, l, g = self.params
+        cos_t = math.cos(0.5 * t)
+        sin_t = math.sin(0.5 * t)
+        return np.array([[
+            1, 0, 0, 0
+        ], [0,
+            cmath.exp(1j * g) * cos_t, 0, -cmath.exp(1j * (g + l)) * sin_t],
+                         [0, 0, 1, 0],
+                         [
+                             0,
+                             cmath.exp(1j * (g + p)) * sin_t, 0,
+                             cmath.exp(1j * (g + p + l)) * cos_t
+                         ]],
                         dtype=complex)
 
 
@@ -677,7 +745,7 @@ class CU1Gate(TwoQubitGate):
 
     def matrix(self):
         return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
-                         [0, 0, 0, 0, np.exp(self.theta)]],
+                         [0, 0, 0, 0, math.exp(self.theta)]],
                         dtype=complex)
 
 
@@ -705,9 +773,9 @@ class CU2Gate(TwoQubitGate):
 
     def matrix(self):
         p, l = self.params
-        c = 1 / np.sqrt(2)
-        a = np.exp(0.5j * (p + l)) * c
-        b = np.exp(0.5j * (p - l)) * c
+        c = 1 / math.sqrt(2)
+        a = cmath.exp(0.5j * (p + l)) * c
+        b = cmath.exp(0.5j * (p - l)) * c
         return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
                          [0, 0, 1, 0], [0, a, 0, b]],
                         dtype=complex)
@@ -743,8 +811,8 @@ class CU3Gate(TwoQubitGate):
 
     def matrix(self):
         t, p, l = self.params
-        a = np.exp(0.5j * (p + l)) * np.cos(t * 0.5)
-        b = np.exp(0.5j * (p - l)) * np.sin(t * 0.5)
+        a = cmath.exp(0.5j * (p + l)) * math.cos(t * 0.5)
+        b = cmath.exp(0.5j * (p - l)) * math.sin(t * 0.5)
         return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
                          [0, 0, 1, 0], [0, a, 0, b]],
                         dtype=complex)
@@ -819,8 +887,8 @@ class RXXGate(TwoQubitGate):
             ])
 
     def matrix(self):
-        a = np.cos(self.theta * 0.5)
-        b = -1j * np.sin(self.theta * 0.5)
+        a = math.cos(self.theta * 0.5)
+        b = -1j * math.sin(self.theta * 0.5)
         return np.array(
             [[a, 0, 0, b], [0, a, b, 0], [0, b, a, 0], [a, 0, 0, b]],
             dtype=complex)
@@ -849,8 +917,8 @@ class RYYGate(TwoQubitGate):
             ])
 
     def matrix(self):
-        a = np.cos(self.theta * 0.5)
-        b = 1j * np.sin(self.theta * 0.5)
+        a = math.cos(self.theta * 0.5)
+        b = 1j * math.sin(self.theta * 0.5)
         return np.array(
             [[a, 0, 0, b], [0, a, -b, 0], [0, -b, a, 0], [a, 0, 0, b]],
             dtype=complex)
@@ -876,7 +944,7 @@ class RZZGate(TwoQubitGate):
              CXGate((c, t))])
 
     def matrix(self):
-        a = np.exp(0.5j * self.theta)
+        a = cmath.exp(0.5j * self.theta)
         return np.array([[a.conjugate(), 0, 0, 0], [0, a, 0, 0], [0, 0, a, 0],
                          [0, 0, 0, a.conjugate()]],
                         dtype=complex)
