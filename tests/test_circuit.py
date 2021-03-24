@@ -235,11 +235,8 @@ def test_globalphase(backend):
     assert abs(c.run(backend=backend)[0] - v0) < 1e-8
 
 
-def test_controlled_gate_phase(backend):
+def test_controlled_gate_phase_crz(backend):
     theta = 1.2
-    phi = 1.6
-    lambd = 2.3
-
     val = np.exp(-0.5j * theta)
     c0 = Circuit().crz(theta)[0, 1]
     c1 = Circuit().x[0] + c0
@@ -247,6 +244,10 @@ def test_controlled_gate_phase(backend):
     v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
+
+
+def test_controlled_gate_phase_cphase(backend):
+    theta = 1.2
 
     val = 1.0
     c0 = Circuit().cphase(theta)[0, 1]
@@ -256,6 +257,12 @@ def test_controlled_gate_phase(backend):
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
+
+def test_controlled_gate_phase_cu1(backend):
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
+
     val = 1.0
     c0 = Circuit().cu1(theta)[0, 1]
     c1 = Circuit().x[0] + c0
@@ -264,6 +271,11 @@ def test_controlled_gate_phase(backend):
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
+
+def test_controlled_gate_phase_cu2(backend):
+    phi = 1.6
+    lambd = 2.3
+
     val = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
     c0 = Circuit().cu2(phi, lambd)[0, 1]
     c1 = Circuit().x[0] + c0
@@ -271,6 +283,12 @@ def test_controlled_gate_phase(backend):
     v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
     assert abs(v1[1] / v0[0] - val) < 1e-8
+
+
+def test_controlled_gate_phase_cu3(backend):
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
 
     val = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
     c0 = Circuit().cu3(theta, phi, lambd)[0, 1]
