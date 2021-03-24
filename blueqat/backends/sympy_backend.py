@@ -70,8 +70,8 @@ class SympyBackend(Backend):
             Matrix([[cos(theta / 2), -sin(theta / 2)],
                     [sin(theta / 2), cos(theta / 2)]]),
             'RZ':
-            Matrix([[cos(theta / 2) - sin(theta / 2), 0],
-                    [0, cos(theta / 2) + sin(theta / 2)]]),
+            Matrix([[cos(theta / 2) - I * sin(theta / 2), 0],
+                    [0, cos(theta / 2) + I * sin(theta / 2)]]),
             'SX':
             Matrix([[1 + I, 1 - I], [1 - I, 1 + I]]) / 2,
             'SXDG':
