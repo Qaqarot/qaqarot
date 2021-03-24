@@ -218,6 +218,27 @@ def _u3gate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
       nogil=True,
       parallel=True,
       fastmath=FASTMATH)
+def _ugate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
+        theta: np.float64, phi: np.float64, lam: np.float64, gamma: np.float64) -> None:
+    cos = math.cos(theta * 0.5)
+    sin = math.sin(theta * 0.5)
+    a = cos * cmath.exp(1j * gamma)
+    b = -sin * cmath.exp(1j * (gamma + lam))
+    c = sin * cmath.exp(1j * (gamma + phi))
+    d = cos * cmath.exp(1j * (gamma + phi + lam))
+    lower_mask = (1 << _QSMask(target)) - 1
+    for i in prange(1 << (_QSMask(n_qubits) - 1)):
+        i0 = _shifted(lower_mask, i)
+        t = qubits[i0]
+        u = qubits[i0 + (1 << target)]
+        qubits[i0] = a * t + b * u
+        qubits[i0 + (1 << target)] = c * t + d * u
+
+
+@njit(locals={'lower_mask': _QSMask},
+      nogil=True,
+      parallel=True,
+      fastmath=FASTMATH)
 def _mat1gate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
               mat: np.ndarray) -> None:
     lower_mask = (1 << _QSMask(target)) - 1
@@ -338,6 +359,30 @@ def _cphasegate(qubits: np.ndarray, n_qubits: _QSIdx,
     for i in prange(n_loop):
         i11 = _mult_shifted(masks, i) | c_mask | t_mask
         qubits[i11] *= eit
+
+
+@njit(nogil=True, parallel=True, fastmath=FASTMATH)
+def _cugate(qubits: np.ndarray, n_qubits: _QSIdx, controls_target: np.ndarray,
+        theta: np.float64, phi: np.float64, lam: np.float64, gamma: np.float64) -> None:
+    cos = math.cos(theta * 0.5)
+    sin = math.sin(theta * 0.5)
+    m11 = cos * cmath.exp(1j * gamma)
+    m12 = -sin * cmath.exp(1j * (gamma + lam))
+    m21 = sin * cmath.exp(1j * (gamma + phi))
+    m22 = cos * cmath.exp(1j * (gamma + phi + lam))
+    c_mask = _QSMask(0)
+    for c in controls_target[:-1]:
+        c_mask |= _QSMask(1) << c
+    t_mask = 1 << controls_target[-1]
+    n_loop = 1 << (_QSMask(n_qubits) - _QSMask(len(controls_target)))
+    masks = _create_masks(controls_target)
+    for i in prange(n_loop):
+        i10 = _mult_shifted(masks, i) | c_mask
+        i11 = i10 | t_mask
+        t = qubits[i10]
+        u = qubits[i11]
+        qubits[i10] = m11 * t + m12 * u
+        qubits[i11] = m21 * t + m22 * u
 
 
 @njit(locals={'lower_mask': _QSMask},
@@ -621,14 +666,13 @@ class NumbaBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_cz(gate: CZGate,
-                ctx: _NumbaBackendContext) -> _NumbaBackendContext:
-        """Implementation of CZ gate."""
+    def gate_cu(gate: CUGate, ctx: _NumbaBackendContext) -> _NumbaBackendContext:
+        """Implementation of CU gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         for control, target in gate.control_target_iter(n_qubits):
-            _czgate(qubits, n_qubits,
-                    np.ndarray([control, target], dtype=_QBIdx_dtype))
+            _cugate(qubits, n_qubits, np.array([control, target], dtype=_QBIdx_dtype),
+                gate.theta, gate.phi, gate.lam, gate.gamma)
         return ctx
 
     @staticmethod
@@ -640,6 +684,17 @@ class NumbaBackend(Backend):
         for control, target in gate.control_target_iter(n_qubits):
             _cxgate(qubits, n_qubits,
                     np.array([control, target], dtype=_QBIdx_dtype))
+        return ctx
+
+    @staticmethod
+    def gate_cz(gate: CZGate,
+                ctx: _NumbaBackendContext) -> _NumbaBackendContext:
+        """Implementation of CZ gate."""
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        for control, target in gate.control_target_iter(n_qubits):
+            _czgate(qubits, n_qubits,
+                    np.ndarray([control, target], dtype=_QBIdx_dtype))
         return ctx
 
     @staticmethod
@@ -762,6 +817,16 @@ class NumbaBackend(Backend):
         angle = gate.lambd
         for target in gate.target_iter(n_qubits):
             _rzgate(qubits, n_qubits, target, angle)
+        return ctx
+
+    @staticmethod
+    def gate_u(gate: U3Gate,
+                ctx: _NumbaBackendContext) -> _NumbaBackendContext:
+        """Implementation of U3 gate."""
+        qubits = ctx.qubits
+        n_qubits = ctx.n_qubits
+        for target in gate.target_iter(n_qubits):
+            _ugate(qubits, n_qubits, target, gate.theta, gate.phi, gate.lam, gate.gamma)
         return ctx
 
     @staticmethod
