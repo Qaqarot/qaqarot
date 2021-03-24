@@ -678,15 +678,6 @@ class CRZGate(TwoQubitGate):
     def dagger(self):
         return CRZGate(self.targets, -self.theta, **self.kwargs)
 
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [
-                RZGate(t, self.theta / 2),
-                CXGate((c, t)),
-                RZGate(t, -self.theta / 2),
-                CXGate((c, t))
-            ])
-
     def matrix(self):
         a = cmath.exp(0.5j * self.theta)
         return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, 0], [0, 0, 1, 0],
