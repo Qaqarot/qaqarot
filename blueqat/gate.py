@@ -822,7 +822,7 @@ class CU3Gate(TwoQubitGate):
         self.theta = theta
         self.phi = phi
         self.lambd = lambd
-        self.u_params = (theta, phi, lambd, -0.5 * (phi + lambd))
+        self.cu_params = (theta, phi, lambd, -0.5 * (phi + lambd))
 
     def dagger(self):
         return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
