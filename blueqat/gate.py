@@ -770,7 +770,7 @@ class CU1Gate(TwoQubitGate):
     def __init__(self, targets, lambd, **kwargs):
         super().__init__(targets, (lambd, ), **kwargs)
         self.lambd = lambd
-        self.cu_params = (0.0, 0.0, lambd, -0.5 * lambd)
+        self.cu_params = (0.0, 0.0, lambd, 0.0)
 
     def dagger(self):
         return CU1Gate(self.targets, -self.lambd, **self.kwargs)
