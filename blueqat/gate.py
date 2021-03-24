@@ -648,15 +648,6 @@ class CRYGate(TwoQubitGate):
     def dagger(self):
         return CRYGate(self.targets, -self.theta, **self.kwargs)
 
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits, lambda c, t: [
-                RYGate(t, self.theta / 2),
-                CXGate((c, t)),
-                RYGate(t, -self.theta / 2),
-                CXGate((c, t))
-            ])
-
     def matrix(self):
         t = self.theta * 0.5
         a = math.cos(t)
@@ -697,7 +688,6 @@ class CSwapGate(Gate):
         return self
 
     def fallback(self, n_qubits):
-        # TODO: test
         c, t1, t2 = self.targets
         return [CXGate((t2, t1)), ToffoliGate((c, t1, t2)), CXGate((t2, t1))]
 
@@ -849,12 +839,6 @@ class CYGate(TwoQubitGate):
 
     def dagger(self):
         return self
-
-    def fallback(self, n_qubits):
-        return self._make_fallback_for_control_target_iter(
-            n_qubits,
-            lambda c, t: [SDagGate(t), CXGate(
-                (c, t)), SGate(t)])
 
     def matrix(self):
         return np.array(

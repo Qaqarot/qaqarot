@@ -49,7 +49,7 @@ class SympyBackend(Backend):
             raise ImportError(
                 'sympy_unitary requires sympy. Please install before call this option.'
             ) from None
-        theta, phi, lam, gamma = symbols('theta phi lam gamma', real=True)
+        theta, phi, lam, gamma = symbols('theta phi lam gamma')
         self.theta = theta
         self.phi = phi
         self.lam = lam
@@ -82,26 +82,6 @@ class SympyBackend(Backend):
                  [(cos(phi) + I * sin(phi)) * sin(theta / 2),
                   (cos(phi + lam) + I * sin(phi + lam)) * cos(theta / 2)]]) *
             (cos(gamma) + I * sin(gamma)),
-            'U1':
-            Matrix([[exp(-I * lam / 2), 0], [0, exp(I * lam / 2)]]),
-            'U2':
-            Matrix([[
-                exp(-I * (phi + lam) / 2) / sqrt(2),
-                -exp(-I * (phi - lam) / 2) / sqrt(2)
-            ],
-                    [
-                        exp(I * (phi - lam) / 2) / sqrt(2),
-                        exp(I * (phi + lam) / 2) / sqrt(2)
-                    ]]),
-            'U3':
-            Matrix([[
-                exp(-I * (phi + lam) / 2) * cos(theta / 2),
-                -exp(-I * (phi - lam) / 2) * sin(theta / 2)
-            ],
-                    [
-                        exp(I * (phi - lam) / 2) * sin(theta / 2),
-                        exp(I * (phi + lam) / 2) * cos(theta / 2)
-                    ]]),
             'X':
             Matrix([[0, 1], [1, 0]]),
             'Y':
@@ -153,29 +133,9 @@ class SympyBackend(Backend):
     gate_rz = _one_qubit_gate_args_theta
     gate_phase = _one_qubit_gate_args_theta
 
-    def _one_qubit_gate_old_ugate(self, gate, ctx):
-        if len(gate.params) == 3:
-            phi = _angle_simplify(gate.phi)
-            theta = _angle_simplify(gate.theta)
-        elif len(gate.params) == 2:
-            phi = _angle_simplify(gate.phi)
-            theta = pi / 2
-        else:
-            phi = theta = 0
-        lam = _angle_simplify(gate.lambd)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
-            [(self.lam, lam), (self.phi, phi), (self.theta, theta)],
-            simultaneous=True)
-        return self._create_matrix_of_one_qubit_gate_circuit(
-            gate, ctx, matrix_of_gate)
-
-    gate_u1 = _one_qubit_gate_old_ugate
-    gate_u2 = _one_qubit_gate_old_ugate
-    gate_u3 = _one_qubit_gate_old_ugate
-
     def gate_u(self, gate, ctx):
         theta, phi, lam, gamma = map(_angle_simplify, gate.params)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
+        matrix_of_gate = self.SYMPY_GATE['U'].subs(
             [(self.lam, lam), (self.phi, phi), (self.theta, theta),
              (self.gamma, gamma)],
             simultaneous=True)
