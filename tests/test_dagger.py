@@ -19,7 +19,7 @@ from blueqat import Circuit
 
 p1, p2, p3, p4, p5 = sympy.symbols('p1 p2 p3 p4 p5')
 
-@pytest.mark.parametrize('circuit', {
+@pytest.mark.parametrize('circuit', [
     Circuit().i[0],
     Circuit().x[0],
     Circuit().y[0],
@@ -49,7 +49,7 @@ p1, p2, p3, p4, p5 = sympy.symbols('p1 p2 p3 p4 p5')
     Circuit().cu3(p1, p2, p3)[1, 0],
     Circuit().swap[2, 0],
     Circuit().ccx[2, 0, 1],
-})
+])
 def test_dagger_unitary(circuit):
     circuit += circuit.dagger()
     u = sympy.simplify(sympy.trigsimp(circuit.to_unitary()))
