@@ -3,8 +3,8 @@
 This module is internally used.
 """
 
-import math
 import cmath
+import math
 from typing import Callable, Iterable, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
@@ -100,6 +100,10 @@ class Gate(Operation):
 
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
+
+    u_params: Optional[Tuple[float, float, float, float]] = None
+    """Params for U gate."""
+
     @property
     def n_qargs(self) -> int:
         return 1
@@ -111,6 +115,15 @@ class OneQubitGate(Gate):
         for t in self.target_iter(n_qubits):
             gates += fallback(t)
         return gates
+
+    def fallback(self, n_qubits: int) -> List['Gate']:
+        if self.u_params:
+            return [UGate(self.targets, *self.u_params, **self.kwargs)]
+        try:
+            mat = self.matrix()
+        except NotImplementedError:
+            return super().fallback(n_qubits)
+        return [Mat1Gate(self.targets, mat, **self.kwargs)]
 
 
 class TwoQubitGate(Gate):
