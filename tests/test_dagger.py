@@ -29,24 +29,22 @@ p1, p2, p3, p4, p5 = sympy.symbols('p1 p2 p3 p4 p5')
     Circuit().tdg[0],
     Circuit().s[0],
     Circuit().sdg[0],
+    Circuit().h[0].s[0],
     Circuit().cz[1, 0],
     Circuit().cy[1, 0],
     Circuit().cx[1, 0],
     Circuit().ch[0, 1],
     Circuit().rx(p1)[1],
-    Circuit().ry(p1)[1],
+    Circuit().ry(p1)[0],
     Circuit().rz(p1)[1],
-    Circuit().r(p1)[2],
-    Circuit().crx(p1)[2, 0],
-    Circuit().cry(p1)[2, 0],
+    Circuit().r(p1)[0],
+    Circuit().crx(p1)[0, 1],
+    Circuit().cry(p1)[1, 0],
     Circuit().crz(p1)[2, 0],
     Circuit().cr(p1)[2, 0],
-    Circuit().u1(p1)[2],
-    Circuit().u2(p1, p2)[2],
-    Circuit().u3(p1, p2, p3)[2],
-    Circuit().cu1(p1)[1, 0],
-    Circuit().cu2(p1, p2)[1, 0],
-    Circuit().cu3(p1, p2, p3)[1, 0],
+    Circuit().u(p1, p2, p3)[1],
+    Circuit().u(p1, p2, p3, p4)[0],
+    Circuit().cu(p1, p2, p3, p4)[1, 0],
     Circuit().swap[2, 0],
     Circuit().ccx[2, 0, 1],
 ])
@@ -56,11 +54,3 @@ def test_dagger_unitary(circuit):
     s1, s2 = u.shape
     assert s1 == s2
     assert u == sympy.eye(s1)
-
-
-def test_dagger_unitary2():
-    c = Circuit().h[0].s[0]
-    c += c.dagger()
-    u = sympy.simplify(c.to_unitary())
-    assert u.shape == (2, 2)
-    assert u == sympy.eye(2)

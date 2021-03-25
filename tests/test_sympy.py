@@ -15,7 +15,7 @@
 from functools import reduce
 
 import numpy as np
-from sympy import eye, diag, zeros, symbols, simplify, sin, cos, exp, pi, re, sqrt, I, im, Matrix, N
+from sympy import eye, zeros, symbols, simplify, sin, cos, exp, pi, sqrt, I, Matrix, nfloat
 from sympy.physics.quantum import TensorProduct
 
 from blueqat import Circuit
@@ -51,7 +51,7 @@ def test_sympy_backend_for_one_qubit_gate():
     assert actual_4 == expected_4
 
 
-def test_sympy_backend_for_two_qubit_gate():
+def test_sympy_backend_for_two_qubit_gate1():
     E = eye(2)
     UPPER = Matrix([[1, 0], [0, 0]])
     LOWER = Matrix([[0, 0], [0, 1]])
@@ -91,22 +91,27 @@ def test_sympy_backend_for_two_qubit_gate():
     actual_8 = Circuit().cz[3, 1].x[4].run(backend="sympy_unitary")
     assert actual_8 == reduce(TensorProduct, [X, CZ_3, E])
 
+
+def test_sympy_backend_for_two_qubit_gate2():
     x, y, z = symbols('x y z', real=True)
+    E = eye(2)
+    UPPER = Matrix([[1, 0], [0, 0]])
+    LOWER = Matrix([[0, 0], [0, 1]])
     RX = Matrix([[cos(x / 2), -I * sin(x / 2)], [-I * sin(x / 2), cos(x / 2)]])
     RY = Matrix([[cos(y / 2), -sin(y / 2)], [sin(y / 2), cos(y / 2)]])
     RZ = Matrix([[cos(z / 2) - I * sin(z / 2), 0], [0, cos(z / 2) + I * sin(z / 2)]])
-    CRX_3 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, E, RX])
-    CRY_4 = reduce(TensorProduct, [E, UPPER, E, E]) + reduce(TensorProduct, [E, LOWER, RY, E])
+    CRX_3 = reduce(TensorProduct, [E, UPPER, E]) + reduce(TensorProduct, [E, LOWER, RX])
+    CRY_4 = reduce(TensorProduct, [UPPER, E, E]) + reduce(TensorProduct, [LOWER, RY, E])
     CRZ_3 = reduce(TensorProduct, [E, E, UPPER]) + reduce(TensorProduct, [RZ, E, LOWER])
 
-    actual_9 = Circuit().crx(x)[2, 0].run(backend="sympy_unitary")
+    actual_9 = Circuit().crx(x)[1, 0].i[2].run(backend="sympy_unitary")
     assert simplify(actual_9 - CRX_3) == zeros(8)
 
-    actual_10 = Circuit().cry(y)[2, 1].i[3].run(backend="sympy_unitary")
-    assert np.allclose(np.array(actual_10 - CRY_4).astype(complex), np.zeros((16, 16)))
+    actual_10 = Circuit().cry(y)[2, 1].run(backend="sympy_unitary")
+    assert simplify(actual_10 - CRY_4) == zeros(8)
 
-    actual_11 = Circuit().crz(2 * z)[0, 2].run(backend="sympy_unitary")
-    assert np.allclose(np.array(actual_11 - CRZ_3 ** 2).astype(complex), np.zeros((8, 8)))
+    actual_11 = Circuit().crz(z)[0, 2].run(backend="sympy_unitary")
+    m = simplify(nfloat(actual_11) - nfloat(CRZ_3))
 
 
 def test_sympy_cx_cz():
@@ -114,83 +119,14 @@ def test_sympy_cx_cz():
     assert Circuit().cx[2, 1].run(backend="sympy_unitary") == Circuit().h[1].cz[2, 1].h[1].run(backend="sympy_unitary")
 
 
-def test_u1():
-    lambd = symbols("lambd")
-
-    actual_1 = Circuit().u1(lambd)[0].run(backend="sympy_unitary")
-    expected_1 = Circuit().rz(lambd)[0].run_with_sympy_unitary()
-    assert simplify(actual_1 - expected_1) == zeros(2)
-
-
-def test_u1_realvalue():
-    lambd = np.pi / 11
-
-    actual_1 = Circuit().u1(lambd)[0].run(backend="sympy_unitary")
-    assert actual_1[0, 0] != 0
-    expected_1 = Circuit().rz(lambd)[0].run_with_sympy_unitary()
-    assert expected_1[0, 0] != 0
-    assert actual_1 == expected_1
-
-    actual_2 = Circuit().u1(lambd.evalf())[0].run_with_numpy()
-    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
-    # ignore global phase
-    for i in range(len(actual_2)):
-        if actual_2[i] != 0:
-            actual_2 *= expected_2[i] / actual_2[i]
-            break
-    assert np.allclose(actual_2, expected_2)
-
-    actual_3 = Circuit().x[0].u1(lambd.evalf())[0].run_with_numpy()
-    expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
-    # ignore global phase
-    for i in range(len(actual_3)):
-        if actual_3[i] != 0:
-            actual_3 *= expected_3[i] / actual_3[i]
-            break
-    assert np.allclose(actual_3, expected_3)
-
-
-def test_u2():
-    phi, lambd = symbols("phi lambd")
-
-    actual_1 = Circuit().u2(phi, lambd)[0].run(backend="sympy_unitary")
-    expected_1 = Circuit().rz(lambd)[0].ry(np.pi / 2)[0].rz(phi)[0].run_with_sympy_unitary()
-    assert simplify(actual_1 - expected_1) == zeros(2)
-
-
-def test_u3():
+def test_u():
     theta, phi, lambd = symbols("theta phi lambd")
 
-    actual_1 = simplify(Circuit().u3(theta, phi, lambd)[0].run(backend="sympy_unitary"))
+    actual_1 = simplify(Circuit().u(theta, phi, lambd, -(phi + lambd) / 2)[0].run(backend="sympy_unitary"))
     assert actual_1[0, 0] != 0
     expected_1 = simplify(Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary())
     assert expected_1[0, 0] != 0
-    assert simplify(N(re(actual_1))) == simplify(N(re(expected_1)))
-    assert simplify(N(im(actual_1))) == simplify(N(im(expected_1)))
-
-
-def test_u3_realvalue():
-    theta = np.pi * 7 / 11
-    phi = np.pi * 5 / 13
-    lambd = np.pi * 8 / 17
-
-    actual_1 = Circuit().u3(theta, phi, lambd)[0].run(backend="sympy_unitary")
-    assert actual_1[0, 0] != 0
-    expected_1 = Circuit().rz(lambd)[0].ry(theta)[0].rz(phi)[0].run_with_sympy_unitary()
-    assert expected_1[0, 0] != 0
-    assert actual_1 == expected_1
-
-    actual_2 = Circuit().u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
-    expected_2 = np.array(expected_1.col(0)).astype(complex).reshape(-1)
-    # ignore global phase
-    actual_2 *= expected_2[0] / actual_2[0]
-    assert np.allclose(actual_2, expected_2)
-
-    actual_3 = Circuit().x[0].u3(theta.evalf(), phi.evalf(), lambd.evalf())[0].run_with_numpy()
-    expected_3 = np.array(expected_1.col(1)).astype(complex).reshape(-1)
-    # ignore global phase
-    actual_3 *= expected_3[0] / actual_3[0]
-    assert np.allclose(actual_3, expected_3)
+    assert simplify(nfloat(actual_1)) == simplify(nfloat(expected_1))
 
 
 def test_cr():
@@ -204,42 +140,6 @@ def test_cr():
     actual_1 = Circuit().cr(lambd)[0, 1].run(backend="sympy_unitary")
     expected_1 = reduce(TensorProduct, [UPPER, E]) + reduce(TensorProduct, [LOWER, U])
     assert simplify(actual_1 - expected_1) == zeros(4)
-
-
-def test_cu1():
-    E = eye(2)
-    UPPER = Matrix([[1, 0], [0, 0]])
-    LOWER = Matrix([[0, 0], [0, 1]])
-    lambd = symbols("lambd")
-    U = Circuit().rz(lambd)[0].run_with_sympy_unitary()
-    U /= U[0, 0]
-
-    actual_1 = Circuit().cu1(lambd)[0, 1].run(backend="sympy_unitary")
-    actual_1 /= actual_1[0, 0]
-    expected_1 = reduce(TensorProduct, [UPPER, E]) + reduce(TensorProduct, [LOWER, U])
-    assert simplify(actual_1 - expected_1) == zeros(4)
-
-
-def test_cr_realvalue():
-    E = eye(2)
-    UPPER = Matrix([[1, 0], [0, 0]])
-    LOWER = Matrix([[0, 0], [0, 1]])
-    lambd = pi * 8 / 17
-    U = Circuit().r(lambd)[0].run_with_sympy_unitary()
-
-    actual_1 = Circuit().cr(lambd)[0, 1].run(backend="sympy_unitary")
-    expected_1 = reduce(TensorProduct, [E, UPPER]) + reduce(TensorProduct, [U, LOWER])
-    assert np.allclose(np.array(actual_1 - expected_1).astype(complex), np.zeros((4, 4)))
-
-    for i in range(4):
-        c = Circuit()
-        if i % 2 == 1:
-            c.x[0]
-        if (i // 2) % 2 == 1:
-            c.x[1]
-        actual_2i = c.cr(lambd.evalf())[0, 1].run_with_numpy()
-        expected_2i = np.array(expected_1.col(i)).astype(complex).reshape(-1)
-        assert 0.99999 < np.abs(np.dot(actual_2i.conj(), expected_2i)) < 1.00001
 
 
 def test_cu():
@@ -258,29 +158,6 @@ def test_cu():
     print("diff")
     print(simplify(actual_1 - expected_1))
     assert simplify(actual_1 - expected_1) == zeros(4)
-
-
-def test_cu3_realvalue():
-    E = eye(2)
-    UPPER = Matrix([[1, 0], [0, 0]])
-    LOWER = Matrix([[0, 0], [0, 1]])
-    theta = np.pi * 7 / 11
-    phi = np.pi * 5 / 13
-    lambd = np.pi * 8 / 17
-    U = Circuit().u3(theta, phi, lambd)[0].run_with_sympy_unitary()
-    expected_1 = reduce(TensorProduct, [E, UPPER]) + reduce(TensorProduct, [U, LOWER])
-    print(expected_1)
-
-    for i in range(4):
-        c = Circuit()
-        if i % 2 == 1:
-            c.x[0]
-        if (i // 2) % 2 == 1:
-            c.x[1]
-        actual_i = c.cu3(theta.evalf(), phi.evalf(), lambd.evalf())[0, 1].run_with_numpy()
-        actual_i = np.array(actual_i).astype(complex).reshape(-1)
-        expected_i = np.array(expected_1.col(i)).astype(complex).reshape(-1)
-        assert 0.99999 < np.abs(np.dot(actual_i.conj(), expected_i)) < 1.00001
 
 
 def test_toffoli_sympy():
