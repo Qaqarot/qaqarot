@@ -367,18 +367,16 @@ class NumPyBackend(Backend):
         newq = ctx.qubits_buf
         n_qubits = ctx.n_qubits
         i = ctx.indices
-        halftheta = gate.theta * 0.5
+        theta = gate.theta
         phi = gate.phi
         lam = gate.lam
         gamma = gate.gamma
         globalphase = cmath.exp(1j * gamma)
-        a00 = math.cos(halftheta) * globalphase
-        a11 = a00 * cmath.exp(complex(0.0, phi + lam))
-        a01 = a10 = math.sin(halftheta) * globalphase
-        a01 *= cmath.exp(complex(0.0, lam))
-        a10 *= cmath.exp(complex(0.0, phi))
-        a00 = a11 = math.cos(halftheta)
-        a01 = a10 = -1j * math.sin(halftheta)
+        a00 = math.cos(theta * 0.5) * globalphase
+        a11 = a00 * cmath.exp(1j * (phi + lam))
+        a01 = a10 = math.sin(theta * 0.5) * globalphase
+        a01 *= -cmath.exp(1j * lam)
+        a10 *= cmath.exp(1j * phi)
         for control, target in gate.control_target_iter(n_qubits):
             np.copyto(newq, qubits)
             c1 = (i & (1 << control)) != 0
@@ -515,7 +513,7 @@ class NumPyBackend(Backend):
             t0 = (i & (1 << target)) == 0
             t1 = (i & (1 << target)) != 0
             newq[t0] = qubits[t0] * a00
-            newq[t0] -= qubits[t1] * a01
+            newq[t0] += qubits[t1] * a01
             newq[t1] = qubits[t0] * a10
             newq[t1] += qubits[t1] * a11
             qubits, newq = newq, qubits
