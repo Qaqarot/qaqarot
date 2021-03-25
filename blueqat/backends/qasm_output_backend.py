@@ -76,15 +76,20 @@ class QasmOutputBackend(Backend):
 
     def gate_u(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(
-                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{idx}];"
-            )
+            if abs(gate.gamma) > 1e-7:
+                ctx[0].append(
+                    f"{gate.lowername}({gate.theta},{gate.phi},{gate.lam}) q[{idx}]; // global phase e^i{gate.gamma} is ignored."
+                )
+            else:
+                ctx[0].append(
+                    f"{gate.lowername}({gate.theta},{gate.phi},{gate.lam}) q[{idx}];"
+                )
         return ctx
 
     def gate_phase(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append(
-                f"p({gate.theta}) q[{idx}]; // Global phase is ignored.")
+                f"p({gate.theta}) q[{idx}];")
         return ctx
 
     def gate_cu(self, gate, ctx):

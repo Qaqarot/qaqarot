@@ -34,7 +34,7 @@ def u_decomposer(gate: OneQubitGate) -> List[UGate]:
     assert check_unitarity(mat)
     gamma = cmath.phase(mat[0, 0])
     mat *= cmath.exp(-1j * gamma)
-    assert math.isclose(mat[0, 0].im, 0.0)
+    assert math.isclose(mat[0, 0].imag, 0.0)
     cos_halftheta = mat[0, 0].real
     sin_halftheta = 1.0 - cos_halftheta ** 2
     theta = math.acos(cos_halftheta) * 2
