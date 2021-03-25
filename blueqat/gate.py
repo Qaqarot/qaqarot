@@ -831,7 +831,7 @@ class ZZGate(TwoQubitGate):
                 RYGate(t, math.pi * 0.5),
                 CXGate((c, t)),
                 RZGate(c, math.pi * 0.5),
-                U3Gate(t, -math.pi * 0.5, math.pi * 0.5, math.pi * 0.5),
+                UGate(t, -math.pi * 0.5, math.pi * 0.5, 0.0, math.pi * 0.25),
             ])
 
     def matrix(self):
