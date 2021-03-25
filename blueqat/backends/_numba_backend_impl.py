@@ -194,30 +194,6 @@ def _rxgate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
       nogil=True,
       parallel=True,
       fastmath=FASTMATH)
-def _u3gate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
-            theta: np.float64, phi: np.float64, lambd: np.float64) -> None:
-    theta *= 0.5
-    cos = math.cos(theta)
-    sin = math.sin(theta)
-    expadd = cmath.exp((phi + lambd) * 0.5j)
-    expsub = cmath.exp((phi - lambd) * 0.5j)
-    a = expadd.conjugate() * cos
-    b = -expsub.conjugate() * sin
-    c = expsub * sin
-    d = expadd * cos
-    lower_mask = (1 << _QSMask(target)) - 1
-    for i in prange(1 << (_QSMask(n_qubits) - 1)):
-        i0 = _shifted(lower_mask, i)
-        t = qubits[i0]
-        u = qubits[i0 + (1 << target)]
-        qubits[i0] = a * t + b * u
-        qubits[i0 + (1 << target)] = c * t + d * u
-
-
-@njit(locals={'lower_mask': _QSMask},
-      nogil=True,
-      parallel=True,
-      fastmath=FASTMATH)
 def _ugate(qubits: np.ndarray, n_qubits: _QSIdx, target: _QSIdx,
         theta: np.float64, phi: np.float64, lam: np.float64, gamma: np.float64) -> None:
     cos = math.cos(theta * 0.5)
@@ -809,17 +785,6 @@ class NumbaBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_u1(gate: U1Gate,
-                ctx: _NumbaBackendContext) -> _NumbaBackendContext:
-        """Implementation of U1 gate."""
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        angle = gate.lambd
-        for target in gate.target_iter(n_qubits):
-            _rzgate(qubits, n_qubits, target, angle)
-        return ctx
-
-    @staticmethod
     def gate_u(gate: U3Gate,
                 ctx: _NumbaBackendContext) -> _NumbaBackendContext:
         """Implementation of U3 gate."""
@@ -827,19 +792,6 @@ class NumbaBackend(Backend):
         n_qubits = ctx.n_qubits
         for target in gate.target_iter(n_qubits):
             _ugate(qubits, n_qubits, target, gate.theta, gate.phi, gate.lam, gate.gamma)
-        return ctx
-
-    @staticmethod
-    def gate_u3(gate: U3Gate,
-                ctx: _NumbaBackendContext) -> _NumbaBackendContext:
-        """Implementation of U3 gate."""
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        theta = gate.theta
-        phi = gate.phi
-        lambd = gate.lambd
-        for target in gate.target_iter(n_qubits):
-            _u3gate(qubits, n_qubits, target, theta, phi, lambd)
         return ctx
 
     @staticmethod

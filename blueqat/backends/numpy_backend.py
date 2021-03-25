@@ -493,52 +493,6 @@ class NumPyBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_u1(gate: U1Gate,
-                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
-        """Implementation of U1 gate."""
-        qubits = ctx.qubits
-        n_qubits = ctx.n_qubits
-        i = ctx.indices
-        halflambda = gate.lambd * 0.5
-        a0 = complex(math.cos(halflambda), -math.sin(halflambda))
-        a1 = complex(math.cos(halflambda), math.sin(halflambda))
-        for target in gate.target_iter(n_qubits):
-            qubits[(i & (1 << target)) == 0] *= a0
-            qubits[(i & (1 << target)) != 0] *= a1
-        return ctx
-
-    @staticmethod
-    def gate_u3(gate: U3Gate,
-                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
-        """Implementation of U3 gate."""
-        qubits = ctx.qubits
-        newq = ctx.qubits_buf
-        n_qubits = ctx.n_qubits
-        i = ctx.indices
-        theta = gate.theta
-        phi = gate.phi
-        lambd = gate.lambd
-        globalphase = complex(math.cos((-phi - lambd) * 0.5),
-                              math.sin((-phi - lambd) * 0.5))
-        a00 = math.cos(theta * 0.5) * globalphase
-        a11 = a00 * complex(math.cos(phi + lambd), math.sin(phi + lambd))
-        a01 = a10 = math.sin(theta * 0.5) * globalphase
-        a01 *= complex(math.cos(lambd), math.sin(lambd))
-        a10 *= complex(math.cos(phi), math.sin(phi))
-        for target in gate.target_iter(n_qubits):
-            np.copyto(newq, qubits)
-            t0 = (i & (1 << target)) == 0
-            t1 = (i & (1 << target)) != 0
-            newq[t0] = qubits[t0] * a00
-            newq[t0] -= qubits[t1] * a01
-            newq[t1] = qubits[t0] * a10
-            newq[t1] += qubits[t1] * a11
-            qubits, newq = newq, qubits
-        ctx.qubits = qubits
-        ctx.qubits_buf = newq
-        return ctx
-
-    @staticmethod
     def gate_u(gate: UGate,
                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of U gate."""

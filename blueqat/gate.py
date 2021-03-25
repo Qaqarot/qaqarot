@@ -5,7 +5,7 @@ This module is internally used.
 
 import cmath
 import math
-from typing import Callable, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 
@@ -103,7 +103,6 @@ class OneQubitGate(Gate):
 
     u_params: Optional[Tuple[float, float, float, float]] = None
     """Params for U gate."""
-
     @property
     def n_qargs(self) -> int:
         return 1
@@ -129,7 +128,8 @@ class OneQubitGate(Gate):
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
 
-    cu_params : Optional[Tuple[float, float, float, float]] = None
+    cu_params: Optional[Tuple[float, float, float, float]] = None
+
     @property
     def n_qargs(self):
         return 2
@@ -199,7 +199,8 @@ class Mat1Gate(OneQubitGate):
         return self.mat
 
     def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError('Fallback implementation for Mat1Gate is not available.')
+        raise NotImplementedError(
+            'Fallback implementation for Mat1Gate is not available.')
 
 
 class PhaseGate(OneQubitGate):
@@ -339,7 +340,6 @@ class SXDagGate(OneQubitGate):
         return np.array([[1 - 1j, 1 + 1j], [1 + 1j, 1 - 1j]])
 
 
-
 class TGate(OneQubitGate):
     """T ($\\pi/8$) gate"""
     lowername = "t"
@@ -420,7 +420,8 @@ class UGate(OneQubitGate):
                      -self.gamma, **self.kwargs)
 
     def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError('Fallback implementation for UGate is not available.')
+        raise NotImplementedError(
+            'Fallback implementation for UGate is not available.')
 
     def matrix(self):
         t, p, l, g = self.params
@@ -432,81 +433,6 @@ class UGate(OneQubitGate):
              [cmath.exp(1j * p) * sin_t,
               cmath.exp(1j * (p + l)) * cos_t]],
             dtype=complex) * gphase
-
-
-class U1Gate(OneQubitGate):
-    """U1 gate of old version Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    CRZ gate (crz) or CPhase gate (cr) are alternative choice.
-    """
-    lowername = "u1"
-
-    def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd, ), **kwargs)
-        self.lambd = lambd
-        self.u_params = (0.0, 0.0, lambd, -0.5 * lambd)
-
-    def dagger(self):
-        return U1Gate(self.targets, -self.lambd, **self.kwargs)
-
-    def matrix(self):
-        a = cmath.exp(0.5j * self.lambd)
-        return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
-
-
-class U2Gate(OneQubitGate):
-    """U2 gate of old version of Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    CU gate is an alternative.
-    """
-    lowername = "u2"
-
-    def __init__(self, targets, phi, lambd, **kwargs):
-        super().__init__(targets, (phi, lambd), **kwargs)
-        self.phi = phi
-        self.lambd = lambd
-        self.u_params = (0.5 * math.pi, phi, lambd, -0.5 * (phi + lambd))
-
-    def dagger(self):
-        return U3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
-                      **self.kwargs)
-
-    def matrix(self):
-        p, l = self.params
-        c = 1.0 / math.sqrt(2)
-        a = cmath.exp(0.5j * (p + l)) * c
-        b = cmath.exp(0.5j * (p - l)) * c
-        return np.array([[a.conjugate(), -b.conjugate()], [a, b]],
-                        dtype=complex)
-
-
-class U3Gate(OneQubitGate):
-    """U3 gate of old version of Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    CU gate is an alternative.
-    """
-    lowername = "u3"
-
-    def __init__(self, targets, theta, phi, lambd, **kwargs):
-        super().__init__(targets, (theta, phi, lambd), **kwargs)
-        self.theta = theta
-        self.phi = phi
-        self.lambd = lambd
-        self.u_params = (theta, phi, lambd, -0.5 * (phi + lambd))
-
-    def dagger(self):
-        return U3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
-                      **self.kwargs)
-
-    def matrix(self):
-        t, p, l = self.params
-        a = cmath.exp(0.5j * (p + l)) * math.cos(t * 0.5)
-        b = cmath.exp(0.5j * (p - l)) * math.sin(t * 0.5)
-        return np.array([[a.conjugate(), -b.conjugate()], [b, a]],
-                        dtype=complex)
 
 
 class XGate(OneQubitGate):
@@ -721,7 +647,8 @@ class CUGate(TwoQubitGate):
                       -self.gamma, **self.kwargs)
 
     def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError('Fallback implementation for CUGate is not available.')
+        raise NotImplementedError(
+            'Fallback implementation for CUGate is not available.')
 
     def matrix(self):
         t, p, l, g = self.params
@@ -737,84 +664,6 @@ class CUGate(TwoQubitGate):
                              cmath.exp(1j * (g + p)) * sin_t, 0,
                              cmath.exp(1j * (g + p + l)) * cos_t
                          ]],
-                        dtype=complex)
-
-
-class CU1Gate(TwoQubitGate):
-    """Controlled U1 gate of old version Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    RZ gate (rz) or Phase gate (r) are alternative choice.
-    """
-    lowername = "cu1"
-
-    def __init__(self, targets, lambd, **kwargs):
-        super().__init__(targets, (lambd, ), **kwargs)
-        self.lambd = lambd
-        self.cu_params = (0.0, 0.0, lambd, 0.0)
-
-    def dagger(self):
-        return CU1Gate(self.targets, -self.lambd, **self.kwargs)
-
-    def matrix(self):
-        return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
-                         [0, 0, 0, 0, math.exp(self.theta)]],
-                        dtype=complex)
-
-
-class CU2Gate(TwoQubitGate):
-    """Controlled U2 gate of old version Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    CU gate is an alternative.
-    """
-    lowername = "cu2"
-
-    def __init__(self, targets, phi, lambd, **kwargs):
-        super().__init__(targets, (phi, lambd), **kwargs)
-        self.phi = phi
-        self.lambd = lambd
-        self.cu_params = (0.5 * math.pi, phi, lambd, -0.5 * (phi + lambd))
-
-    def dagger(self):
-        return CU3Gate(self.targets, -math.pi / 2, -self.lambd, -self.phi,
-                       **self.kwargs)
-
-    def matrix(self):
-        p, l = self.params
-        c = 1 / math.sqrt(2)
-        a = cmath.exp(0.5j * (p + l)) * c
-        b = cmath.exp(0.5j * (p - l)) * c
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
-                         [0, 0, 1, 0], [0, a, 0, b]],
-                        dtype=complex)
-
-
-class CU3Gate(TwoQubitGate):
-    """Controlled U3 gate of old version Qiskit.
-
-    This gate is obsoleted. You SHOULD NOT use this gate except compatibility reasons.
-    CU gate is an alternative.
-    """
-    lowername = "cu3"
-
-    def __init__(self, targets, theta, phi, lambd, **kwargs):
-        super().__init__(targets, (theta, phi, lambd), **kwargs)
-        self.theta = theta
-        self.phi = phi
-        self.lambd = lambd
-        self.cu_params = (theta, phi, lambd, -0.5 * (phi + lambd))
-
-    def dagger(self):
-        return CU3Gate(self.targets, -self.theta, -self.lambd, -self.phi,
-                       **self.kwargs)
-
-    def matrix(self):
-        t, p, l = self.params
-        a = cmath.exp(0.5j * (p + l)) * math.cos(t * 0.5)
-        b = cmath.exp(0.5j * (p - l)) * math.sin(t * 0.5)
-        return np.array([[1, 0, 0, 0], [0, a.conjugate(), 0, -b.conjugate()],
-                         [0, 0, 1, 0], [0, a, 0, b]],
                         dtype=complex)
 
 
@@ -1009,8 +858,18 @@ class Reset(Operation):
         return slicing(self.targets, n_qubits)
 
 
-def slicing_singlevalue(arg: Union[slice, int],
-                        length: int) -> Iterator[int]:
+class DeprecatedOperation:
+    """Inform deprecated operation"""
+    def __init__(self, name: str, alternative: str) -> None:
+        self.name = name
+        self.alt = alternative
+
+    def __call__(self, *_args, **_kwargs) -> NoReturn:
+        raise ValueError(
+            f'{self.name} operation is deprecated. Use insteads {self.alt}.')
+
+
+def slicing_singlevalue(arg: Union[slice, int], length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(arg, slice):
         start, stop, step = arg.indices(length)
@@ -1034,8 +893,7 @@ def slicing_singlevalue(arg: Union[slice, int],
         yield i
 
 
-def slicing(args: Tuple[Union[slice, int], ...],
-            length: int) -> Iterator[int]:
+def slicing(args: Tuple[Union[slice, int], ...], length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(args, tuple):
         for arg in args:
@@ -1064,8 +922,7 @@ def qubit_pairs(args: Tuple[Tuple[Union[slice, int], ...],
     return zip(controls, targets)
 
 
-def get_maximum_index(
-        indices: Union[Tuple[int, ...], int]) -> int:
+def get_maximum_index(indices: Union[Tuple[int, ...], int]) -> int:
     """Internally used."""
     def _maximum_idx_single(idx: int):
         if isinstance(idx, slice):

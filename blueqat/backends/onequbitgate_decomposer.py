@@ -12,43 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import cmath
 from typing import List
 
-import numpy as np
-
 from ..utils import check_unitarity
-from ..gate import *
+from ..gate import OneQubitGate, UGate
 
 
-def u3_decomposer(gate: OneQubitGate) -> List[U3Gate]:
-    """Decompose one qubit gate to U3 gate.
-    This decomposer ignores global phase.
+def u_decomposer(gate: OneQubitGate) -> List[UGate]:
+    """Decompose one qubit gate to U gate.
 
     Args:
         gate (OneQubitGate): The gate which have 2x2 unitary matrix
 
     Returns:
-        List of U3 gate. length is always 1.
+        List of U gate. length is always 1.
     """
     mat = gate.matrix()
     assert mat.shape == (2, 2)
     assert check_unitarity(mat)
-    # Remove global phase. Make SU(2).
-    mat /= np.sqrt(np.linalg.det(mat))
-    sq_cos_halftheta = (mat[0, 0] * mat[1, 1]).real
-    cos_halftheta = np.sqrt(sq_cos_halftheta)
-    sin_halftheta = np.sqrt(1. - sq_cos_halftheta)
-    theta = np.arccos(cos_halftheta) * 2
-    if np.allclose(0.0, cos_halftheta):
-        lam = 0.0
-        phi = cmath.phase(mat[1, 0]) * 2
-    elif np.allclose(0.0, sin_halftheta):
-        lam = 0.0
-        phi = cmath.phase(mat[1, 1]) * 2
+    gamma = cmath.phase(mat[0, 0])
+    mat *= cmath.exp(-1j * gamma)
+    assert math.isclose(mat[0, 0].im, 0.0)
+    cos_halftheta = mat[0, 0].real
+    sin_halftheta = 1.0 - cos_halftheta ** 2
+    theta = math.acos(cos_halftheta) * 2
+    if math.isclose(0.0, sin_halftheta):
+        phi = 0.0
+        lam = cmath.phase(mat[1, 1])
     else:
-        angle_phi_plus_lambda_half = cmath.phase(mat[1, 1] / sin_halftheta)
-        angle_phi_minus_lambda_half = cmath.phase(mat[1, 0] / cos_halftheta)
-        phi = angle_phi_plus_lambda_half + angle_phi_minus_lambda_half
-        lam = angle_phi_plus_lambda_half - angle_phi_minus_lambda_half
-    return [U3Gate(gate.targets, theta, phi, lam)]
+        phi = cmath.phase(mat[1, 0])
+        lam = cmath.phase(mat[0, 1])
+    return [UGate(gate.targets, theta, phi, lam, gamma)]

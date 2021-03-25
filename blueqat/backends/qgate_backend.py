@@ -43,14 +43,9 @@ class QgateBackend(Backend):
                 'crz': (gtype.RZ, 1, 1),
                 'cphase': (gtype.U1, 1, 1),
                 # U gate
-                'u1': (gtype.RZ, 0, 1),
-                'u2': (gtype.U2, 0, 1),
-                'u3': (gtype.U, 0, 1),
-                # gtype of U1 gate is RZ instead of U1, for compatibility with OpenQASM.
+                'u': (gtype.U, 0, 1),
                 # controlled U gate
-                'cu1': (gtype.U1, 1, 1),
-                'cu2': (gtype.U2, 1, 1),
-                'cu3': (gtype.U, 1, 1),
+                'cu': (gtype.U, 1, 1),
                 # swap and multi-controlled-bit gate
                 'swap': (gtype.SWAP, 0, 2),
                 'ccx': (gtype.X, 2, 1),
