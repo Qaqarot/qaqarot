@@ -785,9 +785,9 @@ class NumbaBackend(Backend):
         return ctx
 
     @staticmethod
-    def gate_u(gate: U3Gate,
+    def gate_u(gate: UGate,
                 ctx: _NumbaBackendContext) -> _NumbaBackendContext:
-        """Implementation of U3 gate."""
+        """Implementation of U gate."""
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         for target in gate.target_iter(n_qubits):

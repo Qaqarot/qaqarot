@@ -506,10 +506,10 @@ class NumPyBackend(Backend):
         gamma = gate.gamma
         globalphase = cmath.exp(1j * gamma)
         a00 = math.cos(theta * 0.5) * globalphase
-        a11 = a00 * cmath.exp(complex(0.0, phi + lam))
+        a11 = a00 * cmath.exp(1j * (phi + lam))
         a01 = a10 = math.sin(theta * 0.5) * globalphase
-        a01 *= cmath.exp(complex(0.0, lam))
-        a10 *= cmath.exp(complex(0.0, phi))
+        a01 *= -cmath.exp(1j * lam)
+        a10 *= cmath.exp(1j * phi)
         for target in gate.target_iter(n_qubits):
             np.copyto(newq, qubits)
             t0 = (i & (1 << target)) == 0
