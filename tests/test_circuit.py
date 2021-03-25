@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import math
+import cmath
 import random
 from collections import Counter
-from functools import reduce
 
 import pytest
 import numpy as np
 
 from blueqat import Circuit, BlueqatGlobalSetting
-from blueqat.backends.onequbitgate_decomposer import u3_decomposer
+from blueqat.backends.onequbitgate_decomposer import u_decomposer
 from blueqat.utils import ignore_global_phase
 
 EPS = 1e-16
@@ -163,21 +163,15 @@ def test_toffoli_gate(bits, backend):
     assert c.run(backend=backend, shots=1) == Counter([expected_meas])
 
 
-def test_u3_gate(backend):
+def test_u_gate(backend):
     assert np.allclose(
-        Circuit().u3(1.23, 4.56, -5.43)[1].run(backend=backend),
+        Circuit().u(1.23, 4.56, -5.43, -0.5 * (4.56 - 5.43))[1].run(backend=backend),
         Circuit().rz(-5.43)[1].ry(1.23)[1].rz(4.56)[1].run(backend=backend))
 
 
-def test_u2_gate(backend):
-    assert np.allclose(
-        Circuit().u2(-1.23, 4.56)[1].run(backend=backend),
-        Circuit().u3(math.pi / 2, -1.23, 4.56)[1].run(backend=backend))
-
-
-def test_u1_gate(backend):
-    assert np.allclose(Circuit().u1(-1.23)[1].run(backend=backend),
-                       Circuit().u3(0, 0, -1.23)[1].run(backend=backend))
+def test_r_gate(backend):
+    assert np.allclose(Circuit().r(-1.23)[1].run(backend=backend),
+                       Circuit().u(0, 0, -1.23)[1].run(backend=backend))
 
 
 def test_rotation1(backend):
@@ -189,7 +183,7 @@ def test_rotation1(backend):
 
 def test_crotation(backend):
     assert np.allclose(
-        Circuit().cu3(1.23, 4.56, -5.43)[3, 1].run(backend=backend),
+        Circuit().cu(1.23, 4.56, -5.43, -0.5 * (4.56 - 5.43))[3, 1].run(backend=backend),
         Circuit().crz(-5.43)[3,
                              1].cry(1.23)[3,
                                           1].crz(4.56)[3,
@@ -213,26 +207,30 @@ def test_crotation3(backend):
                        np.sqrt(np.array([0.3, 0.28, 0.0, 0.42])))
 
 
-def test_globalphase(backend):
+def test_globalphase_rz(backend):
     theta = 1.2
-    phi = 1.6
-    lambd = 2.3
     c = Circuit().rz(theta)[0]
-    assert abs(c.run(backend=backend)[0] - np.exp(-0.5j * theta)) < 1e-8
+    assert abs(c.run(backend=backend)[0] - cmath.exp(-0.5j * theta)) < 1e-8
 
+def test_globalphase_r(backend):
+    theta = 1.2
     c = Circuit().phase(theta)[0]
     assert abs(c.run(backend=backend)[0] - 1) < 1e-8
 
-    c = Circuit().u1(theta)[0]
-    assert abs(c.run(backend=backend)[0] - np.exp(-0.5j * theta)) < 1e-8
+def test_globalphase_u(backend):
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
+    c = Circuit().u(theta, phi, lambd)[0]
+    assert abs(c.run(backend=backend)[0] - math.cos(theta / 2)) < 1e-8
 
-    v0 = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
-    c = Circuit().u2(phi, lambd)[0]
-    assert abs(c.run(backend=backend)[0] - v0) < 1e-8
-
-    v0 = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
-    c = Circuit().u3(theta, phi, lambd)[0]
-    assert abs(c.run(backend=backend)[0] - v0) < 1e-8
+def test_globalphase_u_with_gamma(backend):
+    theta = 1.2
+    phi = 1.6
+    lambd = 2.3
+    gamma = -1.4
+    c = Circuit().u(theta, phi, lambd, gamma)[0]
+    assert abs(c.run(backend=backend)[0] - cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
 
 
 def test_controlled_gate_phase_crz(backend):
@@ -248,7 +246,6 @@ def test_controlled_gate_phase_crz(backend):
 
 def test_controlled_gate_phase_cphase(backend):
     theta = 1.2
-
     val = 1.0
     c0 = Circuit().cphase(theta)[0, 1]
     c1 = Circuit().x[0] + c0
@@ -258,45 +255,30 @@ def test_controlled_gate_phase_cphase(backend):
     assert abs(v1[1] / v0[0] - val) < 1e-8
 
 
-def test_controlled_gate_phase_cu1(backend):
+def test_controlled_gate_phase_cu(backend):
     theta = 1.2
     phi = 1.6
     lambd = 2.3
-
-    val = 1.0
-    c0 = Circuit().cu1(theta)[0, 1]
+    c0 = Circuit().cu(theta, phi, lambd)[0, 1]
     c1 = Circuit().x[0] + c0
     v0 = c0.run(backend=backend)
     v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
-    assert abs(v1[1] / v0[0] - val) < 1e-8
+    assert abs(v1[1] / v0[0] - math.cos(theta / 2)) < 1e-8
 
 
-def test_controlled_gate_phase_cu2(backend):
-    phi = 1.6
-    lambd = 2.3
-
-    val = np.exp(-0.5j * (phi + lambd)) / np.sqrt(2)
-    c0 = Circuit().cu2(phi, lambd)[0, 1]
-    c1 = Circuit().x[0] + c0
-    v0 = c0.run(backend=backend)
-    v1 = c1.run(backend=backend)
-    assert abs(abs(v0[0]) - 1) < 1e-8
-    assert abs(v1[1] / v0[0] - val) < 1e-8
-
-
-def test_controlled_gate_phase_cu3(backend):
+def test_controlled_gate_phase_cu_with_gamma(backend):
     theta = 1.2
     phi = 1.6
     lambd = 2.3
+    gamma = 1.4
 
-    val = np.exp(-0.5j * (phi + lambd)) * np.cos(theta * 0.5)
-    c0 = Circuit().cu3(theta, phi, lambd)[0, 1]
+    c0 = Circuit().cu(theta, phi, lambd, gamma)[0, 1]
     c1 = Circuit().x[0] + c0
     v0 = c0.run(backend=backend)
     v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
-    assert abs(v1[1] / v0[0] - val) < 1e-8
+    assert abs(v1[1] / v0[0] - cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
 
 
 def test_measurement1(backend):
@@ -461,10 +443,10 @@ def test_complicated_circuit(backend):
     c.cx[0, 2].h[0].rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2]
     c.cx[0, 2].cx[2, 3].rz(0.095491506289)[3].cx[2, 3].cx[0, 2].h[0]
     c.rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2].cx[0, 1]
-    c.cx[1, 2].rz(0.095491506289)[2].cx[1, 2].cx[0, 1].h[0].u2(1.58, -0.62)[2]
+    c.cx[1, 2].rz(0.095491506289)[2].cx[1, 2].cx[0, 1].h[0].u(math.pi / 2, 1.58, -0.62)[2]
     c.h[0].rx(-1.5707963267948966)[2].cx[0, 1].cx[1, 2].cx[2, 3]
     c.rz(0.095491506289)[3].cx[2, 3].cx[1, 2].cx[0, 1].h[0]
-    c.rx(1.5707963267948966)[2].u3(0.42, -1.5707963267948966, 1.64)[2].h[2]
+    c.rx(1.5707963267948966)[2].u(0.42, -1.5707963267948966, 1.64)[2].h[2]
     c.cx[0, 2].rz(-0.095491506289)[2].cx[0, 2].rx(1.5707963267948966)[0].h[2]
     c.rx(-1.5707963267948966)[0].h[2].cx[0, 2].cx[2, 3].rz(-0.095491506289)[3]
     c.cx[2, 3].cx[0, 2].rx(1.5707963267948966)[0].h[2]
@@ -482,7 +464,7 @@ def test_complicated_circuit(backend):
     c.cx[1, 3].rx(1.5707963267948966)[1].rx(-1.5707963267948966)[1].cx[0, 1]
     c.cx[1, 2].rz(-1.2142490216037756e-08)[2].cx[1, 2].cx[0, 1]
     c.rx(1.5707963267948966)[1]
-    c.cx[0, 3].u3(0.23, 1.24, -0.65)[3].cx[3, 1].cx[3, 0]
+    c.cx[0, 3].u(0.23, 1.24, -0.65)[3].cx[3, 1].cx[3, 0]
     vec = c.run(backend=backend)
     assert np.allclose(
         ignore_global_phase(vec),
@@ -556,8 +538,8 @@ def test_mat1(backend):
     p = random.random() * math.pi
     q = random.random() * math.pi
     r = random.random() * math.pi
-    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
-    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    a1 = Circuit().u(p, q, r)[0].run(backend=backend)
+    a2 = Circuit().x[0].u(p, q, r)[0].run(backend=backend)
     a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
 
     b1 = Circuit().mat1(a)[0].run(backend=backend)
@@ -594,14 +576,15 @@ def test_mat1_decomposite(backend):
     p = random.random() * math.pi
     q = random.random() * math.pi
     r = random.random() * math.pi
-    a1 = Circuit().u3(p, q, r)[0].run(backend=backend)
-    a2 = Circuit().x[0].u3(p, q, r)[0].run(backend=backend)
+    g = random.random() * math.pi
+    a1 = Circuit().u(p, q, r, g)[0].run(backend=backend)
+    a2 = Circuit().x[0].u(p, q, r, g)[0].run(backend=backend)
     a = np.hstack([a1.reshape((2, 1)), a2.reshape((2, 1))])
 
     c = Circuit().mat1(a)[2, 4]
     v1 = c.run(backend=backend)
     v2 = c.run_with_2q_decomposition(
-        basis='cx', mat1_decomposer=u3_decomposer).run(backend=backend)
+        basis='cx', mat1_decomposer=u_decomposer).run(backend=backend)
     assert np.allclose(v1, v2)
 
 
