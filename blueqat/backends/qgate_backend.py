@@ -1,4 +1,5 @@
 from collections import Counter
+import math
 from typing import Any, List, Optional
 
 import numpy as np
@@ -6,6 +7,25 @@ import numpy as np
 from .backendbase import Backend
 import blueqat.gate as bqgate
 
+class _U3(bqgate.OneQubitGate):
+    lowername = '_u3'
+    def __init__(self, targets, theta, phi, lam):
+        super().__init__(targets, (theta, phi, lam))
+
+class _CU3(bqgate.TwoQubitGate):
+    lowername = '_cu3'
+    def __init__(self, targets, theta, phi, lam):
+        super().__init__(targets, (theta, phi, lam))
+
+class _Expii(bqgate.OneQubitGate):
+    lowername = '_expii'
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta,))
+
+class _CExpii(bqgate.TwoQubitGate):
+    lowername = '_cexpii'
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta,))
 
 class QgateBackend(Backend):
     def __init__(self):
@@ -43,9 +63,14 @@ class QgateBackend(Backend):
                 'crz': (gtype.RZ, 1, 1),
                 'cphase': (gtype.U1, 1, 1),
                 # U gate
-                'u': (gtype.U, 0, 1),
+                'u': None,
+                '_u3': (gtype.U, 0, 1),
                 # controlled U gate
-                'cu': (gtype.U, 1, 1),
+                'cu': None,
+                '_cu3': (gtype.U, 1, 1),
+                # global phase
+                '_expii': (gtype.ExpiI, 0, 1),
+                '_cexpii': (gtype.ExpiI, 1, 1),
                 # swap and multi-controlled-bit gate
                 'swap': (gtype.SWAP, 0, 2),
                 'ccx': (gtype.X, 2, 1),
@@ -195,6 +220,16 @@ class QgateBackend(Backend):
                     ops += self.convert_one_qubit_gate(op, typeinfo)
                 else:
                     ops += self.convert_multi_qubit_gate(op, typeinfo)
+            elif op.lowername == 'u':
+                ops += self.convert_operators([
+                    _U3(op.targets, op.theta, op.phi, op.lam),
+                    _Expii(op.targets, op.gamma + 0.5 * (op.phi + op.lam))
+                ])
+            elif op.lowername == 'cu':
+                ops += self.convert_operators([
+                    _CU3(op.targets, op.theta, op.phi, op.lam),
+                    _CExpii(op.targets, op.gamma + 0.5 * (op.phi + op.lam))
+                ])
             elif op.lowername in ('measure', 'm'):
                 # "measure": gate.Measurement, "m": gate.Measurement,
                 ops += self.convert_measure(op)
