@@ -398,7 +398,14 @@ class ToffoliGate(Gate):
 
 
 class UGate(OneQubitGate):
-    """Arbitrary 1 qubit unitary gate."""
+    """Arbitrary 1 qubit unitary gate including global phase.
+
+    U(θ, φ, λ, γ = 0.0) = e^iγ * array([
+        [cos(θ/2), -e^iλ sin(θ/2)],
+        [e^iφ sin(θ/2), e^i(φ+λ) cos(θ/2)]])
+
+    Note: If SU matrix is required, U(θ, φ, λ, (φ + λ) / 2) works fine.
+    """
     lowername = "u"
 
     def __init__(self,
