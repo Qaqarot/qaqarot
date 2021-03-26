@@ -48,24 +48,21 @@ class SympyBackend(Backend):
         except ImportError:
             raise ImportError(
                 'sympy_unitary requires sympy. Please install before call this option.'
-            )
-        theta, phi, lambd = symbols('theta phi lambd')
+            ) from None
+        theta, phi, lam, gamma = symbols('theta phi lam gamma')
         self.theta = theta
         self.phi = phi
-        self.lambd = lambd
+        self.lam = lam
+        self.gamma = gamma
         self.SYMPY_GATE = {
             '_C0':
             Matrix([[1, 0], [0, 0]]),
             '_C1':
             Matrix([[0, 0], [0, 1]]),
-            'X':
-            Matrix([[0, 1], [1, 0]]),
-            'Y':
-            Matrix([[0, -I], [I, 0]]),
-            'Z':
-            Matrix([[1, 0], [0, -1]]),
             'H':
             Matrix([[1, 1], [1, -1]]) / sqrt(2),
+            'PHASE':
+            Matrix([[1, 0], [0, exp(I * theta)]]),
             'RX':
             Matrix([[cos(theta / 2), -I * sin(theta / 2)],
                     [-I * sin(theta / 2), cos(theta / 2)]]),
@@ -73,29 +70,24 @@ class SympyBackend(Backend):
             Matrix([[cos(theta / 2), -sin(theta / 2)],
                     [sin(theta / 2), cos(theta / 2)]]),
             'RZ':
-            Matrix([[exp(-I * theta / 2), 0], [0, exp(I * theta / 2)]]),
-            'PHASE':
-            Matrix([[1, 0], [0, exp(I * theta)]]),
-            'U1':
-            Matrix([[exp(-I * lambd / 2), 0], [0, exp(I * lambd / 2)]]),
-            'U2':
-            Matrix([[
-                exp(-I * (phi + lambd) / 2) / sqrt(2),
-                -exp(-I * (phi - lambd) / 2) / sqrt(2)
-            ],
-                    [
-                        exp(I * (phi - lambd) / 2) / sqrt(2),
-                        exp(I * (phi + lambd) / 2) / sqrt(2)
-                    ]]),
-            'U3':
-            Matrix([[
-                exp(-I * (phi + lambd) / 2) * cos(theta / 2),
-                -exp(-I * (phi - lambd) / 2) * sin(theta / 2)
-            ],
-                    [
-                        exp(I * (phi - lambd) / 2) * sin(theta / 2),
-                        exp(I * (phi + lambd) / 2) * cos(theta / 2)
-                    ]]),
+            Matrix([[cos(theta / 2) - I * sin(theta / 2), 0],
+                    [0, cos(theta / 2) + I * sin(theta / 2)]]),
+            'SX':
+            Matrix([[1 + I, 1 - I], [1 - I, 1 + I]]) / 2,
+            'SXDG':
+            Matrix([[1 - I, 1 + I], [1 + I, 1 - I]]) / 2,
+            'U':
+            Matrix(
+                [[cos(theta / 2), -(cos(lam) + I * sin(lam)) * sin(theta / 2)],
+                 [(cos(phi) + I * sin(phi)) * sin(theta / 2),
+                  (cos(phi + lam) + I * sin(phi + lam)) * cos(theta / 2)]]) *
+            (cos(gamma) + I * sin(gamma)),
+            'X':
+            Matrix([[0, 1], [1, 0]]),
+            'Y':
+            Matrix([[0, -I], [I, 0]]),
+            'Z':
+            Matrix([[1, 0], [0, -1]]),
         }
 
     def _create_matrix_of_one_qubit_gate(self, n_qubits, targets,
@@ -134,39 +126,38 @@ class SympyBackend(Backend):
     gate_y = _one_qubit_gate_noargs
     gate_z = _one_qubit_gate_noargs
     gate_h = _one_qubit_gate_noargs
+    gate_sx = _one_qubit_gate_noargs
+    gate_sxdg = _one_qubit_gate_noargs
     gate_rx = _one_qubit_gate_args_theta
     gate_ry = _one_qubit_gate_args_theta
     gate_rz = _one_qubit_gate_args_theta
     gate_phase = _one_qubit_gate_args_theta
 
-    def _one_qubit_gate_ugate(self, gate, ctx):
-        if len(gate.params) == 3:
-            phi = _angle_simplify(gate.phi)
-            theta = _angle_simplify(gate.theta)
-        elif len(gate.params) == 2:
-            phi = _angle_simplify(gate.phi)
-            theta = pi / 2
-        else:
-            phi = theta = 0
-        lambd = _angle_simplify(gate.lambd)
-        matrix_of_gate = self.SYMPY_GATE[gate.uppername].subs(
-            [(self.lambd, lambd), (self.phi, phi), (self.theta, theta)],
+    def gate_u(self, gate, ctx):
+        theta, phi, lam, gamma = map(_angle_simplify, gate.params)
+        matrix_of_gate = self.SYMPY_GATE['U'].subs(
+            [(self.lam, lam), (self.phi, phi), (self.theta, theta),
+             (self.gamma, gamma)],
             simultaneous=True)
         return self._create_matrix_of_one_qubit_gate_circuit(
             gate, ctx, matrix_of_gate)
 
-    gate_u1 = _one_qubit_gate_ugate
-    gate_u2 = _one_qubit_gate_ugate
-    gate_u3 = _one_qubit_gate_ugate
-
-    def _create_matrix_of_two_qubit_gate(self, n_qubits, gate, control,
-                                         target):
+    def _create_matrix_of_two_qubit_gate(self,
+                                         n_qubits,
+                                         gate,
+                                         control,
+                                         target,
+                                         subs=None):
+        matrix_of_target_gate = self.SYMPY_GATE[gate.uppername[1:]]
+        if subs:
+            matrix_of_target_gate = matrix_of_target_gate.subs(
+                subs, simultaneous=True)
         c0 = self._create_matrix_of_one_qubit_gate(n_qubits, [control],
                                                    self.SYMPY_GATE['_C0'])
         c1 = self._create_matrix_of_one_qubit_gate(n_qubits, [control],
                                                    self.SYMPY_GATE['_C1'])
-        tgt = self._create_matrix_of_one_qubit_gate(
-            n_qubits, [target], self.SYMPY_GATE[gate.uppername[1:]])
+        tgt = self._create_matrix_of_one_qubit_gate(n_qubits, [target],
+                                                    matrix_of_target_gate)
         return c0 + tgt * c1
 
     def _two_qubit_gate_noargs(self, gate, ctx):
@@ -179,6 +170,17 @@ class SympyBackend(Backend):
 
     gate_cx = _two_qubit_gate_noargs
     gate_cz = _two_qubit_gate_noargs
+
+    def gate_cu(self, gate, ctx):
+        theta, phi, lam, gamma = map(_angle_simplify, gate.params)
+        n_qubits = ctx.n_qubits
+        subs = [(self.lam, lam), (self.phi, phi), (self.theta, theta),
+                (self.gamma, gamma)]
+        for control, target in gate.control_target_iter(n_qubits):
+            m = self._create_matrix_of_two_qubit_gate(n_qubits, gate, control,
+                                                      target, subs)
+            ctx.matrix_of_circuit = m * ctx.matrix_of_circuit
+        return ctx
 
     def _two_qubit_gate_args_theta(self, gate, ctx):
         theta = _angle_simplify(gate.theta)

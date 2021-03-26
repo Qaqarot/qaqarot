@@ -74,51 +74,34 @@ class QasmOutputBackend(Backend):
             ctx[0].append(f"id q[{idx}];")
         return ctx
 
-    def gate_u1(self, gate, ctx):
+    def gate_u(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.lambd}) q[{idx}];")
-        return ctx
-
-    def gate_u2(self, gate, ctx):
-        for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(
-                f"{gate.lowername}({gate.phi},{gate.lambd}) q[{idx}];")
-        return ctx
-
-    def gate_u3(self, gate, ctx):
-        for idx in gate.target_iter(ctx[1]):
-            ctx[0].append(
-                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{idx}];"
-            )
+            if abs(gate.gamma) > 1e-7:
+                ctx[0].append(
+                    f"{gate.lowername}({gate.theta},{gate.phi},{gate.lam}) q[{idx}]; // global phase e^i{gate.gamma} is ignored."
+                )
+            else:
+                ctx[0].append(
+                    f"{gate.lowername}({gate.theta},{gate.phi},{gate.lam}) q[{idx}];"
+                )
         return ctx
 
     def gate_phase(self, gate, ctx):
         for idx in gate.target_iter(ctx[1]):
             ctx[0].append(
-                f"u1({gate.theta}) q[{idx}]; // Global phase is ignored.")
+                f"p({gate.theta}) q[{idx}];")
         return ctx
 
-    def gate_cu1(self, gate, ctx):
-        for c, t in gate.control_target_iter(ctx[1]):
-            ctx[0].append(f"{gate.lowername}({gate.lambd}) q[{c}],q[{t}];")
-        return ctx
-
-    def gate_cu2(self, gate, ctx):
+    def gate_cu(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
             ctx[0].append(
-                f"{gate.lowername}({gate.phi},{gate.lambd}) q[{c}],q[{t}];")
-        return ctx
-
-    def gate_cu3(self, gate, ctx):
-        for c, t in gate.control_target_iter(ctx[1]):
-            ctx[0].append(
-                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lambd}) q[{c}],q[{t}];"
+                f"{gate.lowername}({gate.theta},{gate.phi},{gate.lam},{gate.gamma}) q[{c}],q[{t}];"
             )
         return ctx
 
     def gate_cphase(self, gate, ctx):
         for c, t in gate.control_target_iter(ctx[1]):
-            ctx[0].append(f"cu1({gate.theta}) q[{c}],q[{t}];")
+            ctx[0].append(f"cp({gate.theta}) q[{c}],q[{t}];")
         return ctx
 
     def _three_qubit_gate_noargs(self, gate, ctx):
