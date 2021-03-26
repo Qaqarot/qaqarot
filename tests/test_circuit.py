@@ -329,7 +329,7 @@ def test_measurement_entangled_state(backend):
 
 
 def test_measurement_hadamard1(backend):
-    n = 500
+    n = 1000
     c = Circuit().h[0].m[0]
     cnt = c.run(backend=backend, shots=n)
     a, b = cnt.most_common(2)
