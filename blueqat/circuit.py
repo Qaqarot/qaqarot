@@ -17,7 +17,10 @@ This module defines Circuit and the setting for circuit.
 
 import warnings
 from functools import partial
-from typing import Callable
+import typing
+from typing import Callable, Tuple
+
+import numpy as np
 
 from . import gate
 
@@ -210,7 +213,7 @@ class Circuit:
             |   e.g. "statevector" returns the state vector after run the circuit.
             |         "shots" returns the counter of measured value.
             | token, url (str, optional): The token and URL for cloud resource.
-        
+
         Returns:
             Depends on backend.
 
@@ -274,6 +277,68 @@ class Circuit:
             str: The name of default backend.
         """
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
+
+    def statevector(self, *args, backend=None, **kwargs) -> np.ndarray:
+        """Run the circuit and get a statevector as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.statevector has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if backend.hasattr('statevector'):
+            return backend.statevector(self.ops, self.n_qubits, *args,
+                                       **kwargs)
+        return backend.run(self.ops,
+                           self.n_qubits,
+                           *args,
+                           returns='statevector',
+                           **kwargs)
+
+    def shots(self, *args, backend=None, **kwargs) -> typing.Counter[str]:
+        """Run the circuit and get shots as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.statevector has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if backend.hasattr('shots'):
+            return backend.shots(self.ops, self.n_qubits, *args, **kwargs)
+        return backend.run(self.ops,
+                           self.n_qubits,
+                           *args,
+                           returns='shots',
+                           **kwargs)
+
+    def oneshot(self, *args, backend=None, **kwargs) -> Tuple[np.ndarray, str]:
+        """Run the circuit and get shots as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.statevector has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if backend.hasattr('oneshot'):
+            return backend.shots(self.ops, self.n_qubits, *args, **kwargs)
+        v, cnt = backend.run(self.ops,
+                             self.n_qubits,
+                             *args,
+                             returns='statevector_and_shots',
+                             **kwargs)
+        return v, cnt.most_common()[0][0]
 
 
 class _GateWrapper:
