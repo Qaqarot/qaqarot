@@ -424,10 +424,11 @@ class Opt:
 
     def qi(self):
         nn = len(self.qubo)
+        qubo = np.triu(self.qubo + np.transpose(self.qubo)) - np.eye(nn) * self.qubo
         self.J = [np.random.choice([1., 1.], nn) for j in range(nn)]
         for i in range(nn):
             for j in range(i + 1, nn):
-                self.J[i][j] = self.qubo[i][j] / 4
+                self.J[i][j] = qubo[i][j] / 4
 
         self.J = np.triu(self.J) + np.triu(self.J, k=1).T
 
@@ -435,7 +436,7 @@ class Opt:
             sum = 0
             for j in range(nn):
                 if i == j:
-                    sum += self.qubo[i][i] * 0.5
+                    sum += qubo[i][i] * 0.5
                 else:
                     sum += self.J[i][j]
             self.J[i][i] = sum
