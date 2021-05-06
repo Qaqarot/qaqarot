@@ -50,8 +50,9 @@ DECOMPOSE_TABLE: Dict[str, Dict[str, Tuple[
 
 class TwoQubitGateDecomposingTranspiler(Backend):
     """Decomposite two qubit gate."""
+    @staticmethod
     def _run_inner(
-            self, gates, operations: List[Operation],
+            gates, operations: List[Operation],
             singlemats: List[np.array], n_qubits: int, basis: Sequence[str],
             mat1_decomposer: Callable[[OneQubitGate],
                                       List[Operation]]) -> None:
@@ -95,11 +96,11 @@ class TwoQubitGateDecomposingTranspiler(Backend):
                     singlemats[t2] = r2.copy()
                     operations.append(basisgate((t1, t2), *gparams))
             else:
-                self._run_inner(gate.fallback(n_qubits), operations,
+                TwoQubitGateDecomposingTranspiler._run_inner(gate.fallback(n_qubits), operations,
                                 singlemats, n_qubits, basis, mat1_decomposer)
 
-    def run(self,
-            gates: List[Operation],
+    @staticmethod
+    def run(gates: List[Operation],
             n_qubits: int,
             *,
             basis: Union[str, Sequence[str]],
@@ -125,7 +126,7 @@ class TwoQubitGateDecomposingTranspiler(Backend):
             raise ValueError('Unsupported basis.')
         operations = []
         singlemats = [_eye.copy() for _ in range(n_qubits)]
-        self._run_inner(gates, operations, singlemats, n_qubits, basis,
+        TwoQubitGateDecomposingTranspiler._run_inner(gates, operations, singlemats, n_qubits, basis,
                         mat1_decomposer)
         for i, mat in enumerate(singlemats):
             if not np.allclose(mat, _eye):
