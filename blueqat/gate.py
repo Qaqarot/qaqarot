@@ -224,7 +224,7 @@ class PhaseGate(OneQubitGate):
         return PhaseGate(self.targets, -self.theta, **self.kwargs)
 
     def matrix(self):
-        return np.array([[1, 0], [0, math.exp(self.theta)]], dtype=complex)
+        return np.array([[1, 0], [0, cmath.exp(1j * self.theta)]], dtype=complex)
 
 
 class RXGate(OneQubitGate):
@@ -544,7 +544,7 @@ class CPhaseGate(TwoQubitGate):
 
     def matrix(self):
         return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
-                         [0, 0, 0, 0, math.exp(self.theta)]],
+                         [0, 0, 0, cmath.exp(1j * self.theta)]],
                         dtype=complex)
 
 
