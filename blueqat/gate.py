@@ -654,8 +654,16 @@ class CUGate(TwoQubitGate):
                       -self.gamma, **self.kwargs)
 
     def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError(
-            'Fallback implementation for CUGate is not available.')
+        theta, phi, lam, gamma = self.params
+        return self._make_fallback_for_control_target_iter(
+            n_qubits, lambda c, t: [
+                PhaseGate((c,), gamma + 0.5 * (lam + phi)),
+                PhaseGate((t,), 0.5 * (lam - phi)),
+                CXGate((c, t)),
+                UGate((t,), -0.5 * theta, 0.0, -0.5 * (phi + lam)),
+                CXGate((c, t)),
+                UGate((t,), 0.5 * theta, phi, 0.0)
+            ])
 
     def matrix(self):
         t, p, l, g = self.params
