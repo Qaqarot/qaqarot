@@ -50,9 +50,10 @@ DECOMPOSE_TABLE: Dict[str, Dict[str, Tuple[
 
 class TwoQubitGateDecomposingTranspiler(Backend):
     """Decomposite two qubit gate."""
+    @staticmethod
     def _run_inner(
-            self, gates, operations: List[Operation],
-            singlemats: List[np.array], n_qubits: int, basis: Sequence[str],
+            gates: List[Operation], operations: List[Operation],
+            singlemats: List[np.ndarray], n_qubits: int, basis: Sequence[str],
             mat1_decomposer: Callable[[OneQubitGate],
                                       List[Operation]]) -> None:
         basisgate = BASIS_TABLE[basis[0]]
@@ -95,11 +96,12 @@ class TwoQubitGateDecomposingTranspiler(Backend):
                     singlemats[t2] = r2.copy()
                     operations.append(basisgate((t1, t2), *gparams))
             else:
-                self._run_inner(gate.fallback(n_qubits), operations,
-                                singlemats, n_qubits, basis, mat1_decomposer)
+                TwoQubitGateDecomposingTranspiler._run_inner(
+                    gate.fallback(n_qubits), operations, singlemats, n_qubits,
+                    basis, mat1_decomposer)
 
-    def run(self,
-            gates: List[Operation],
+    @staticmethod
+    def run(gates: List[Operation],
             n_qubits: int,
             *,
             basis: Union[str, Sequence[str]],
@@ -125,9 +127,26 @@ class TwoQubitGateDecomposingTranspiler(Backend):
             raise ValueError('Unsupported basis.')
         operations = []
         singlemats = [_eye.copy() for _ in range(n_qubits)]
-        self._run_inner(gates, operations, singlemats, n_qubits, basis,
-                        mat1_decomposer)
+        TwoQubitGateDecomposingTranspiler._run_inner(gates, operations,
+                                                     singlemats, n_qubits,
+                                                     basis, mat1_decomposer)
         for i, mat in enumerate(singlemats):
             if not np.allclose(mat, _eye):
                 operations += mat1_decomposer(Mat1Gate((i, ), mat))
         return Circuit(n_qubits, operations)
+
+
+def two_qubit_gate_decompose(
+    circuit: Circuit,
+    basis: Union[str, Sequence[str]],
+    mat1_decomposer: Optional[Callable[[OneQubitGate], List[Operation]]] = None
+) -> Circuit:
+    """Function for decompose two qubit gates.
+
+    This function is experimenatal feature.
+    It may be deleted or destructively changed in future release."""
+    return TwoQubitGateDecomposingTranspiler.run(
+        circuit.ops,
+        circuit.n_qubits,
+        basis=basis,
+        mat1_decomposer=mat1_decomposer)
