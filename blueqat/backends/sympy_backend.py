@@ -19,7 +19,6 @@ from .backendbase import Backend
 
 
 def lazy_import():
-    global eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix, sympy_gate, TensorProduct, sympy
     from sympy import eye, symbols, sin, cos, exp, sqrt, pi, I, Matrix
     from sympy.physics.quantum import TensorProduct
     import sympy
