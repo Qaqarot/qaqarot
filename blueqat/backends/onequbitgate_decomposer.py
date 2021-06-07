@@ -40,7 +40,7 @@ def u_decomposer(gate: OneQubitGate) -> List[UGate]:
     try:
         theta = math.acos(cos_halftheta) * 2
     except ValueError: # math domain error
-        assert abs(cos_halftheta - 1.0) < 1e-8
+        assert abs(abs(cos_halftheta) - 1.0) < 1e-8
         if cos_halftheta > 0:
             theta = 0.0
         else:
@@ -71,7 +71,14 @@ def ryrz_decomposer(gate: OneQubitGate) -> List[Union[RYGate, RZGate]]:
     assert abs(mat[0, 0].imag) < 1e-8
     cos_halftheta = mat[0, 0].real
     sin_halftheta = 1.0 - cos_halftheta ** 2
-    theta = math.acos(cos_halftheta) * 2
+    try:
+        theta = math.acos(cos_halftheta) * 2
+    except ValueError: # math domain error
+        assert abs(abs(cos_halftheta) - 1.0) < 1e-8
+        if cos_halftheta > 0:
+            theta = 0.0
+        else:
+            theta = math.pi
     if abs(sin_halftheta) < 1e-8:
         phi = 0.0
         lam = cmath.phase(mat[1, 1])
