@@ -13,13 +13,13 @@
 # limitations under the License.
 """Utilities for convenient."""
 from collections import Counter
+import typing
 from typing import Dict, Tuple, Union
 
 import numpy as np
 
-from blueqat import Circuit
-
-
+if typing.TYPE_CHECKING:
+    from . import Circuit
 
 
 def to_inttuple(
@@ -76,9 +76,13 @@ def check_unitarity(mat: np.ndarray) -> bool:
     return np.allclose(mat @ mat.T.conjugate(), np.eye(shape[0]))
 
 
-def circuit_to_unitary(circ: Circuit, *runargs, **runkwargs):
+def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs):
     """Make circuit to unitary. This function is experimental feature and
     may changed or deleted in the future."""
+
+    # To avoid circuilar import, import here.
+    from . import Circuit
+
     runkwargs.setdefault('returns', 'statevector')
     runkwargs.setdefault('ignore_global', False)
     n_qubits = circ.n_qubits
