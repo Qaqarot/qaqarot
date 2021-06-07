@@ -432,7 +432,7 @@ class UGate(OneQubitGate):
 
     def matrix(self):
         t, p, l, g = self.params
-        gphase = cmath.exp(g)
+        gphase = cmath.exp(1j * g)
         cos_t = math.cos(0.5 * t)
         sin_t = math.sin(0.5 * t)
         return np.array(
