@@ -547,7 +547,7 @@ class Opt:
             self.E.append(EE)
             qtemp = (np.asarray(q, int) + 1) / 2
             qq.append([int(s) for s in qtemp])
-            if verbose == True:
+            if verbose:
                 print(i, ':', [int(s) for s in qtemp])
             if shots == 1:
                 qq = qq[0]
@@ -666,6 +666,6 @@ class Opt:
             model_qubo = self.rbm_model_qubo(shots=shots, targetT=targetT)
             self.qubo = np.asarray(self.qubo) * alpha + epsilon * (
                 np.asarray(data_qubo) - np.asarray(model_qubo))
-            if verbose == True:
+            if verbose:
                 print("epoch", i, ":", self.qubo)
 
