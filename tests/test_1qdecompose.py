@@ -1,3 +1,4 @@
+import cmath
 from math import pi
 import random
 from typing import Callable, List
@@ -21,20 +22,39 @@ def check_decomposed(g: OneQubitGate, d: Decomposer, ignore_global: bool):
     c2 = Circuit(1, d(g))
     u1 = circuit_to_unitary(c1)
     u2 = circuit_to_unitary(c2)
+    if ignore_global:
+        gphase1 = cmath.phase(np.linalg.det(u1))
+        gphase2 = cmath.phase(np.linalg.det(u2))
+        su1 = u1 * cmath.exp(-0.5j * gphase1)
+        su2 = u2 * cmath.exp(-0.5j * gphase2)
+        assert np.isclose(np.linalg.det(su1), 1.0)
+        assert np.isclose(np.linalg.det(su2), 1.0)
+    else:
+        su1 = su2 = np.eye(2) # To avoid static analyzer warning.
     try:
-        if not ignore_global:
-            assert np.allclose(u1, u2)
+        if ignore_global:
+            assert np.allclose(su1, su2) or np.allclose(su1, -su2)
         else:
-            # If u1 and u2 are same, u1 u2† = e^iθ I.
-            # But, vice versa? I'm not sure...
-            u = u1 @ u2.T.conj()
-            gphase = np.sqrt(np.linalg.det(u))
-            assert np.allclose(u, gphase * np.eye(2, dtype=complex))
+            assert np.allclose(u1, u2)
     except AssertionError:
         print("Orig:", c1)
         print(u1)
+        if ignore_global:
+            print("-->")
+            print(su1)
         print("Conv:", c2)
         print(u2)
+        if ignore_global:
+            print("-->")
+            print(su2)
+        if ignore_global:
+            print("abs(Orig - Conv):")
+            print(np.abs(su1 - su2))
+            print("abs(Orig + Conv):")
+            print(np.abs(su1 + su2))
+        else:
+            print("abs(Orig - Conv):")
+            print(np.abs(u1 - u2))
         raise
 
 
@@ -69,7 +89,7 @@ def test_random_ry(decomposer):
     for _ in range(20):
         t = random.random() * pi
         g = RYGate((0, ), t)
-        check_decomposed(g, decomposer, False)
+        check_decomposed(g, decomposer, True)
 
 
 @decomposer_test
@@ -77,7 +97,7 @@ def test_random_rz(decomposer):
     for _ in range(20):
         t = random.random() * pi
         g = RZGate((0, ), t)
-        check_decomposed(g, decomposer, False)
+        check_decomposed(g, decomposer, True)
 
 
 @decomposer_test
@@ -85,7 +105,7 @@ def test_random_r(decomposer):
     for _ in range(20):
         t = random.random() * pi
         g = PhaseGate((0, ), t)
-        check_decomposed(g, decomposer, False)
+        check_decomposed(g, decomposer, True)
 
 
 @decomposer_test
