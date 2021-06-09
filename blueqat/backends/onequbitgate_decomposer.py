@@ -14,10 +14,27 @@
 
 import math
 import cmath
-from typing import List, Union
+import typing
+from typing import List, Tuple, Union
 
 from ..utils import check_unitarity
 from ..gate import OneQubitGate, RYGate, RZGate, UGate
+
+if typing.TYPE_CHECKING:
+    import numpy as np
+
+
+def calc_uparams(mat: 'np.ndarray') -> Tuple[float, float, float, float]:
+    """Calculate U-gate parameters from a 2x2 unitary matrix."""
+    assert mat.shape == (2, 2)
+    assert check_unitarity(mat)
+    gamma = cmath.phase(mat[0, 0])
+    mat = mat * cmath.exp(-1j * gamma)
+    theta = math.atan2(abs(mat[1, 0]), mat[0, 0].real) * 2.0
+    phi_plus_lambda = cmath.phase(mat[1, 1])
+    phi = cmath.phase(mat[1, 0]) % (2.0 * math.pi)
+    lam = (phi_plus_lambda - phi) % (2.0 * math.pi)
+    return theta, phi, lam, gamma
 
 
 def u_decomposer(gate: OneQubitGate) -> List[UGate]:
@@ -30,27 +47,7 @@ def u_decomposer(gate: OneQubitGate) -> List[UGate]:
         List of U gate. length is always 1.
     """
     mat = gate.matrix()
-    assert mat.shape == (2, 2)
-    assert check_unitarity(mat)
-    gamma = cmath.phase(mat[0, 0])
-    mat *= cmath.exp(-1j * gamma)
-    assert abs(mat[0, 0].imag) < 1e-8
-    cos_halftheta = mat[0, 0].real
-    sin_halftheta = 1.0 - cos_halftheta ** 2
-    try:
-        theta = math.acos(cos_halftheta) * 2
-    except ValueError: # math domain error
-        assert abs(abs(cos_halftheta) - 1.0) < 1e-8
-        if cos_halftheta > 0:
-            theta = 0.0
-        else:
-            theta = math.pi
-    if abs(sin_halftheta) < 1e-8:
-        phi = 0.0
-        lam = cmath.phase(mat[1, 1])
-    else:
-        phi = cmath.phase(mat[1, 0])
-        lam = cmath.phase(mat[0, 1])
+    theta, phi, lam, gamma = calc_uparams(mat)
     return [UGate(gate.targets, theta, phi, lam, gamma)]
 
 
@@ -64,33 +61,15 @@ def ryrz_decomposer(gate: OneQubitGate) -> List[Union[RYGate, RZGate]]:
         List of RZ and RY gate. The global phase is omitted.
     """
     mat = gate.matrix()
-    assert mat.shape == (2, 2)
-    assert check_unitarity(mat)
-    gamma = cmath.phase(mat[0, 0])
-    mat *= cmath.exp(-1j * gamma)
-    assert abs(mat[0, 0].imag) < 1e-8
-    cos_halftheta = mat[0, 0].real
-    sin_halftheta = 1.0 - cos_halftheta ** 2
-    try:
-        theta = math.acos(cos_halftheta) * 2
-    except ValueError: # math domain error
-        assert abs(abs(cos_halftheta) - 1.0) < 1e-8
-        if cos_halftheta > 0:
-            theta = 0.0
-        else:
-            theta = math.pi
-    if abs(sin_halftheta) < 1e-8:
-        phi = 0.0
-        lam = cmath.phase(mat[1, 1])
-    else:
-        phi = cmath.phase(mat[1, 0])
-        lam = cmath.phase(mat[0, 1])
-    if theta < 1e-8:
-        return [RZGate(gate.targets, lam + phi)]
-    gates = []
-    if lam > 1e-8:
-        gates.append(RZGate(gate.targets, lam))
-    gates.append(RYGate(gate.targets, theta))
-    if phi > 1e-8:
-        gates.append(RZGate(gate.targets, phi))
-    return gates
+    theta, phi, lam, _ = calc_uparams(mat)
+    if theta < 1e-10:
+        if phi + lam < 1e-10:
+            return []
+        return [RZGate(gate.targets, phi + lam)]
+    ops = []
+    if 1e-10 < lam < 2.0 * math.pi - 1e-10:
+        ops.append(RZGate(gate.targets, lam))
+    ops.append(RYGate(gate.targets, theta))
+    if 1e-10 < phi < 2.0 * math.pi - 1e-10:
+        ops.append(RZGate(gate.targets, phi))
+    return ops
