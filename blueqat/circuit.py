@@ -227,7 +227,9 @@ class Circuit:
                 backend = DEFAULT_BACKEND_NAME
             else:
                 backend = self._default_backend
-        return self.__get_backend(backend).make_cache(self.ops, self.n_qubits)
+        if isinstance(backend, str):
+            backend = self.__get_backend(backend)
+        return backend.make_cache(self.ops, self.n_qubits)
 
     def to_qasm(self, *args, **kwargs):
         """Returns the OpenQASM output of this circuit."""
@@ -279,19 +281,21 @@ class Circuit:
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
-        if backend.hasattr('statevector'):
-            return backend.statevector(self.ops, self.n_qubits, *args,
+        if hasattr(backend, 'statevector'):
+            return backend.statevector(self.ops, self.n_qubits,
                                        **kwargs)
         return backend.run(self.ops,
                            self.n_qubits,
-                           *args,
                            returns='statevector',
                            **kwargs)
 
-    def shots(self, *args, backend=None, **kwargs) -> typing.Counter[str]:
+    def shots(self,
+              shots: int,
+              backend: BackendUnion = None,
+              **kwargs) -> typing.Counter[str]:
         """Run the circuit and get shots as a result."""
         if kwargs.get('returns'):
-            raise ValueError('Circuit.statevector has no argument `returns`.')
+            raise ValueError('Circuit.shots has no argument `returns`.')
         if backend is None:
             if self._default_backend is None:
                 backend = self.__get_backend(DEFAULT_BACKEND_NAME)
@@ -300,18 +304,23 @@ class Circuit:
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
-        if backend.hasattr('shots'):
-            return backend.shots(self.ops, self.n_qubits, *args, **kwargs)
+        if hasattr(backend, 'shots'):
+            return backend.shots(self.ops,
+                                 self.n_qubits,
+                                 shots=shots,
+                                 **kwargs)
         return backend.run(self.ops,
                            self.n_qubits,
-                           *args,
+                           shots=shots,
                            returns='shots',
                            **kwargs)
 
-    def oneshot(self, *args, backend=None, **kwargs) -> Tuple[np.ndarray, str]:
+    def oneshot(self,
+                backend: BackendUnion = None,
+                **kwargs) -> Tuple[np.ndarray, str]:
         """Run the circuit and get shots as a result."""
         if kwargs.get('returns'):
-            raise ValueError('Circuit.statevector has no argument `returns`.')
+            raise ValueError('Circuit.oneshot has no argument `returns`.')
         if backend is None:
             if self._default_backend is None:
                 backend = self.__get_backend(DEFAULT_BACKEND_NAME)
@@ -320,11 +329,11 @@ class Circuit:
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
-        if backend.hasattr('oneshot'):
-            return backend.shots(self.ops, self.n_qubits, *args, **kwargs)
+        if hasattr(backend, 'oneshot'):
+            return backend.oneshot(self.ops, self.n_qubits, **kwargs)
         v, cnt = backend.run(self.ops,
                              self.n_qubits,
-                             *args,
+                             shots=1,
                              returns='statevector_and_shots',
                              **kwargs)
         return v, cnt.most_common()[0][0]
