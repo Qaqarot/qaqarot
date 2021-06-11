@@ -141,10 +141,8 @@ class Circuit:
         return self
 
     def copy(self,
-             copy_backends=True,
-             copy_default_backend=True,
-             copy_cache=None,
-             copy_history=None):
+             copy_backends: bool = True,
+             copy_default_backend: bool = True) -> 'Circuit':
         """Copy the circuit.
 
         params:
@@ -156,15 +154,6 @@ class Circuit:
             copied._backends = {k: v.copy() for k, v in self._backends.items()}
         if copy_default_backend:
             copied._default_backend = self._default_backend
-
-        # Warn for deprecated options
-        if copy_cache is not None:
-            warnings.warn(
-                "copy_cache is deprecated. Use copy_backends instead.",
-                DeprecationWarning)
-        if copy_history is not None:
-            warnings.warn("copy_history is deprecated.", DeprecationWarning)
-
         return copied
 
     def dagger(self,
