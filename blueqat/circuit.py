@@ -222,7 +222,7 @@ class Circuit:
             backend = self.__get_backend(backend)
         return backend.run(self.ops, self.n_qubits, *args, **kwargs)
 
-    def make_cache(self, backend: BackendUnion = None) -> None:
+    def make_cache(self, backend: 'BackendUnion' = None) -> None:
         """Make a cache to reduce the time of run. Some backends may implemented it.
 
         This is temporary API. It may changed or deprecated."""
@@ -274,7 +274,7 @@ class Circuit:
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
 
     def statevector(self,
-                    backend: BackendUnion = None,
+                    backend: 'BackendUnion' = None,
                     **kwargs) -> np.ndarray:
         """Run the circuit and get a statevector as a result."""
         if kwargs.get('returns'):
@@ -297,7 +297,7 @@ class Circuit:
 
     def shots(self,
               shots: int,
-              backend: BackendUnion = None,
+              backend: 'BackendUnion' = None,
               **kwargs) -> typing.Counter[str]:
         """Run the circuit and get shots as a result."""
         if kwargs.get('returns'):
@@ -322,7 +322,7 @@ class Circuit:
                            **kwargs)
 
     def oneshot(self,
-                backend: BackendUnion = None,
+                backend: 'BackendUnion' = None,
                 **kwargs) -> Tuple[np.ndarray, str]:
         """Run the circuit and get shots as a result."""
         if kwargs.get('returns'):
