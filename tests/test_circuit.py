@@ -165,7 +165,8 @@ def test_toffoli_gate(bits, backend):
 
 def test_u_gate(backend):
     assert np.allclose(
-        Circuit().u(1.23, 4.56, -5.43, -0.5 * (4.56 - 5.43))[1].run(backend=backend),
+        Circuit().u(1.23, 4.56, -5.43,
+                    -0.5 * (4.56 - 5.43))[1].run(backend=backend),
         Circuit().rz(-5.43)[1].ry(1.23)[1].rz(4.56)[1].run(backend=backend))
 
 
@@ -183,7 +184,8 @@ def test_rotation1(backend):
 
 def test_crotation(backend):
     assert np.allclose(
-        Circuit().cu(1.23, 4.56, -5.43, -0.5 * (4.56 - 5.43))[3, 1].run(backend=backend),
+        Circuit().cu(1.23, 4.56, -5.43,
+                     -0.5 * (4.56 - 5.43))[3, 1].run(backend=backend),
         Circuit().crz(-5.43)[3,
                              1].cry(1.23)[3,
                                           1].crz(4.56)[3,
@@ -212,10 +214,12 @@ def test_globalphase_rz(backend):
     c = Circuit().rz(theta)[0]
     assert abs(c.run(backend=backend)[0] - cmath.exp(-0.5j * theta)) < 1e-8
 
+
 def test_globalphase_r(backend):
     theta = 1.2
     c = Circuit().phase(theta)[0]
     assert abs(c.run(backend=backend)[0] - 1) < 1e-8
+
 
 def test_globalphase_u(backend):
     theta = 1.2
@@ -224,13 +228,16 @@ def test_globalphase_u(backend):
     c = Circuit().u(theta, phi, lambd)[0]
     assert abs(c.run(backend=backend)[0] - math.cos(theta / 2)) < 1e-8
 
+
 def test_globalphase_u_with_gamma(backend):
     theta = 1.2
     phi = 1.6
     lambd = 2.3
     gamma = -1.4
     c = Circuit().u(theta, phi, lambd, gamma)[0]
-    assert abs(c.run(backend=backend)[0] - cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
+    assert abs(
+        c.run(backend=backend)[0] -
+        cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
 
 
 def test_controlled_gate_phase_crz(backend):
@@ -278,7 +285,8 @@ def test_controlled_gate_phase_cu_with_gamma(backend):
     v0 = c0.run(backend=backend)
     v1 = c1.run(backend=backend)
     assert abs(abs(v0[0]) - 1) < 1e-8
-    assert abs(v1[1] / v0[0] - cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
+    assert abs(v1[1] / v0[0] -
+               cmath.exp(1j * gamma) * math.cos(theta / 2)) < 1e-8
 
 
 def test_measurement1(backend):
@@ -443,7 +451,11 @@ def test_complicated_circuit(backend):
     c.cx[0, 2].h[0].rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2]
     c.cx[0, 2].cx[2, 3].rz(0.095491506289)[3].cx[2, 3].cx[0, 2].h[0]
     c.rx(1.5707963267948966)[2].h[0].ry(-1.5707963267948966)[2].cx[0, 1]
-    c.cx[1, 2].rz(0.095491506289)[2].cx[1, 2].cx[0, 1].h[0].u(math.pi / 2, 1.58, -0.62)[2]
+    c.cx[1,
+         2].rz(0.095491506289)[2].cx[1,
+                                     2].cx[0,
+                                           1].h[0].u(math.pi / 2, 1.58,
+                                                     -0.62)[2]
     c.h[0].rx(-1.5707963267948966)[2].cx[0, 1].cx[1, 2].cx[2, 3]
     c.rz(0.095491506289)[3].cx[2, 3].cx[1, 2].cx[0, 1].h[0]
     c.rx(1.5707963267948966)[2].u(0.42, -1.5707963267948966, 1.64)[2].h[2]
@@ -640,7 +652,8 @@ def test_initial_vec(backend):
 
     c = Circuit().h[0]
     v1 = c.run(backend=backend)
-    assert np.allclose(c.run(backend=backend, initial=v1), Circuit(1).run(backend=backend))
+    assert np.allclose(c.run(backend=backend, initial=v1),
+                       Circuit(1).run(backend=backend))
 
 
 def test_initial_vec2(backend):
@@ -667,3 +680,19 @@ def test_initial_vec3(backend):
     v = Circuit(4).h[3].run(backend=backend)
     v2 = Circuit(4).run(backend=backend, initial=v)
     assert np.allclose(v, v2)
+
+
+def test_statevector_method(backend):
+    assert isinstance(
+        Circuit().h[0].cx[0, 1].m[:].statevector(backend=backend), np.ndarray)
+
+
+def test_shots_method(backend):
+    assert isinstance(
+        Circuit().h[0].cx[0, 1].m[:].shots(200, backend=backend), Counter)
+
+
+def test_oneshot_method(backend):
+    vec, meas = Circuit().h[0].cx[0, 1].m[:].oneshot(backend=backend)
+    assert isinstance(vec, np.ndarray)
+    assert isinstance(meas, str)
