@@ -17,9 +17,16 @@ This module defines Circuit and the setting for circuit.
 
 import warnings
 from functools import partial
-from typing import Callable
+import typing
+from typing import Callable, Tuple
+
+import numpy as np
 
 from . import gate
+
+if typing.TYPE_CHECKING:
+    from .backends.backendbase import Backend
+    BackendUnion = typing.Union[None, str, Backend]
 
 GATE_SET = {
     # 1 qubit gates (alphabetical)
@@ -92,7 +99,7 @@ class Circuit:
         return f'Circuit({self.n_qubits}).' + '.'.join(
             str(op) for op in self.ops)
 
-    def __get_backend(self, backend_name):
+    def __get_backend(self, backend_name: str) -> 'Backend':
         try:
             return self._backends[backend_name]
         except KeyError:
@@ -138,10 +145,8 @@ class Circuit:
         return self
 
     def copy(self,
-             copy_backends=True,
-             copy_default_backend=True,
-             copy_cache=None,
-             copy_history=None):
+             copy_backends: bool = True,
+             copy_default_backend: bool = True) -> 'Circuit':
         """Copy the circuit.
 
         params:
@@ -153,26 +158,17 @@ class Circuit:
             copied._backends = {k: v.copy() for k, v in self._backends.items()}
         if copy_default_backend:
             copied._default_backend = self._default_backend
-
-        # Warn for deprecated options
-        if copy_cache is not None:
-            warnings.warn(
-                "copy_cache is deprecated. Use copy_backends instead.",
-                DeprecationWarning)
-        if copy_history is not None:
-            warnings.warn("copy_history is deprecated.", DeprecationWarning)
-
         return copied
 
     def dagger(self,
-               ignore_measurement=False,
-               copy_backends=False,
-               copy_default_backend=True):
+               ignore_measurement: bool = False,
+               copy_backends: bool = False,
+               copy_default_backend: bool = True) -> 'Circuit':
         """Make Hermitian conjugate of the circuit.
 
         This feature is beta. Interface may be changed.
 
-        ignore_measurement (bool, optional): 
+        ignore_measurement (bool, optional):
             | If True, ignore the measurement in the circuit.
             | Otherwise, if measurement in the circuit, raises ValueError.
         """
@@ -210,7 +206,7 @@ class Circuit:
             |   e.g. "statevector" returns the state vector after run the circuit.
             |         "shots" returns the counter of measured value.
             | token, url (str, optional): The token and URL for cloud resource.
-        
+
         Returns:
             Depends on backend.
 
@@ -226,7 +222,7 @@ class Circuit:
             backend = self.__get_backend(backend)
         return backend.run(self.ops, self.n_qubits, *args, **kwargs)
 
-    def make_cache(self, backend=None):
+    def make_cache(self, backend: 'BackendUnion' = None) -> None:
         """Make a cache to reduce the time of run. Some backends may implemented it.
 
         This is temporary API. It may changed or deprecated."""
@@ -235,7 +231,9 @@ class Circuit:
                 backend = DEFAULT_BACKEND_NAME
             else:
                 backend = self._default_backend
-        return self.__get_backend(backend).make_cache(self.ops, self.n_qubits)
+        if isinstance(backend, str):
+            backend = self.__get_backend(backend)
+        return backend.make_cache(self.ops, self.n_qubits)
 
     def to_qasm(self, *args, **kwargs):
         """Returns the OpenQASM output of this circuit."""
@@ -245,7 +243,7 @@ class Circuit:
         """Returns sympy unitary matrix of this circuit."""
         return self.run_with_sympy_unitary(*args, **kwargs)
 
-    def set_default_backend(self, backend_name):
+    def set_default_backend(self, backend_name: str) -> None:
         """Set the default backend of this circuit.
 
         This setting is only applied for this circuit.
@@ -267,13 +265,84 @@ class Circuit:
             raise ValueError(f"Unknown backend '{backend_name}'.")
         self._default_backend = backend_name
 
-    def get_default_backend_name(self):
+    def get_default_backend_name(self) -> str:
         """Get the default backend of this circuit or global setting.
 
         Returns:
             str: The name of default backend.
         """
         return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
+
+    def statevector(self,
+                    backend: 'BackendUnion' = None,
+                    **kwargs) -> np.ndarray:
+        """Run the circuit and get a statevector as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.statevector has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if hasattr(backend, 'statevector'):
+            return backend.statevector(self.ops, self.n_qubits,
+                                       **kwargs)
+        return backend.run(self.ops,
+                           self.n_qubits,
+                           returns='statevector',
+                           **kwargs)
+
+    def shots(self,
+              shots: int,
+              backend: 'BackendUnion' = None,
+              **kwargs) -> typing.Counter[str]:
+        """Run the circuit and get shots as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.shots has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if hasattr(backend, 'shots'):
+            return backend.shots(self.ops,
+                                 self.n_qubits,
+                                 shots=shots,
+                                 **kwargs)
+        return backend.run(self.ops,
+                           self.n_qubits,
+                           shots=shots,
+                           returns='shots',
+                           **kwargs)
+
+    def oneshot(self,
+                backend: 'BackendUnion' = None,
+                **kwargs) -> Tuple[np.ndarray, str]:
+        """Run the circuit and get shots as a result."""
+        if kwargs.get('returns'):
+            raise ValueError('Circuit.oneshot has no argument `returns`.')
+        if backend is None:
+            if self._default_backend is None:
+                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
+            else:
+                backend = self.__get_backend(self._default_backend)
+        elif isinstance(backend, str):
+            backend = self.__get_backend(backend)
+
+        if hasattr(backend, 'oneshot'):
+            return backend.oneshot(self.ops, self.n_qubits, **kwargs)
+        v, cnt = backend.run(self.ops,
+                             self.n_qubits,
+                             shots=1,
+                             returns='statevector_and_shots',
+                             **kwargs)
+        return v, cnt.most_common()[0][0]
 
 
 class _GateWrapper:
