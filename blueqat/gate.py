@@ -13,15 +13,16 @@ import numpy as np
 class Operation:
     """Abstract quantum circuit operation class."""
 
-    lowername: Optional[str] = None
+    lowername: str = ''
     """Lower name of the operation."""
+
     @property
     def uppername(self) -> str:
-        """Upper name of the gate."""
+        """Upper name of the operation."""
         return self.lowername.upper()
 
     def __init__(self, targets, params=(), **kwargs) -> None:
-        if self.lowername is None:
+        if self.lowername == '':
             raise ValueError(
                 f"{self.__class__.__name__}.lowername is not defined.")
         self.params = params
