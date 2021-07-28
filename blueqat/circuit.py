@@ -93,7 +93,6 @@ class Circuit:
     def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
         self._backends: Dict[str, 'Backend'] = {}
-        self._default_backend = None
         self.n_qubits = n_qubits
 
     def __repr__(self):
@@ -146,25 +145,19 @@ class Circuit:
         return self
 
     def copy(self,
-             copy_backends: bool = True,
-             copy_default_backend: bool = True) -> 'Circuit':
+             copy_backends: bool = True) -> 'Circuit':
         """Copy the circuit.
 
         params:
             | copy_backends :bool copy backends if True.
-            | copy_default_backend :bool copy default_backend if True.
         """
         copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_backends:
             copied._backends = {k: v.copy() for k, v in self._backends.items()}
-        if copy_default_backend:
-            copied._default_backend = self._default_backend
         return copied
 
     def dagger(self,
-               ignore_measurement: bool = False,
-               copy_backends: bool = False,
-               copy_default_backend: bool = True) -> 'Circuit':
+               ignore_measurement: bool = False) -> 'Circuit':
         """Make Hermitian conjugate of the circuit.
 
         This feature is beta. Interface may be changed.
@@ -184,11 +177,6 @@ class Circuit:
                         'the circuit contains measurement.')
 
         copied = Circuit(self.n_qubits, ops)
-        if copy_backends:
-            copied._backends = {k: v.copy() for k, v in self._backends.items()}
-        if copy_default_backend:
-            copied._default_backend = self._default_backend
-
         return copied
 
     def run(self, *args, backend=None, **kwargs):
@@ -215,10 +203,7 @@ class Circuit:
             Depends on backend.
         """
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
         return backend.run(self.ops, self.n_qubits, *args, **kwargs)
@@ -228,10 +213,7 @@ class Circuit:
 
         This is temporary API. It may changed or deprecated."""
         if backend is None:
-            if self._default_backend is None:
-                backend = DEFAULT_BACKEND_NAME
-            else:
-                backend = self._default_backend
+            backend = DEFAULT_BACKEND_NAME
         if isinstance(backend, str):
             backend = self.__get_backend(backend)
         return backend.make_cache(self.ops, self.n_qubits)
@@ -244,36 +226,6 @@ class Circuit:
         """Returns sympy unitary matrix of this circuit."""
         return self.run_with_sympy_unitary(*args, **kwargs)
 
-    def set_default_backend(self, backend_name: str) -> None:
-        """Set the default backend of this circuit.
-
-        This setting is only applied for this circuit.
-        If you want to change the default backend of all gates,
-        use `BlueqatGlobalSetting.set_default_backend()`.
-
-        After set the default backend by this method,
-        global setting is ignored even if `BlueqatGlobalSetting.set_default_backend()` is called.
-        If you want to use global default setting, call this method with backend_name=None.
-
-        Args:
-            | backend_name (str or None): new default backend name.
-            |     If None is given, global setting is applied.
-
-        Raises:
-            ValueError: If `backend_name` is not registered backend.
-        """
-        if backend_name not in BACKENDS:
-            raise ValueError(f"Unknown backend '{backend_name}'.")
-        self._default_backend = backend_name
-
-    def get_default_backend_name(self) -> str:
-        """Get the default backend of this circuit or global setting.
-
-        Returns:
-            str: The name of default backend.
-        """
-        return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
-
     def statevector(self,
                     backend: 'BackendUnion' = None,
                     **kwargs) -> np.ndarray:
@@ -281,10 +233,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.statevector has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -304,10 +253,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.shots has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -329,10 +275,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.oneshot has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -489,7 +432,6 @@ class BlueqatGlobalSetting:
             | name (str): The name of backend.
             | gateclass (type): The type object of backend
             | allow_overwrite (bool, optional): If True, allow to overwrite the existing backend.
-              
                 Otherwise, raise the ValueError.
 
         Raises:
@@ -517,7 +459,7 @@ class BlueqatGlobalSetting:
         Raises:
             ValueError: Specified backend is not registered.
         """
-        if name not in GATE_SET:
+        if name not in BACKENDS:
             raise ValueError(f"Backend '{name}' is not registered.")
         del BACKENDS[name]
 
