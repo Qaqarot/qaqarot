@@ -5,9 +5,11 @@ This module is internally used.
 
 import cmath
 import math
-from typing import Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Union
+from typing import Callable, Iterable, Iterator, List, NoReturn, Tuple, Type, TypeVar, Union
 
 import numpy as np
+
+_Op = TypeVar('_Op', bound='Operation')
 
 
 class Operation:
@@ -15,7 +17,6 @@ class Operation:
 
     lowername: str = ''
     """Lower name of the operation."""
-
     @property
     def uppername(self) -> str:
         """Upper name of the operation."""
@@ -32,6 +33,12 @@ class Operation:
     def target_iter(self, n_qubits: int) -> Iterator[int]:
         """The generator which yields the target qubits."""
         return slicing(self.targets, n_qubits)
+
+    @classmethod
+    def create(cls: Type[_Op], targets: Union[int, slice, tuple],
+            params: tuple) -> _Op:
+        """Create an operation."""
+        raise NotImplementedError(f"{cls.__name__}.create() is not defined.")
 
     def fallback(self, n_qubits: int) -> List['Operation']:
         """Returns alternative operations to make equivalent circuit."""
@@ -88,7 +95,7 @@ class Gate(Operation):
     def dagger(self) -> 'Gate':
         """Returns the Hermitian conjugate of `self`."""
         raise NotImplementedError(
-            f"Hermitian conjugate of this gate is not provided.")
+            "Hermitian conjugate of this gate is not provided.")
 
     def matrix(self) -> np.ndarray:
         """Returns the matrix of implementations.
@@ -102,7 +109,7 @@ class Gate(Operation):
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
 
-    u_params: Optional[Tuple[float, float, float, float]] = None
+    u_params: Tuple[float, float, float, float]
     """Params for U gate."""
     @property
     def n_qargs(self) -> int:
@@ -129,7 +136,7 @@ class OneQubitGate(Gate):
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
 
-    cu_params: Optional[Tuple[float, float, float, float]] = None
+    cu_params: Tuple[float, float, float, float]
 
     @property
     def n_qargs(self):
@@ -158,6 +165,10 @@ class HGate(OneQubitGate):
     lowername = "h"
     u_params = (-math.pi / 2.0, math.pi, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'HGate':
+        return cls(targets, *params)
+
     def dagger(self):
         return self
 
@@ -170,7 +181,11 @@ class IGate(OneQubitGate):
     lowername = "i"
     u_params = (0.0, 0.0, 0.0, 0.0)
 
-    def fallback(self, n_qubits):
+    @classmethod
+    def create(cls, targets, params) -> 'IGate':
+        return cls(targets, *params)
+
+    def fallback(self, _):
         return []
 
     def dagger(self):
@@ -192,6 +207,10 @@ class Mat1Gate(OneQubitGate):
     def __init__(self, targets, mat: np.ndarray, **kwargs):
         super().__init__(targets, (mat, ), **kwargs)
         self.mat = mat
+
+    @classmethod
+    def create(cls, targets, params) -> 'Mat1Gate':
+        return cls(targets, params[0])
 
     def dagger(self):
         return Mat1Gate(self.targets, self.mat.T.conjugate(), **self.kwargs)
@@ -221,11 +240,16 @@ class PhaseGate(OneQubitGate):
         self.theta = theta
         self.u_params = (0.0, self.theta, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'PhaseGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return PhaseGate(self.targets, -self.theta, **self.kwargs)
 
     def matrix(self):
-        return np.array([[1, 0], [0, cmath.exp(1j * self.theta)]], dtype=complex)
+        return np.array([[1, 0], [0, cmath.exp(1j * self.theta)]],
+                        dtype=complex)
 
 
 class RXGate(OneQubitGate):
@@ -236,6 +260,10 @@ class RXGate(OneQubitGate):
         super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
         self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'RXGate':
+        return cls(targets, params[0])
 
     def dagger(self):
         return RXGate(self.targets, -self.theta, **self.kwargs)
@@ -256,6 +284,10 @@ class RYGate(OneQubitGate):
         self.theta = theta
         self.u_params = (theta, 0.0, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'RYGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return RYGate(self.targets, -self.theta, **self.kwargs)
 
@@ -275,6 +307,10 @@ class RZGate(OneQubitGate):
         self.theta = theta
         self.u_params = (0.0, 0.0, theta, -0.5 * theta)
 
+    @classmethod
+    def create(cls, targets, params) -> 'RZGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return RZGate(self.targets, -self.theta, **self.kwargs)
 
@@ -287,6 +323,10 @@ class SGate(OneQubitGate):
     """S gate"""
     lowername = "s"
     u_params = (0.0, 0.0, math.pi / 2, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'SGate':
+        return cls(targets, params)
 
     def dagger(self):
         return SDagGate(self.targets, self.params, **self.kwargs)
@@ -303,6 +343,10 @@ class SDagGate(OneQubitGate):
     """Dagger of S gate"""
     lowername = "sdg"
     u_params = (0.0, 0.0, -math.pi / 2, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'SDagGate':
+        return cls(targets, params)
 
     def dagger(self):
         return SGate(self.targets, self.params, **self.kwargs)
@@ -321,6 +365,10 @@ class SXGate(OneQubitGate):
     This is equivalent as RX(π/2) * (1 + i) / √2."""
     lowername = "sx"
     u_params = (math.pi / 2.0, -math.pi / 2.0, math.pi / 2.0, math.pi / 4.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'SXGate':
+        return cls(targets, params)
 
     def dagger(self):
         return SXDagGate(self.targets, self.params, **self.kwargs)
@@ -346,6 +394,10 @@ class TGate(OneQubitGate):
     lowername = "t"
     u_params = (0, 0, math.pi / 4.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'TGate':
+        return cls(targets, params)
+
     def dagger(self):
         return TDagGate(self.targets, self.params, **self.kwargs)
 
@@ -360,6 +412,10 @@ class TDagGate(OneQubitGate):
     """Dagger of T ($\\pi/8$) gate"""
     lowername = "tdg"
     u_params = (0, 0, -math.pi / 4.0, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'TDagGate':
+        return cls(targets, params)
 
     def dagger(self):
         return TGate(self.targets, self.params, **self.kwargs)
@@ -378,6 +434,10 @@ class ToffoliGate(Gate):
     @property
     def n_qargs(self):
         return 3
+
+    @classmethod
+    def create(cls, targets, params) -> 'ToffoliGate':
+        return cls(targets, params)
 
     def dagger(self):
         return self
@@ -423,6 +483,10 @@ class UGate(OneQubitGate):
         self.gamma = gamma
         self.u_params = (theta, phi, lam, gamma)
 
+    @classmethod
+    def create(cls, targets, params) -> 'UGate':
+        return cls(targets, *params)
+
     def dagger(self):
         return UGate(self.targets, -self.theta, -self.lam, -self.phi,
                      -self.gamma, **self.kwargs)
@@ -448,6 +512,10 @@ class XGate(OneQubitGate):
     lowername = "x"
     u_params = (math.pi, 0.0, math.pi, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'XGate':
+        return cls(targets, params)
+
     def dagger(self):
         return self
 
@@ -460,6 +528,10 @@ class YGate(OneQubitGate):
     lowername = "y"
     u_params = (math.pi, math.pi / 2, math.pi / 2, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'YGate':
+        return cls(targets, params)
+
     def dagger(self):
         return self
 
@@ -471,6 +543,10 @@ class ZGate(OneQubitGate):
     """Pauli's Z gate"""
     lowername = "z"
     u_params = (0.0, 0.0, math.pi, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'ZGate':
+        return cls(targets, params)
 
     def dagger(self):
         return self
@@ -486,6 +562,10 @@ class CCZGate(Gate):
     @property
     def n_qargs(self):
         return 3
+
+    @classmethod
+    def create(cls, targets, params) -> 'CCZGate':
+        return cls(targets, params)
 
     def fallback(self, n_qubits):
         c1, c2, t = self.targets
@@ -521,6 +601,10 @@ class CHGate(TwoQubitGate):
     lowername = "ch"
     cu_params = (-math.pi / 2.0, math.pi, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CHGate':
+        return cls(targets, params)
+
     def dagger(self):
         return self
 
@@ -540,6 +624,10 @@ class CPhaseGate(TwoQubitGate):
         self.theta = theta
         self.cu_params = (0.0, self.theta, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CPhaseGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return CPhaseGate(self.targets, -self.theta, **self.kwargs)
 
@@ -557,6 +645,10 @@ class CRXGate(TwoQubitGate):
         super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
         self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'CRXGate':
+        return cls(targets, params[0])
 
     def dagger(self):
         return CRXGate(self.targets, -self.theta, **self.kwargs)
@@ -579,6 +671,10 @@ class CRYGate(TwoQubitGate):
         self.theta = theta
         self.cu_params = (theta, 0.0, 0.0, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CRYGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return CRYGate(self.targets, -self.theta, **self.kwargs)
 
@@ -600,6 +696,10 @@ class CRZGate(TwoQubitGate):
         self.theta = theta
         self.cu_params = (0.0, 0.0, theta, -0.5 * theta)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CRZGate':
+        return cls(targets, params[0])
+
     def dagger(self):
         return CRZGate(self.targets, -self.theta, **self.kwargs)
 
@@ -617,6 +717,10 @@ class CSwapGate(Gate):
     @property
     def n_qargs(self):
         return 3
+
+    @classmethod
+    def create(cls, targets, params) -> 'CSwapGate':
+        return cls(targets, params)
 
     def dagger(self):
         return self
@@ -650,6 +754,10 @@ class CUGate(TwoQubitGate):
         self.lam = lam
         self.gamma = gamma
 
+    @classmethod
+    def create(cls, targets, params) -> 'CUGate':
+        return cls(targets, *params)
+
     def dagger(self):
         return CUGate(self.targets, -self.theta, -self.lam, -self.phi,
                       -self.gamma, **self.kwargs)
@@ -658,12 +766,12 @@ class CUGate(TwoQubitGate):
         theta, phi, lam, gamma = self.params
         return self._make_fallback_for_control_target_iter(
             n_qubits, lambda c, t: [
-                PhaseGate((c,), gamma + 0.5 * (lam + phi)),
-                PhaseGate((t,), 0.5 * (lam - phi)),
+                PhaseGate((c, ), gamma + 0.5 * (lam + phi)),
+                PhaseGate((t, ), 0.5 * (lam - phi)),
                 CXGate((c, t)),
-                UGate((t,), -0.5 * theta, 0.0, -0.5 * (phi + lam)),
+                UGate((t, ), -0.5 * theta, 0.0, -0.5 * (phi + lam)),
                 CXGate((c, t)),
-                UGate((t,), 0.5 * theta, phi, 0.0)
+                UGate((t, ), 0.5 * theta, phi, 0.0)
             ])
 
     def matrix(self):
@@ -688,6 +796,10 @@ class CXGate(TwoQubitGate):
     lowername = "cx"
     cu_params = (math.pi, 0.0, math.pi, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CXGate':
+        return cls(targets, params)
+
     def dagger(self):
         return self
 
@@ -702,6 +814,10 @@ class CYGate(TwoQubitGate):
     lowername = "cy"
     cu_params = (math.pi, math.pi / 2, math.pi / 2, 0.0)
 
+    @classmethod
+    def create(cls, targets, params) -> 'CYGate':
+        return cls(targets, params)
+
     def dagger(self):
         return self
 
@@ -715,6 +831,10 @@ class CZGate(TwoQubitGate):
     """Controlled-Z gate"""
     lowername = "cz"
     cu_params = (0.0, 0.0, math.pi, 0.0)
+
+    @classmethod
+    def create(cls, targets, params) -> 'CZGate':
+        return cls(targets, params)
 
     def dagger(self):
         return self
@@ -732,6 +852,10 @@ class RXXGate(TwoQubitGate):
     def __init__(self, targets, theta, **kwargs):
         super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
+
+    @classmethod
+    def create(cls, targets, params) -> 'RXXGate':
+        return cls(targets, *params)
 
     def dagger(self):
         return RXXGate(self.targets, -self.theta, **self.kwargs)
@@ -762,6 +886,10 @@ class RYYGate(TwoQubitGate):
         super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
+    @classmethod
+    def create(cls, targets, params) -> 'RYYGate':
+        return cls(targets, *params)
+
     def dagger(self):
         return RYYGate(self.targets, -self.theta, **self.kwargs)
 
@@ -791,6 +919,10 @@ class RZZGate(TwoQubitGate):
         super().__init__(targets, (theta, ), **kwargs)
         self.theta = theta
 
+    @classmethod
+    def create(cls, targets, params) -> 'RZZGate':
+        return cls(targets, *params)
+
     def dagger(self):
         return RZZGate(self.targets, -self.theta, **self.kwargs)
 
@@ -815,6 +947,10 @@ class SwapGate(TwoQubitGate):
     def dagger(self):
         return self
 
+    @classmethod
+    def create(cls, targets, params) -> 'SwapGate':
+        return cls(targets, params)
+
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
             n_qubits,
@@ -838,6 +974,10 @@ class ZZGate(TwoQubitGate):
     def __init__(self, targets, **kwargs):
         super().__init__(targets, (), **kwargs)
 
+    @classmethod
+    def create(cls, targets, params) -> 'ZZGate':
+        return cls(targets)
+
     def dagger(self):
         return self
 
@@ -858,6 +998,10 @@ class Measurement(Operation):
     """Measurement operation"""
     lowername = "measure"
 
+    @classmethod
+    def create(cls, targets, params) -> 'Measurement':
+        return cls(targets)
+
     # Ad-hoc copy and paste programming.
     def target_iter(self, n_qubits):
         """The generator which yields the target qubits."""
@@ -867,6 +1011,10 @@ class Measurement(Operation):
 class Reset(Operation):
     """Reset operation"""
     lowername = "reset"
+
+    @classmethod
+    def create(cls, targets, params) -> 'Reset':
+        return cls(targets)
 
     # Ad-hoc copy and paste programming.
     def target_iter(self, n_qubits):

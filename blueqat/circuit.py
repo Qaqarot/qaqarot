@@ -18,13 +18,14 @@ This module defines Circuit and the setting for circuit.
 import warnings
 from functools import partial
 import typing
-from typing import Callable, Tuple
+from typing import Callable, Dict, Optional, Tuple, Type
 
 import numpy as np
 
 from . import gate
 
 if typing.TYPE_CHECKING:
+    from .gate import Operation
     from .backends.backendbase import Backend
     BackendUnion = typing.Union[None, str, Backend]
 
@@ -91,7 +92,7 @@ class Circuit:
     """Store the gate operations and call the backends."""
     def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
-        self._backends = {}
+        self._backends: Dict[str, 'Backend'] = {}
         self._default_backend = None
         self.n_qubits = n_qubits
 
@@ -222,7 +223,7 @@ class Circuit:
             backend = self.__get_backend(backend)
         return backend.run(self.ops, self.n_qubits, *args, **kwargs)
 
-    def make_cache(self, backend: 'BackendUnion' = None) -> None:
+    def make_cache(self, backend: Optional['BackendUnion'] = None) -> None:
         """Make a cache to reduce the time of run. Some backends may implemented it.
 
         This is temporary API. It may changed or deprecated."""
@@ -346,31 +347,31 @@ class Circuit:
 
 
 class _GateWrapper:
-    def __init__(self, circuit, name, gate):
+    def __init__(self, circuit: Circuit, name: str, g: Type['Operation']):
         self.circuit = circuit
         self.target = None
         self.name = name
-        self.gate = gate
-        self.args = ()
+        self.gate = g
+        self.params = ()
         self.kwargs = {}
 
     def __call__(self, *args, **kwargs):
-        self.args = args
+        self.params = args
         self.kwargs = kwargs
         return self
 
     def __getitem__(self, args):
         self.target = args
         self.circuit.ops.append(
-            self.gate(self.target, *self.args, **self.kwargs))
+            self.gate.create(self.target, self.params, **self.kwargs))
         # ad-hoc
         self.circuit.n_qubits = max(
             gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         return self.circuit
 
     def __str__(self):
-        if self.args:
-            args_str = str(self.args)
+        if self.params:
+            args_str = str(self.params)
             if self.kwargs:
                 args_str = args_str[:-1] + ", kwargs=" + str(self.kwargs) + ")"
         elif self.kwargs:
