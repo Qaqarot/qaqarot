@@ -23,67 +23,12 @@ from typing import Callable, Dict, Optional, Tuple, Type
 import numpy as np
 
 from . import gate
+from .gateset import get_op_type, register_operation, unregister_operation
 
 if typing.TYPE_CHECKING:
     from .gate import Operation
     from .backends.backendbase import Backend
     BackendUnion = typing.Union[None, str, Backend]
-
-GATE_SET = {
-    # 1 qubit gates (alphabetical)
-    "h": gate.HGate,
-    "i": gate.IGate,
-    "mat1": gate.Mat1Gate,
-    "p": gate.PhaseGate,
-    "phase": gate.PhaseGate,
-    "r": gate.PhaseGate,
-    "rx": gate.RXGate,
-    "ry": gate.RYGate,
-    "rz": gate.RZGate,
-    "s": gate.SGate,
-    "sdg": gate.SDagGate,
-    "sx": gate.SXGate,
-    "sxdg": gate.SXDagGate,
-    "t": gate.TGate,
-    "tdg": gate.TDagGate,
-    "u": gate.UGate,
-    "u1": gate.DeprecatedOperation("u1", "u"),
-    "u2": gate.DeprecatedOperation("u2", "u"),
-    "u3": gate.DeprecatedOperation("u3", "u"),
-    "x": gate.XGate,
-    "y": gate.YGate,
-    "z": gate.ZGate,
-    # Controlled gates (alphabetical)
-    "ccx": gate.ToffoliGate,
-    "ccz": gate.CCZGate,
-    "cnot": gate.CXGate,
-    "ch": gate.CHGate,
-    "cp": gate.CPhaseGate,
-    "cphase": gate.CPhaseGate,
-    "cr": gate.CPhaseGate,
-    "crx": gate.CRXGate,
-    "cry": gate.CRYGate,
-    "crz": gate.CRZGate,
-    "cswap": gate.CSwapGate,
-    "cu": gate.CUGate,
-    "cu1": gate.DeprecatedOperation("cu1", "cu"),
-    "cu2": gate.DeprecatedOperation("cu2", "cu"),
-    "cu3": gate.DeprecatedOperation("cu3", "cu"),
-    "cx": gate.CXGate,
-    "cy": gate.CYGate,
-    "cz": gate.CZGate,
-    "toffoli": gate.ToffoliGate,
-    # Other multi qubit gates (alphabetical)
-    "rxx": gate.RXXGate,
-    "ryy": gate.RYYGate,
-    "rzz": gate.RZZGate,
-    "swap": gate.SwapGate,
-    "zz": gate.ZZGate,
-    # Measure and reset (alphabetical)
-    "m": gate.Measurement,
-    "measure": gate.Measurement,
-    "reset": gate.Reset,
-}
 
 GLOBAL_MACROS = {}
 
@@ -118,8 +63,9 @@ class Circuit:
         return runner
 
     def __getattr__(self, name):
-        if name in GATE_SET:
-            return _GateWrapper(self, name, GATE_SET[name])
+        op_type = get_op_type(name)
+        if op_type:
+            return _GateWrapper(self, op_type)
         if name in GLOBAL_MACROS:
             return partial(GLOBAL_MACROS[name], self)
         if name.startswith("run_with_"):
@@ -290,23 +236,20 @@ class Circuit:
 
 
 class _GateWrapper:
-    def __init__(self, circuit: Circuit, name: str, g: Type['Operation']):
+    def __init__(self, circuit: Circuit, op_type: Type['Operation']):
         self.circuit = circuit
         self.target = None
-        self.name = name
-        self.gate = g
+        self.op_type = op_type
         self.params = ()
-        self.kwargs = {}
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args):
         self.params = args
-        self.kwargs = kwargs
         return self
 
     def __getitem__(self, args):
         self.target = args
         self.circuit.ops.append(
-            self.gate.create(self.target, self.params, **self.kwargs))
+            self.op_type.create(self.target, self.params))
         # ad-hoc
         self.circuit.n_qubits = max(
             gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
@@ -315,13 +258,9 @@ class _GateWrapper:
     def __str__(self):
         if self.params:
             args_str = str(self.params)
-            if self.kwargs:
-                args_str = args_str[:-1] + ", kwargs=" + str(self.kwargs) + ")"
-        elif self.kwargs:
-            args_str = "(kwargs=" + str(self.kwargs) + ")"
         else:
             args_str = ""
-        return self.name + args_str + " " + str(self.target)
+        return self.op_type.lowername + args_str + " " + str(self.target)
 
 
 class BlueqatGlobalSetting:
@@ -355,7 +294,7 @@ class BlueqatGlobalSetting:
                 raise ValueError(
                     f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
-            if name in GATE_SET:
+            if get_op_type(name) is not None:
                 raise ValueError(
                     f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
@@ -403,12 +342,12 @@ class BlueqatGlobalSetting:
                 raise ValueError(
                     f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
-            if name in GATE_SET:
+            if get_op_type(name) is not None:
                 raise ValueError(
                     f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
                 raise ValueError(f"Macro '{name}' is already exists.")
-        GATE_SET[name] = gateclass
+        register_operation(name, gateclass)
 
     @staticmethod
     def unregister_gate(name):
@@ -420,9 +359,9 @@ class BlueqatGlobalSetting:
         Raises:
             ValueError: Specified gate is not registered.
         """
-        if name not in GATE_SET:
+        if get_op_type(name) is None:
             raise ValueError(f"Gate '{name}' is not registered.")
-        del GATE_SET[name]
+        unregister_operation(name)
 
     @staticmethod
     def register_backend(name, backend, allow_overwrite=False):

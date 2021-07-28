@@ -9,6 +9,8 @@ from typing import Callable, Iterable, Iterator, List, NoReturn, Tuple, Type, Ty
 
 import numpy as np
 
+from .typing import Targets
+
 _Op = TypeVar('_Op', bound='Operation')
 
 
@@ -22,7 +24,7 @@ class Operation:
         """Upper name of the operation."""
         return self.lowername.upper()
 
-    def __init__(self, targets, params=(), **kwargs) -> None:
+    def __init__(self, targets: Targets, params=(), **kwargs) -> None:
         if self.lowername == '':
             raise ValueError(
                 f"{self.__class__.__name__}.lowername is not defined.")
@@ -35,8 +37,7 @@ class Operation:
         return slicing(self.targets, n_qubits)
 
     @classmethod
-    def create(cls: Type[_Op], targets: Union[int, slice, tuple],
-            params: tuple) -> _Op:
+    def create(cls: Type[_Op], targets: Targets, params: tuple) -> _Op:
         """Create an operation."""
         raise NotImplementedError(f"{cls.__name__}.create() is not defined.")
 
@@ -1057,7 +1058,7 @@ def slicing_singlevalue(arg: Union[slice, int], length: int) -> Iterator[int]:
         yield i
 
 
-def slicing(args: Tuple[Union[slice, int], ...], length: int) -> Iterator[int]:
+def slicing(args: Targets, length: int) -> Iterator[int]:
     """Internally used."""
     if isinstance(args, tuple):
         for arg in args:
@@ -1066,9 +1067,7 @@ def slicing(args: Tuple[Union[slice, int], ...], length: int) -> Iterator[int]:
         yield from slicing_singlevalue(args, length)
 
 
-def qubit_pairs(args: Tuple[Tuple[Union[slice, int], ...],
-                            Tuple[Union[slice, int], ...]],
-                length: int) -> Iterator[Tuple[int, int]]:
+def qubit_pairs(args: Tuple[Targets, Targets], length: int) -> Iterator[Tuple[int, int]]:
     """Internally used."""
     if not isinstance(args, tuple):
         raise ValueError("Control and target qubits pair(s) are required.")
@@ -1086,7 +1085,7 @@ def qubit_pairs(args: Tuple[Tuple[Union[slice, int], ...],
     return zip(controls, targets)
 
 
-def get_maximum_index(indices: Union[Tuple[int, ...], int]) -> int:
+def get_maximum_index(indices: Targets) -> int:
     """Internally used."""
     def _maximum_idx_single(idx: int):
         if isinstance(idx, slice):
