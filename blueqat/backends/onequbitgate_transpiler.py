@@ -12,7 +12,7 @@ _eye = np.eye(2, dtype=complex)
 class OneQubitGateCompactionTranspiler(Backend):
     """Merge one qubit gate."""
     def _run_inner(self, gates, operations: List[Operation],
-                   singlemats: List[np.array], n_qubits: int,
+                   singlemats: List[np.ndarray], n_qubits: int,
                    mat1_decomposer: Callable[[OneQubitGate], List[Operation]]):
         for gate in gates:
             if isinstance(gate, Gate) and gate.n_qargs == 1:
@@ -22,7 +22,7 @@ class OneQubitGateCompactionTranspiler(Backend):
                 for t in gate.target_iter(n_qubits):
                     if not np.allclose(singlemats[t], _eye):
                         operations += mat1_decomposer(
-                            Mat1Gate((t, ), singlemats[t]))
+                            Mat1Gate.create((t, ), (singlemats[t],)))
                         singlemats[t] = _eye.copy()
                 operations.append(gate)
 
@@ -47,5 +47,5 @@ class OneQubitGateCompactionTranspiler(Backend):
                         mat1_decomposer)
         for i, mat in enumerate(singlemats):
             if not np.allclose(mat, _eye):
-                operations += mat1_decomposer(Mat1Gate((i, ), mat))
+                operations += mat1_decomposer(Mat1Gate.create((i, ), (mat,)))
         return Circuit(n_qubits, operations)

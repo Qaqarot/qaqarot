@@ -48,7 +48,7 @@ def u_decomposer(gate: OneQubitGate) -> List[UGate]:
     """
     mat = gate.matrix()
     theta, phi, lam, gamma = calc_uparams(mat)
-    return [UGate(gate.targets, theta, phi, lam, gamma)]
+    return [UGate.create(gate.targets, (theta, phi, lam, gamma))]
 
 
 def ryrz_decomposer(gate: OneQubitGate) -> List[Union[RYGate, RZGate]]:
@@ -65,11 +65,11 @@ def ryrz_decomposer(gate: OneQubitGate) -> List[Union[RYGate, RZGate]]:
     if theta < 1e-10:
         if phi + lam < 1e-10:
             return []
-        return [RZGate(gate.targets, phi + lam)]
+        return [RZGate.create(gate.targets, (phi + lam,))]
     ops = []
     if 1e-10 < lam < 2.0 * math.pi - 1e-10:
-        ops.append(RZGate(gate.targets, lam))
+        ops.append(RZGate.create(gate.targets, (lam,)))
     ops.append(RYGate(gate.targets, theta))
     if 1e-10 < phi < 2.0 * math.pi - 1e-10:
-        ops.append(RZGate(gate.targets, phi))
+        ops.append(RZGate.create(gate.targets, (phi,)))
     return ops

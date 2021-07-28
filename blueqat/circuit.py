@@ -18,71 +18,17 @@ This module defines Circuit and the setting for circuit.
 import warnings
 from functools import partial
 import typing
-from typing import Callable, Tuple
+from typing import Callable, Dict, Optional, Tuple, Type
 
 import numpy as np
 
 from . import gate
+from .gateset import get_op_type, register_operation, unregister_operation
 
 if typing.TYPE_CHECKING:
+    from .gate import Operation
     from .backends.backendbase import Backend
     BackendUnion = typing.Union[None, str, Backend]
-
-GATE_SET = {
-    # 1 qubit gates (alphabetical)
-    "h": gate.HGate,
-    "i": gate.IGate,
-    "mat1": gate.Mat1Gate,
-    "p": gate.PhaseGate,
-    "phase": gate.PhaseGate,
-    "r": gate.PhaseGate,
-    "rx": gate.RXGate,
-    "ry": gate.RYGate,
-    "rz": gate.RZGate,
-    "s": gate.SGate,
-    "sdg": gate.SDagGate,
-    "sx": gate.SXGate,
-    "sxdg": gate.SXDagGate,
-    "t": gate.TGate,
-    "tdg": gate.TDagGate,
-    "u": gate.UGate,
-    "u1": gate.DeprecatedOperation("u1", "u"),
-    "u2": gate.DeprecatedOperation("u2", "u"),
-    "u3": gate.DeprecatedOperation("u3", "u"),
-    "x": gate.XGate,
-    "y": gate.YGate,
-    "z": gate.ZGate,
-    # Controlled gates (alphabetical)
-    "ccx": gate.ToffoliGate,
-    "ccz": gate.CCZGate,
-    "cnot": gate.CXGate,
-    "ch": gate.CHGate,
-    "cp": gate.CPhaseGate,
-    "cphase": gate.CPhaseGate,
-    "cr": gate.CPhaseGate,
-    "crx": gate.CRXGate,
-    "cry": gate.CRYGate,
-    "crz": gate.CRZGate,
-    "cswap": gate.CSwapGate,
-    "cu": gate.CUGate,
-    "cu1": gate.DeprecatedOperation("cu1", "cu"),
-    "cu2": gate.DeprecatedOperation("cu2", "cu"),
-    "cu3": gate.DeprecatedOperation("cu3", "cu"),
-    "cx": gate.CXGate,
-    "cy": gate.CYGate,
-    "cz": gate.CZGate,
-    "toffoli": gate.ToffoliGate,
-    # Other multi qubit gates (alphabetical)
-    "rxx": gate.RXXGate,
-    "ryy": gate.RYYGate,
-    "rzz": gate.RZZGate,
-    "swap": gate.SwapGate,
-    "zz": gate.ZZGate,
-    # Measure and reset (alphabetical)
-    "m": gate.Measurement,
-    "measure": gate.Measurement,
-    "reset": gate.Reset,
-}
 
 GLOBAL_MACROS = {}
 
@@ -91,8 +37,7 @@ class Circuit:
     """Store the gate operations and call the backends."""
     def __init__(self, n_qubits=0, ops=None):
         self.ops = ops or []
-        self._backends = {}
-        self._default_backend = None
+        self._backends: Dict[str, 'Backend'] = {}
         self.n_qubits = n_qubits
 
     def __repr__(self):
@@ -118,8 +63,9 @@ class Circuit:
         return runner
 
     def __getattr__(self, name):
-        if name in GATE_SET:
-            return _GateWrapper(self, name, GATE_SET[name])
+        op_type = get_op_type(name)
+        if op_type:
+            return _GateWrapper(self, op_type)
         if name in GLOBAL_MACROS:
             return partial(GLOBAL_MACROS[name], self)
         if name.startswith("run_with_"):
@@ -145,25 +91,19 @@ class Circuit:
         return self
 
     def copy(self,
-             copy_backends: bool = True,
-             copy_default_backend: bool = True) -> 'Circuit':
+             copy_backends: bool = True) -> 'Circuit':
         """Copy the circuit.
 
         params:
             | copy_backends :bool copy backends if True.
-            | copy_default_backend :bool copy default_backend if True.
         """
         copied = Circuit(self.n_qubits, self.ops.copy())
         if copy_backends:
             copied._backends = {k: v.copy() for k, v in self._backends.items()}
-        if copy_default_backend:
-            copied._default_backend = self._default_backend
         return copied
 
     def dagger(self,
-               ignore_measurement: bool = False,
-               copy_backends: bool = False,
-               copy_default_backend: bool = True) -> 'Circuit':
+               ignore_measurement: bool = False) -> 'Circuit':
         """Make Hermitian conjugate of the circuit.
 
         This feature is beta. Interface may be changed.
@@ -183,11 +123,6 @@ class Circuit:
                         'the circuit contains measurement.')
 
         copied = Circuit(self.n_qubits, ops)
-        if copy_backends:
-            copied._backends = {k: v.copy() for k, v in self._backends.items()}
-        if copy_default_backend:
-            copied._default_backend = self._default_backend
-
         return copied
 
     def run(self, *args, backend=None, **kwargs):
@@ -214,23 +149,17 @@ class Circuit:
             Depends on backend.
         """
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
         return backend.run(self.ops, self.n_qubits, *args, **kwargs)
 
-    def make_cache(self, backend: 'BackendUnion' = None) -> None:
+    def make_cache(self, backend: Optional['BackendUnion'] = None) -> None:
         """Make a cache to reduce the time of run. Some backends may implemented it.
 
         This is temporary API. It may changed or deprecated."""
         if backend is None:
-            if self._default_backend is None:
-                backend = DEFAULT_BACKEND_NAME
-            else:
-                backend = self._default_backend
+            backend = DEFAULT_BACKEND_NAME
         if isinstance(backend, str):
             backend = self.__get_backend(backend)
         return backend.make_cache(self.ops, self.n_qubits)
@@ -243,36 +172,6 @@ class Circuit:
         """Returns sympy unitary matrix of this circuit."""
         return self.run_with_sympy_unitary(*args, **kwargs)
 
-    def set_default_backend(self, backend_name: str) -> None:
-        """Set the default backend of this circuit.
-
-        This setting is only applied for this circuit.
-        If you want to change the default backend of all gates,
-        use `BlueqatGlobalSetting.set_default_backend()`.
-
-        After set the default backend by this method,
-        global setting is ignored even if `BlueqatGlobalSetting.set_default_backend()` is called.
-        If you want to use global default setting, call this method with backend_name=None.
-
-        Args:
-            | backend_name (str or None): new default backend name.
-            |     If None is given, global setting is applied.
-
-        Raises:
-            ValueError: If `backend_name` is not registered backend.
-        """
-        if backend_name not in BACKENDS:
-            raise ValueError(f"Unknown backend '{backend_name}'.")
-        self._default_backend = backend_name
-
-    def get_default_backend_name(self) -> str:
-        """Get the default backend of this circuit or global setting.
-
-        Returns:
-            str: The name of default backend.
-        """
-        return DEFAULT_BACKEND_NAME if self._default_backend is None else self._default_backend
-
     def statevector(self,
                     backend: 'BackendUnion' = None,
                     **kwargs) -> np.ndarray:
@@ -280,10 +179,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.statevector has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -303,10 +199,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.shots has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -328,10 +221,7 @@ class Circuit:
         if kwargs.get('returns'):
             raise ValueError('Circuit.oneshot has no argument `returns`.')
         if backend is None:
-            if self._default_backend is None:
-                backend = self.__get_backend(DEFAULT_BACKEND_NAME)
-            else:
-                backend = self.__get_backend(self._default_backend)
+            backend = self.__get_backend(DEFAULT_BACKEND_NAME)
         elif isinstance(backend, str):
             backend = self.__get_backend(backend)
 
@@ -346,38 +236,31 @@ class Circuit:
 
 
 class _GateWrapper:
-    def __init__(self, circuit, name, gate):
+    def __init__(self, circuit: Circuit, op_type: Type['Operation']):
         self.circuit = circuit
         self.target = None
-        self.name = name
-        self.gate = gate
-        self.args = ()
-        self.kwargs = {}
+        self.op_type = op_type
+        self.params = ()
 
-    def __call__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
+    def __call__(self, *args):
+        self.params = args
         return self
 
     def __getitem__(self, args):
         self.target = args
         self.circuit.ops.append(
-            self.gate(self.target, *self.args, **self.kwargs))
+            self.op_type.create(self.target, self.params))
         # ad-hoc
         self.circuit.n_qubits = max(
             gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         return self.circuit
 
     def __str__(self):
-        if self.args:
-            args_str = str(self.args)
-            if self.kwargs:
-                args_str = args_str[:-1] + ", kwargs=" + str(self.kwargs) + ")"
-        elif self.kwargs:
-            args_str = "(kwargs=" + str(self.kwargs) + ")"
+        if self.params:
+            args_str = str(self.params)
         else:
             args_str = ""
-        return self.name + args_str + " " + str(self.target)
+        return self.op_type.lowername + args_str + " " + str(self.target)
 
 
 class BlueqatGlobalSetting:
@@ -411,7 +294,7 @@ class BlueqatGlobalSetting:
                 raise ValueError(
                     f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
-            if name in GATE_SET:
+            if get_op_type(name) is not None:
                 raise ValueError(
                     f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
@@ -459,12 +342,12 @@ class BlueqatGlobalSetting:
                 raise ValueError(
                     f"Gate name `{name}` shall not start with 'run_with_'.")
         if not allow_overwrite:
-            if name in GATE_SET:
+            if get_op_type(name) is not None:
                 raise ValueError(
                     f"Gate '{name}' is already exists in gate set.")
             if name in GLOBAL_MACROS:
                 raise ValueError(f"Macro '{name}' is already exists.")
-        GATE_SET[name] = gateclass
+        register_operation(name, gateclass)
 
     @staticmethod
     def unregister_gate(name):
@@ -476,9 +359,9 @@ class BlueqatGlobalSetting:
         Raises:
             ValueError: Specified gate is not registered.
         """
-        if name not in GATE_SET:
+        if get_op_type(name) is None:
             raise ValueError(f"Gate '{name}' is not registered.")
-        del GATE_SET[name]
+        unregister_operation(name)
 
     @staticmethod
     def register_backend(name, backend, allow_overwrite=False):
@@ -488,7 +371,6 @@ class BlueqatGlobalSetting:
             | name (str): The name of backend.
             | gateclass (type): The type object of backend
             | allow_overwrite (bool, optional): If True, allow to overwrite the existing backend.
-              
                 Otherwise, raise the ValueError.
 
         Raises:
@@ -516,7 +398,7 @@ class BlueqatGlobalSetting:
         Raises:
             ValueError: Specified backend is not registered.
         """
-        if name not in GATE_SET:
+        if name not in BACKENDS:
             raise ValueError(f"Backend '{name}' is not registered.")
         del BACKENDS[name]
 
