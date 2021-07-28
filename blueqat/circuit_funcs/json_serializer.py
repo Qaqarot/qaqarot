@@ -1,6 +1,10 @@
+"""Defines JSON serializer and deserializer."""
 import typing
 from typing import Any
 from blueqat import Circuit
+
+from ..gateset import create
+from .flatten import flatten
 
 SCHEMA_NAME = 'blueqat-circuit'
 SCHEMA_VERSION = "1"
@@ -29,18 +33,18 @@ if typing.TYPE_CHECKING:
 
 
 def serialize(c: Circuit) -> 'CircuitJsonDict':
+    """Serialize Circuit into JSON type dict"""
     def serialize_op(op: 'Operation') -> 'OpJsonDict':
-        # TODO: When targets is slice, what to do?
-        if isinstance(op.targets, int):
-            targets = [op.targets]
-        else:
-            targets = [int(t) for t in op.targets]
+        target = op.targets
+        if not isinstance(target, int):
+            raise TypeError('Not flatten circuit.')
         return {
             'name': str(op.lowername),
             'params': [float(p) for p in op.params],
-            'targets': targets
+            'targets': [target]
         }
 
+    c = flatten(c)
     return {
         'schema': {
             'name': SCHEMA_NAME,
@@ -52,23 +56,18 @@ def serialize(c: Circuit) -> 'CircuitJsonDict':
 
 
 def deserialize(data: 'CircuitJsonDict') -> Circuit:
+    """Deserialize JSON type dict into Circuit"""
     def make_op(opdata: 'OpJsonDict') -> 'Operation':
-        from blueqat.circuit import GATE_SET
+        return create(opdata['name'],
+                      tuple(opdata['targets']),
+                      tuple(float(p) for p in opdata['params']))
     schema = data.get('schema', {})
     if schema.get('name', '') != SCHEMA_NAME:
         raise ValueError('Invalid schema')
     if schema.get('version', '') != SCHEMA_VERSION:
         raise ValueError('Unknown schema version')
-    try:
-        n_qubits = data['n_qubits']
-    except KeyError:
-        raise ValueError('Invalid data')
-    if not isinstance(n_qubits, int):
-        raise TypeError('Invalid n_qubits type')
-    try:
-        ops = data['ops']
-    except KeyError:
-        raise ValueError('Invalid data')
+    n_qubits = data['n_qubits']
+    ops = data['ops']
     return Circuit(n_qubits, [
-        # TODO: Impl.
+        make_op(opdata) for opdata in ops
     ])
