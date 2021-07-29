@@ -22,6 +22,7 @@ Version 1
 JSON schema version 1 is available from blueqat version 0.4.6.
 
 .. code-block
+
   Circuit := { "schema": Schema, "n_qubits": int, "ops": [Op...] }
   Schema := { "name": "blueqat-circuit", "version": "1" }
   Op := { "name": lowername-of-operation, "targets": [int...], "params": [number...] }
