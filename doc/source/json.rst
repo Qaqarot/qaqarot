@@ -19,9 +19,7 @@ Serialize and deserialize function
 Version 1
 ---------
 
-JSON schema version 1 is available from blueqat version 0.4.6.
-
-.. code-block
+JSON schema version 1 is available from blueqat version 0.4.6. ::
 
   Circuit := { "schema": Schema, "n_qubits": int, "ops": [Op...] }
   Schema := { "name": "blueqat-circuit", "version": "1" }
