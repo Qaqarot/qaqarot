@@ -1,6 +1,5 @@
 """Defines JSON serializer and deserializer."""
 import typing
-from typing import Any
 from blueqat import Circuit
 
 from ..gateset import create
@@ -12,36 +11,47 @@ SCHEMA_VERSION = "1"
 if typing.TYPE_CHECKING:
     from blueqat.gate import Operation
     try:
-        from typing import List, TypedDict
+        from typing import Any, Dict, List, TypedDict
     except ImportError:
-        CircuitJsonDict = Any
-        OpJsonDict = Any
+        CircuitJsonDict = Dict[str, Any]
+        OpJsonDict = Dict[str, Any]
     else:
         class SchemaJsonDict(TypedDict):
+            """Schema header for detect data type"""
             name: str
             version: str
 
         class OpJsonDict(TypedDict):
+            """Data type of Operation"""
             name: str
             params: List[float]
             targets: List[int]
 
         class CircuitJsonDict(TypedDict):
+            """Data type of Circuit"""
             schema: SchemaJsonDict
             n_qubits: int
             ops: List[OpJsonDict]
 
 
 def serialize(c: Circuit) -> 'CircuitJsonDict':
-    """Serialize Circuit into JSON type dict"""
+    """Serialize Circuit into JSON type dict.
+
+    In this implementation, serialized circuit is flattened.
+    However, it's not specifications of JSON schema.
+    """
     def serialize_op(op: 'Operation') -> 'OpJsonDict':
-        target = op.targets
-        if not isinstance(target, int):
+        targets = op.targets
+        if isinstance(targets, slice):
             raise TypeError('Not flatten circuit.')
+        if isinstance(targets, int):
+            targets = [targets]
+        if isinstance(targets, tuple):
+            targets = list(targets)
         return {
             'name': str(op.lowername),
             'params': [float(p) for p in op.params],
-            'targets': [target]
+            'targets': targets
         }
 
     c = flatten(c)
