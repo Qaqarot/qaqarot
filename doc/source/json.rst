@@ -6,8 +6,8 @@ This documentations describe the JSON format of ``blueqat.Circuit``.
 Motivations
 -----------
 
-When you want to send or receive the Circuit to/from remote servers, `serialization<https://en.wikipedia.org/wiki/Serialization>` is an effective way.
-`Pickling<https://docs.python.org/3/library/pickle.html>` is one of the traditional serializations in Python language. However, pickling is insecure when you communicate with unreliable servers or clients.  Recently, JSON has been widely used as serializing format with unspecified machines.
+When you want to send or receive the Circuit to/from remote servers, `serialization <https://en.wikipedia.org/wiki/Serialization>`_ is an effective way.
+`Pickling <https://docs.python.org/3/library/pickle.html>`_ is one of the traditional serializations in Python language. However, pickling is insecure when you communicate with unreliable servers or clients.  Recently, JSON has been widely used as serializing format with unspecified machines.
 Therefore, we make specifications of blueqat Circuit JSON formats.
 
 Serialize and deserialize function
