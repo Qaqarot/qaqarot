@@ -14,7 +14,7 @@
 """Utilities for convenient."""
 from collections import Counter
 import typing
-from typing import Dict, Tuple, Union
+from typing import Dict, Iterator, Tuple, Union
 import warnings
 
 import numpy as np
@@ -77,7 +77,7 @@ def check_unitarity(mat: np.ndarray) -> bool:
     return np.allclose(mat @ mat.T.conjugate(), np.eye(shape[0]))
 
 
-def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs):
+def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs) -> np.ndarray:
     """Make circuit to unitary. This function is experimental feature and
     may changed or deleted in the future."""
     warnings.warn(
@@ -89,5 +89,11 @@ def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs):
 
 
 def sqrt_2x2_matrix(mat: np.ndarray) -> np.ndarray:
+    """Returns square root of 2x2 matrix."""
     assert mat.shape == (2, 2)
     return (mat + np.eye(2)) / np.sqrt(mat[0, 0] + mat[1, 1] + 2)
+
+
+def gen_graycode(n: int) -> Iterator[int]:
+    """Generate an iterator which returns Gray code."""
+    return (v ^ (v >> 1) for v in range(2**n))
