@@ -15,6 +15,7 @@
 from collections import Counter
 import typing
 from typing import Dict, Tuple, Union
+import warnings
 
 import numpy as np
 
@@ -79,21 +80,11 @@ def check_unitarity(mat: np.ndarray) -> bool:
 def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs):
     """Make circuit to unitary. This function is experimental feature and
     may changed or deleted in the future."""
+    warnings.warn(
+        "blueqat.util.circuit_to_unitary is moved to " +
+        "blueqat.circuit_funcs.circuit_to_unitary.circuit_to_unitary.",
+        DeprecationWarning)
+    from blueqat.circuit_funcs.circuit_to_unitary import circuit_to_unitary as f
+    return f(circ, *runargs, **runkwargs)
 
-    # To avoid circuilar import, import here.
-    from . import Circuit
 
-    runkwargs.setdefault('returns', 'statevector')
-    runkwargs.setdefault('ignore_global', False)
-    n_qubits = circ.n_qubits
-    vecs = []
-    if n_qubits == 0:
-        return np.array([[1]])
-    for i in range(1 << n_qubits):
-        bitmask = tuple(k for k in range(n_qubits) if (1 << k) & i)
-        c = Circuit()
-        if bitmask:
-            c.x[bitmask]
-        c += circ
-        vecs.append(c.run(*runargs, **runkwargs))
-    return np.array(vecs).T
