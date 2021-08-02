@@ -88,3 +88,6 @@ def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs):
     return f(circ, *runargs, **runkwargs)
 
 
+def sqrt_2x2_matrix(mat: np.ndarray) -> np.ndarray:
+    assert mat.shape == (2, 2)
+    return (mat + np.eye(2)) / np.sqrt(mat[0, 0] + mat[1, 1] + 2)
