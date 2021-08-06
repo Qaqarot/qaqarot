@@ -97,3 +97,51 @@ def sqrt_2x2_matrix(mat: np.ndarray) -> np.ndarray:
 def gen_graycode(n: int) -> Iterator[int]:
     """Generate an iterator which returns Gray code."""
     return (v ^ (v >> 1) for v in range(2**n))
+
+
+def gen_gray_controls(n: int) -> Iterator[Tuple[int, int, int]]:
+    """Generate an iterator which returns bit indices for constructing
+    Gray code based controlled gate.
+
+    ## Example
+
+    4 controlled Z impletation:
+
+    ```py
+    n = 3
+    t = 3
+    c = Circuit()
+    angles = [pi / 2**(n - 1), -pi / 2**(n - 1)]
+    for c0, c1, parity in gen_gray_controls(n):
+        if c0 >= 0:
+            c.cx[c0, c1]
+        c.crz(angles[parity])[c1, t]
+    """
+    def gen_changedbit(n):
+        pow2 = [2 ** i for i in range(n)]
+        gen = gen_graycode(n)
+        try:
+            prev = next(gen)
+        except StopIteration: # Unreachable.
+            raise ValueError() from None
+        for g in gen:
+            yield pow2.index(g ^ prev)
+            prev = g
+
+    def gen_cxtarget():
+        k = 0
+        while 1:
+            for _ in range(2**k):
+                yield k
+            k += 1
+
+    def gen_parity():
+        while 1:
+            yield 0
+            yield 1
+
+    for c0, c1, p in zip(gen_changedbit(n), gen_cxtarget(), gen_parity()):
+        if c0 == c1:
+            yield c0 - 1, c1, p
+        else:
+            yield c0, c1, p
