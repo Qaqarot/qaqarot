@@ -128,6 +128,20 @@ def mcrz_gray(c: Circuit, theta: float, ctrl: Sequence[int],
 
 
 @circuitmacro
+def mcr_gray(c: Circuit, theta: float, ctrl: Sequence[int],
+              target: int) -> Circuit:
+    n_ctrl = len(ctrl)
+    if n_ctrl == 0:
+        return c.r(theta)[target]
+    angles = [theta / 2**(n_ctrl - 1), -theta / 2**(n_ctrl - 1)]
+    for c0, c1, parity in gen_gray_controls(n_ctrl):
+        if c0 >= 0:
+            c.cx[ctrl[c0], ctrl[c1]]
+        c.cr(angles[parity])[ctrl[c1], target]
+    return c
+
+
+@circuitmacro
 def mcu_gray(c: Circuit, theta: float, phi: float, lam: float, gamma: float,
              ctrl: Sequence[int], target: int) -> Circuit:
     pass
