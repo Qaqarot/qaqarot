@@ -119,3 +119,17 @@ def test_mcrz_gray_n(theta, n):
     assert np.allclose(
         circuit_to_unitary(Circuit().mcrz_gray(theta, list(range(n)), n)),
         expected)
+
+
+@pytest.mark.parametrize("theta", ANGLES)
+@pytest.mark.parametrize("n", [0, 1, 2, 4])
+def test_mcrz_gray_n(theta, n):
+    u = circuit_to_unitary(Circuit().r(theta)[0])
+    expected = np.eye(2**(n + 1), dtype=complex)
+    expected[2**n - 1, 2**n - 1] = u[0, 0]
+    expected[2**(n + 1) - 1, 2**n - 1] = u[1, 0]
+    expected[2**n - 1, 2**(n + 1) - 1] = u[0, 1]
+    expected[2**(n + 1) - 1, 2**(n + 1) - 1] = u[1, 1]
+    assert np.allclose(
+        circuit_to_unitary(Circuit().mcr_gray(theta, list(range(n)), n)),
+        expected)
