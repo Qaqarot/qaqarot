@@ -7,7 +7,9 @@ from typing import Any, Sequence, Optional
 
 from blueqat import Circuit
 from blueqat.decorators import circuitmacro
-from blueqat.utils import gen_gray_controls
+from blueqat.utils import calc_u_params, gen_gray_controls, sqrt_2x2_matrix
+
+from blueqat.gate import UGate
 
 
 @circuitmacro
@@ -31,26 +33,31 @@ def margolus(c: Circuit, c0: int, c1: int) -> Circuit:
 
 @circuitmacro
 def c3z(c: Circuit, c0: int, c1: int, c2: int, t: int) -> Circuit:
+    """A macro of 3-controlled Z gate"""
     return c.mcz_gray([c0, c1, c2], t)
 
 
 @circuitmacro
 def c4z(c: Circuit, c0: int, c1: int, c2: int, c3: int, t: int) -> Circuit:
+    """A macro of 4-controlled Z gate"""
     return c.mcz_gray([c0, c1, c2, c3], t)
 
 
 @circuitmacro
 def c3x(c: Circuit, c0: int, c1: int, c2: int, t: int) -> Circuit:
+    """A macro of 3-controlled X gate"""
     return c.h[t].c3z(c0, c1, c2, t).h[t]
 
 
 @circuitmacro
 def c4x(c: Circuit, c0: int, c1: int, c2: int, c3: int, t: int) -> Circuit:
+    """A macro of 4-controlled X gate"""
     return c.h[t].c4z(c0, c1, c2, c3, t).h[t]
 
 
 @circuitmacro
 def mcx_gray(c: Circuit, ctrl: Sequence[int], target: int) -> Circuit:
+    """A macro of multi controlled X gate."""
     return c.h[target].mcz_gray(ctrl, target).h[target]
 
 
@@ -61,11 +68,12 @@ def mcx_with_ancilla(c: Circuit,
                      ancilla: Optional[int] = None) -> Circuit:
     if ancilla is None:
         ancilla = c.n_qubits
-    pass
+    raise NotImplementedError("This function is still not implemented.")
 
 
 @circuitmacro
 def mcz_gray(c: Circuit, ctrl: Sequence[int], target: int) -> Circuit:
+    """A macro of multi controlled Z gate."""
     n_ctrl = len(ctrl)
     if n_ctrl == 0:
         return c.z[target]
@@ -88,6 +96,7 @@ def mcz_with_ancilla(c: Circuit,
 @circuitmacro
 def mcrx_gray(c: Circuit, theta: float, ctrl: Sequence[int],
               target: int) -> Circuit:
+    """A macro of multi controlled RX gate."""
     n_ctrl = len(ctrl)
     if n_ctrl == 0:
         return c.rx(theta)[target]
@@ -102,6 +111,7 @@ def mcrx_gray(c: Circuit, theta: float, ctrl: Sequence[int],
 @circuitmacro
 def mcry_gray(c: Circuit, theta: float, ctrl: Sequence[int],
               target: int) -> Circuit:
+    """A macro of multi controlled RY gate."""
     n_ctrl = len(ctrl)
     if n_ctrl == 0:
         return c.ry(theta)[target]
@@ -116,6 +126,7 @@ def mcry_gray(c: Circuit, theta: float, ctrl: Sequence[int],
 @circuitmacro
 def mcrz_gray(c: Circuit, theta: float, ctrl: Sequence[int],
               target: int) -> Circuit:
+    """A macro of multi controlled RZ gate."""
     n_ctrl = len(ctrl)
     if n_ctrl == 0:
         return c.rz(theta)[target]
@@ -130,6 +141,7 @@ def mcrz_gray(c: Circuit, theta: float, ctrl: Sequence[int],
 @circuitmacro
 def mcr_gray(c: Circuit, theta: float, ctrl: Sequence[int],
               target: int) -> Circuit:
+    """A macro of multi controlled R gate."""
     n_ctrl = len(ctrl)
     if n_ctrl == 0:
         return c.r(theta)[target]
@@ -144,4 +156,22 @@ def mcr_gray(c: Circuit, theta: float, ctrl: Sequence[int],
 @circuitmacro
 def mcu_gray(c: Circuit, theta: float, phi: float, lam: float, gamma: float,
              ctrl: Sequence[int], target: int) -> Circuit:
-    pass
+    """A macro of multi controlled U gate."""
+    n_ctrl = len(ctrl)
+    if n_ctrl == 0:
+        return c.u(theta, phi, lam, gamma)[target]
+    if n_ctrl == 1:
+        return c.cu(theta, phi, lam, gamma)[ctrl[0], target]
+    mat = UGate.create(0, (theta, phi, lam, gamma)).matrix()
+    for _ in range(n_ctrl - 1):
+        mat = sqrt_2x2_matrix(mat)
+    params = calc_u_params(mat)
+    params_dagger = -params[0], -params[2], -params[1], -params[3]
+    for c0, c1, parity in gen_gray_controls(n_ctrl):
+        if c0 >= 0:
+            c.cx[ctrl[c0], ctrl[c1]]
+        if parity:
+            c.cu(*params_dagger)[ctrl[c1], target]
+        else:
+            c.cu(*params)[ctrl[c1], target]
+    return c

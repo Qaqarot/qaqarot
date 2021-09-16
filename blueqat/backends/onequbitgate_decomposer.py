@@ -13,28 +13,10 @@
 # limitations under the License.
 
 import math
-import cmath
-import typing
-from typing import List, Tuple, Union
+from typing import List, Union
 
-from ..utils import check_unitarity
+from ..utils import calc_u_params
 from ..gate import OneQubitGate, RYGate, RZGate, UGate
-
-if typing.TYPE_CHECKING:
-    import numpy as np
-
-
-def calc_uparams(mat: 'np.ndarray') -> Tuple[float, float, float, float]:
-    """Calculate U-gate parameters from a 2x2 unitary matrix."""
-    assert mat.shape == (2, 2)
-    assert check_unitarity(mat)
-    gamma = cmath.phase(mat[0, 0])
-    mat = mat * cmath.exp(-1j * gamma)
-    theta = math.atan2(abs(mat[1, 0]), mat[0, 0].real) * 2.0
-    phi_plus_lambda = cmath.phase(mat[1, 1])
-    phi = cmath.phase(mat[1, 0]) % (2.0 * math.pi)
-    lam = (phi_plus_lambda - phi) % (2.0 * math.pi)
-    return theta, phi, lam, gamma
 
 
 def u_decomposer(gate: OneQubitGate) -> List[UGate]:
@@ -47,7 +29,7 @@ def u_decomposer(gate: OneQubitGate) -> List[UGate]:
         List of U gate. length is always 1.
     """
     mat = gate.matrix()
-    theta, phi, lam, gamma = calc_uparams(mat)
+    theta, phi, lam, gamma = calc_u_params(mat)
     return [UGate.create(gate.targets, (theta, phi, lam, gamma))]
 
 
@@ -61,7 +43,7 @@ def ryrz_decomposer(gate: OneQubitGate) -> List[Union[RYGate, RZGate]]:
         List of RZ and RY gate. The global phase is omitted.
     """
     mat = gate.matrix()
-    theta, phi, lam, _ = calc_uparams(mat)
+    theta, phi, lam, _ = calc_u_params(mat)
     if theta < 1e-10:
         if phi + lam < 1e-10:
             return []

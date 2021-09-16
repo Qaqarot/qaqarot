@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utilities for convenient."""
+import cmath
 from collections import Counter
+import math
 import typing
 from typing import Dict, Iterator, Tuple, Union
 import warnings
@@ -88,10 +90,31 @@ def circuit_to_unitary(circ: 'Circuit', *runargs, **runkwargs) -> np.ndarray:
     return f(circ, *runargs, **runkwargs)
 
 
-def sqrt_2x2_matrix(mat: np.ndarray) -> np.ndarray:
-    """Returns square root of 2x2 matrix."""
+def calc_u_params(mat: np.ndarray) -> Tuple[float, float, float, float]:
+    """Calculate U-gate parameters from a 2x2 unitary matrix."""
     assert mat.shape == (2, 2)
-    return (mat + np.eye(2)) / np.sqrt(mat[0, 0] + mat[1, 1] + 2)
+    assert check_unitarity(mat)
+    gamma = cmath.phase(mat[0, 0])
+    mat = mat * cmath.exp(-1j * gamma)
+    theta = math.atan2(abs(mat[1, 0]), mat[0, 0].real) * 2.0
+    phi_plus_lambda = cmath.phase(mat[1, 1])
+    phi = cmath.phase(mat[1, 0]) % (2.0 * math.pi)
+    lam = (phi_plus_lambda - phi) % (2.0 * math.pi)
+    return theta, phi, lam, gamma
+
+
+def sqrt_2x2_matrix(mat: np.ndarray) -> np.ndarray:
+    """Returns square root of 2x2 matrix.
+
+    Reference: https://en.wikipedia.org/wiki/Square_root_of_a_2_by_2_matrix
+    """
+    assert mat.shape == (2, 2)
+    s = np.sqrt(np.linalg.det(mat))
+    t = np.sqrt(mat[0, 0] + mat[1, 1] + 2 * s)
+    if abs(t) < 1e-8: # Avoid zero division.
+        s = -s
+        t = np.sqrt(mat[0, 0] + mat[1, 1] + 2 * s)
+    return (mat + s * np.eye(2)) / t
 
 
 def gen_graycode(n: int) -> Iterator[int]:
