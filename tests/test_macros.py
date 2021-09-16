@@ -15,6 +15,8 @@ import blueqat.macros
 PAULI_X = np.array([[0, 1], [1, 0]])
 ANGLES = [0.0, pi / 4, pi / 2, pi, -pi / 2, 2 * pi, -7 * pi]
 
+ANGLES_SMALL = [0.0, -pi / 2, pi, 2 * pi]
+
 
 def test_c3z():
     assert np.allclose(circuit_to_unitary(Circuit().c3z(0, 1, 2, 3)),
@@ -132,4 +134,21 @@ def test_mcrz_gray_n(theta, n):
     expected[2**(n + 1) - 1, 2**(n + 1) - 1] = u[1, 1]
     assert np.allclose(
         circuit_to_unitary(Circuit().mcr_gray(theta, list(range(n)), n)),
+        expected)
+
+
+@pytest.mark.parametrize("theta", ANGLES_SMALL)
+@pytest.mark.parametrize("phi", ANGLES_SMALL)
+@pytest.mark.parametrize("lam", ANGLES_SMALL)
+@pytest.mark.parametrize("gamma", ANGLES_SMALL)
+@pytest.mark.parametrize("n", [0, 1, 2, 4])
+def test_mcu_gray_n(theta, phi, lam, gamma, n):
+    u = circuit_to_unitary(Circuit().u(theta, phi, lam, gamma)[0])
+    expected = np.eye(2**(n + 1), dtype=complex)
+    expected[2**n - 1, 2**n - 1] = u[0, 0]
+    expected[2**(n + 1) - 1, 2**n - 1] = u[1, 0]
+    expected[2**n - 1, 2**(n + 1) - 1] = u[0, 1]
+    expected[2**(n + 1) - 1, 2**(n + 1) - 1] = u[1, 1]
+    assert np.allclose(
+        circuit_to_unitary(Circuit().mcu_gray(theta, phi, lam, gamma, list(range(n)), n)),
         expected)
