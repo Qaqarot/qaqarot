@@ -65,10 +65,31 @@ def mcx_gray(c: Circuit, ctrl: Sequence[int], target: int) -> Circuit:
 def mcx_with_ancilla(c: Circuit,
                      ctrl: Sequence[int],
                      target: int,
-                     ancilla: Optional[int] = None) -> Circuit:
-    if ancilla is None:
-        ancilla = c.n_qubits
-    raise NotImplementedError("This function is still not implemented.")
+                     ancilla: int) -> Circuit:
+    """A macro of multi controlled X gate with ancilla.
+
+    Refer https://arxiv.org/pdf/quant-ph/9503016.pdf Lem. 7.3, Cor. 7.4."""
+    n_ctrl = len(ctrl)
+    if n_ctrl == 0:
+        return c.x[target]
+    if n_ctrl == 1:
+        return c.cx[ctrl[0], target]
+    if n_ctrl == 2:
+        return c.ccx[ctrl[0], ctrl[1], target]
+    if n_ctrl == 3:
+        return c.c3x(ctrl[0], ctrl[1], ctrl[2], target)
+    if n_ctrl == 4:
+        return c.c4x(ctrl[0], ctrl[1], ctrl[2], ctrl[3], target)
+    sep = (n_ctrl + 1) // 2 + 1
+    c1 = ctrl[:sep]
+    a1 = ctrl[-1]
+    c2 = list(ctrl[sep:]) + [ancilla]
+    a2 = ctrl[sep - 1]
+    c.mcx_with_ancilla(c1, ancilla, a1)
+    c.mcx_with_ancilla(c2, target, a2)
+    c.mcx_with_ancilla(c1, ancilla, a1)
+    c.mcx_with_ancilla(c2, target, a2)
+    return c
 
 
 @circuitmacro
@@ -89,7 +110,8 @@ def mcz_gray(c: Circuit, ctrl: Sequence[int], target: int) -> Circuit:
 def mcz_with_ancilla(c: Circuit,
                      ctrl: Sequence[int],
                      target: int,
-                     ancilla: Optional[int] = None) -> Circuit:
+                     ancilla: int) -> Circuit:
+    """A macro of multi controlled X gate with ancilla."""
     return c.h[target].mcx_with_ancilla(ctrl, target, ancilla).h[target]
 
 
