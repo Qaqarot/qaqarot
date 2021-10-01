@@ -152,3 +152,111 @@ def test_mcu_gray_n(theta, phi, lam, gamma, n):
     assert np.allclose(
         circuit_to_unitary(Circuit().mcu_gray(theta, phi, lam, gamma, list(range(n)), n)),
         expected)
+
+
+def test_mcx_with_ancilla_0():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([], 1, 0)),
+            circuit_to_unitary(Circuit().x[1])
+            )
+
+
+def test_mcx_with_ancilla_1():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1], 2, 0)),
+            circuit_to_unitary(Circuit().cx[1, 2])
+            )
+
+
+def test_mcx_with_ancilla_2():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1, 2], 3, 0)),
+            circuit_to_unitary(Circuit().ccx[1, 2, 3])
+            )
+
+
+def test_mcx_with_ancilla_3():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1, 2, 3], 4, 0)),
+            circuit_to_unitary(Circuit().c3x(1, 2, 3, 4))
+            )
+
+
+def test_mcx_with_ancilla_4():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1, 2, 3, 4], 5, 0)),
+            circuit_to_unitary(Circuit().c4x(1, 2, 3, 4, 5))
+            )
+
+
+def test_mcx_with_ancilla_5():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1, 2, 3, 4, 5], 6, 0)),
+            circuit_to_unitary(Circuit().mcx_gray([1, 2, 3, 4, 5], 6))
+            )
+
+
+def test_mcx_with_ancilla_6():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcx_with_ancilla([1, 2, 3, 4, 5, 6], 7, 0)),
+            circuit_to_unitary(Circuit().mcx_gray([1, 2, 3, 4, 5, 6], 7))
+            )
+
+
+def test_mcz_with_ancilla_0():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([], 1, 0)),
+            circuit_to_unitary(Circuit().z[1])
+            )
+
+
+def test_mcz_with_ancilla_1():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1], 2, 0)),
+            circuit_to_unitary(Circuit().cz[1, 2])
+            )
+
+
+def test_mcz_with_ancilla_2():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2], 3, 0)),
+            circuit_to_unitary(Circuit().ccz[1, 2, 3])
+            )
+
+
+def test_mcz_with_ancilla_3():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2, 3], 4, 0)),
+            circuit_to_unitary(Circuit().c3z(1, 2, 3, 4))
+            )
+
+
+def test_mcz_with_ancilla_4():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2, 3, 4], 5, 0)),
+            circuit_to_unitary(Circuit().mcz_gray([1, 2, 3, 4], 5))
+            )
+
+
+def test_mcz_with_ancilla_5():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2, 3, 4, 5], 6, 0)),
+            circuit_to_unitary(Circuit().mcz_gray([1, 2, 3, 4, 5], 6))
+            )
+
+
+def test_mcz_with_ancilla_6():
+    assert np.allclose(
+            circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2, 3, 4, 5, 6], 7, 0)),
+            circuit_to_unitary(Circuit().mcz_gray([1, 2, 3, 4, 5, 6], 7))
+            )
+
+
+def test_mcx_gray_12():
+    cnt = Circuit().x[:12].mcx_gray(range(12), 12).m[:].shots(10)
+    assert cnt == Counter({'1' * 13: 10})
+
+
+def test_mcx_with_ancilla_12():
+    cnt = Circuit().x[:12].mcx_with_ancilla(range(12), 12, 13).m[:].shots(10)
+    assert cnt == Counter({'1' * 13 + '0': 10})
