@@ -250,3 +250,13 @@ def test_mcz_with_ancilla_6():
             circuit_to_unitary(Circuit().mcz_with_ancilla([1, 2, 3, 4, 5, 6], 7, 0)),
             circuit_to_unitary(Circuit().mcz_gray([1, 2, 3, 4, 5, 6], 7))
             )
+
+
+def test_mcx_gray_12():
+    cnt = Circuit().x[:12].mcx_gray(range(12), 12).m[:].shots(10)
+    assert cnt == Counter({'1' * 13: 10})
+
+
+def test_mcx_with_ancilla_12():
+    cnt = Circuit().x[:12].mcx_with_ancilla(range(12), 12, 13).m[:].shots(10)
+    assert cnt == Counter({'1' * 13 + '0': 10})
