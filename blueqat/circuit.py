@@ -16,14 +16,15 @@ This module defines Circuit and the setting for circuit.
 """
 
 import warnings
-from functools import partial
+from functools import partial, update_wrapper
 import typing
-from typing import Callable, Dict, Optional, Tuple, Type
+from typing import cast, Any, Callable, Dict, Optional, Tuple, Type
 
 import numpy as np
 
 from . import gate
 from .gateset import get_op_type, register_operation, unregister_operation
+from .typing import CircuitOperation
 
 if typing.TYPE_CHECKING:
     from .gate import Operation
@@ -62,12 +63,13 @@ class Circuit:
 
         return runner
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> CircuitOperation[Any]:
         op_type = get_op_type(name)
         if op_type:
             return _GateWrapper(self, op_type)
         if name in GLOBAL_MACROS:
-            return partial(GLOBAL_MACROS[name], self)
+            macro = update_wrapper(partial(GLOBAL_MACROS[name], self), GLOBAL_MACROS[name])
+            return cast(CircuitOperation[Any], macro)
         if name.startswith("run_with_"):
             backend_name = name[9:]
             if backend_name in BACKENDS:
@@ -235,18 +237,18 @@ class Circuit:
         return v, cnt.most_common()[0][0]
 
 
-class _GateWrapper:
+class _GateWrapper(CircuitOperation[Circuit]):
     def __init__(self, circuit: Circuit, op_type: Type['Operation']):
         self.circuit = circuit
         self.target = None
         self.op_type = op_type
         self.params = ()
 
-    def __call__(self, *args):
+    def __call__(self, *args) -> '_GateWrapper':
         self.params = args
         return self
 
-    def __getitem__(self, args):
+    def __getitem__(self, args) -> 'Circuit':
         self.target = args
         self.circuit.ops.append(
             self.op_type.create(self.target, self.params))
@@ -255,7 +257,7 @@ class _GateWrapper:
             gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
         return self.circuit
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.params:
             args_str = str(self.params)
         else:
