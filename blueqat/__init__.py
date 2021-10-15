@@ -17,7 +17,6 @@ from .decorators import circuitmacro
 from . import pauli
 from . import utils
 from . import vqe
-from . import wq
 from ._version import __version__
 
-__all__ = ["pauli", "utils", "vqe", "wq", "circuitmacro", "Circuit", "BlueqatGlobalSetting"]
+__all__ = ["pauli", "utils", "vqe", "circuitmacro", "Circuit", "BlueqatGlobalSetting"]

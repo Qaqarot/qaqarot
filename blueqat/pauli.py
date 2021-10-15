@@ -19,6 +19,7 @@ from functools import reduce
 from itertools import combinations, groupby, product
 from numbers import Number, Integral
 from math import pi
+from typing import Sequence
 
 import numpy as np
 import scipy.sparse
@@ -944,3 +945,16 @@ def qubo_bit(n):
         Expr: Pauli expression of QUBO bit.
     """
     return 0.5 - 0.5 * Z[n]
+
+
+def from_qubo(qubo: Sequence[Sequence[float]]) -> Expr:
+    """
+    Convert to pauli operators of universal gate model.
+    """
+    h = 0.0
+    assert all(len(q) == len(qubo) for q in qubo)
+    for i in range(len(qubo)):
+        h += qubo_bit(i) * qubo[i][i]
+        for j in range(i + 1, len(qubo)):
+            h += qubo_bit(i) * qubo_bit(j) * (qubo[i][j] + qubo[j][i])
+    return h
