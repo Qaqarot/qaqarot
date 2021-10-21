@@ -5,7 +5,7 @@ This module is internally used.
 
 import cmath
 import math
-from typing import Callable, Iterable, Iterator, List, NoReturn, Tuple, Type, TypeVar, Union
+from typing import Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 
@@ -110,7 +110,7 @@ class Gate(Operation):
 class OneQubitGate(Gate):
     """Abstract quantum gate class for 1 qubit gate."""
 
-    u_params: Tuple[float, float, float, float]
+    u_params: Optional[Tuple[float, float, float, float]]
     """Params for U gate."""
     @property
     def n_qargs(self) -> int:
@@ -137,7 +137,7 @@ class OneQubitGate(Gate):
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
 
-    cu_params: Tuple[float, float, float, float]
+    cu_params: Optional[Tuple[float, float, float, float]]
 
     @property
     def n_qargs(self):
