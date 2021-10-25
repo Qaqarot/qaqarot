@@ -19,7 +19,7 @@ This module is internally used.
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from ..gate import Operation
+from ..gate import Operation, IFallbackOperation
 
 
 class Backend:
@@ -52,8 +52,10 @@ class Backend:
             action = self._get_action(gate)
             if action is not None:
                 ctx = action(gate, ctx)
-            else:
+            elif isinstance(gate, IFallbackOperation):
                 ctx = self._run_gates(gate.fallback(n_qubits), n_qubits, ctx)
+            else:
+                raise ValueError(f"Cannot run {gate.lowername} operation on this backend")
         return ctx
 
     def _run(self, gates: List[Operation], n_qubits: int, args: Tuple[Any],
