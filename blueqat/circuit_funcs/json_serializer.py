@@ -10,8 +10,9 @@ SCHEMA_VERSION = "1"
 
 if typing.TYPE_CHECKING:
     from blueqat.gate import Operation
+    from typing import Any, Dict, List
     try:
-        from typing import Any, Dict, List, TypedDict
+        from typing import TypedDict
     except ImportError:
         CircuitJsonDict = Dict[str, Any]
         OpJsonDict = Dict[str, Any]
