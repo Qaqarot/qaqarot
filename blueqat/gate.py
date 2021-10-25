@@ -5,7 +5,7 @@ This module is internally used.
 
 import cmath
 import math
-from typing import Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type, TypeVar, Union
+from typing import cast, Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 
@@ -41,12 +41,6 @@ class Operation:
         """Create an operation."""
         raise NotImplementedError(f"{cls.__name__}.create() is not defined.")
 
-    def fallback(self, n_qubits: int) -> List['Operation']:
-        """Returns alternative operations to make equivalent circuit."""
-        raise NotImplementedError(
-            f"The fallback of {self.__class__.__name__} operation is not defined."
-        )
-
     def dagger(self) -> 'Operation':
         """Returns the Hermitian conjugate of `self`."""
         raise NotImplementedError(
@@ -81,17 +75,17 @@ class Operation:
         return f'{self.lowername}{str_args}{str_targets}'
 
 
+class IFallbackOperation:
+    def fallback(self, n_qubits: int) -> List['Operation']:
+        raise NotImplementedError()
+
+
 class Gate(Operation):
     """Abstract quantum gate class."""
     @property
     def n_qargs(self) -> int:
         """Number of qubit arguments of this gate."""
         raise NotImplementedError()
-
-    def fallback(self, n_qubits: int) -> List['Gate']:
-        """Returns alternative gates to make equivalent circuit."""
-        raise NotImplementedError(
-            f"The fallback of {self.__class__.__name__} gate is not defined.")
 
     def dagger(self) -> 'Gate':
         """Returns the Hermitian conjugate of `self`."""
@@ -124,15 +118,6 @@ class OneQubitGate(Gate):
             gates += fallback(t)
         return gates
 
-    def fallback(self, n_qubits: int) -> List['Gate']:
-        if self.u_params:
-            return [UGate(self.targets, *self.u_params, **self.kwargs)]
-        try:
-            mat = self.matrix()
-        except NotImplementedError:
-            return super().fallback(n_qubits)
-        return [Mat1Gate(self.targets, mat, **self.kwargs)]
-
 
 class TwoQubitGate(Gate):
     """Abstract quantum gate class for 2 qubits gate."""
@@ -155,11 +140,6 @@ class TwoQubitGate(Gate):
             gates += fallback(c, t)
         return gates
 
-    def fallback(self, n_qubits: int) -> List['Gate']:
-        if self.cu_params:
-            return [CUGate(self.targets, *self.cu_params, **self.kwargs)]
-        return super().fallback(n_qubits)
-
 
 class HGate(OneQubitGate):
     """Hadamard gate"""
@@ -177,7 +157,7 @@ class HGate(OneQubitGate):
         return np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)
 
 
-class IGate(OneQubitGate):
+class IGate(OneQubitGate, IFallbackOperation):
     """Identity gate"""
     lowername = "i"
     u_params = (0.0, 0.0, 0.0, 0.0)
@@ -218,10 +198,6 @@ class Mat1Gate(OneQubitGate):
 
     def matrix(self):
         return self.mat
-
-    def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError(
-            'Fallback implementation for Mat1Gate is not available.')
 
 
 class PhaseGate(OneQubitGate):
@@ -320,7 +296,7 @@ class RZGate(OneQubitGate):
         return np.array([[a.conjugate(), 0], [0, a]], dtype=complex)
 
 
-class SGate(OneQubitGate):
+class SGate(OneQubitGate, IFallbackOperation):
     """S gate"""
     lowername = "s"
     u_params = (0.0, 0.0, math.pi / 2, 0.0)
@@ -340,7 +316,7 @@ class SGate(OneQubitGate):
         return np.array([[1, 0], [0, 1j]])
 
 
-class SDagGate(OneQubitGate):
+class SDagGate(OneQubitGate, IFallbackOperation):
     """Dagger of S gate"""
     lowername = "sdg"
     u_params = (0.0, 0.0, -math.pi / 2, 0.0)
@@ -390,7 +366,7 @@ class SXDagGate(OneQubitGate):
         return np.array([[1 - 1j, 1 + 1j], [1 + 1j, 1 - 1j]])
 
 
-class TGate(OneQubitGate):
+class TGate(OneQubitGate, IFallbackOperation):
     """T ($\\pi/8$) gate"""
     lowername = "t"
     u_params = (0, 0, math.pi / 4.0, 0.0)
@@ -409,7 +385,7 @@ class TGate(OneQubitGate):
         return np.array([[1, 0], [0, math.exp(math.pi * 0.25)]])
 
 
-class TDagGate(OneQubitGate):
+class TDagGate(OneQubitGate, IFallbackOperation):
     """Dagger of T ($\\pi/8$) gate"""
     lowername = "tdg"
     u_params = (0, 0, -math.pi / 4.0, 0.0)
@@ -428,7 +404,7 @@ class TDagGate(OneQubitGate):
         return np.array([[1, 0], [0, math.exp(math.pi * -0.25)]])
 
 
-class ToffoliGate(Gate):
+class ToffoliGate(Gate, IFallbackOperation):
     """Toffoli (CCX) gate"""
     lowername = "ccx"
 
@@ -492,10 +468,6 @@ class UGate(OneQubitGate):
         return UGate(self.targets, -self.theta, -self.lam, -self.phi,
                      -self.gamma, **self.kwargs)
 
-    def fallback(self, n_qubits: int) -> List['Gate']:
-        raise NotImplementedError(
-            'Fallback implementation for UGate is not available.')
-
     def matrix(self):
         t, p, l, g = self.params
         gphase = cmath.exp(1j * g)
@@ -556,7 +528,7 @@ class ZGate(OneQubitGate):
         return np.array([[1, 0], [0, -1]], dtype=complex)
 
 
-class CCZGate(Gate):
+class CCZGate(Gate, IFallbackOperation):
     """2-Controlled Z gate"""
     lowername = "ccz"
 
@@ -597,7 +569,7 @@ class CCZGate(Gate):
                         dtype=complex)
 
 
-class CHGate(TwoQubitGate):
+class CHGate(TwoQubitGate, IFallbackOperation):
     """Controlled-H gate"""
     lowername = "ch"
     cu_params = (-math.pi / 2.0, math.pi, 0.0, 0.0)
@@ -609,6 +581,9 @@ class CHGate(TwoQubitGate):
     def dagger(self):
         return self
 
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
+
     def matrix(self):
         a = 1.0 / math.sqrt(2)
         return np.array(
@@ -616,7 +591,7 @@ class CHGate(TwoQubitGate):
             dtype=complex)
 
 
-class CPhaseGate(TwoQubitGate):
+class CPhaseGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate but phase is different."""
     lowername = "cphase"
 
@@ -629,6 +604,9 @@ class CPhaseGate(TwoQubitGate):
     def create(cls, targets, params) -> 'CPhaseGate':
         return cls(targets, params[0])
 
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
+
     def dagger(self):
         return CPhaseGate(self.targets, -self.theta, **self.kwargs)
 
@@ -638,7 +616,7 @@ class CPhaseGate(TwoQubitGate):
                         dtype=complex)
 
 
-class CRXGate(TwoQubitGate):
+class CRXGate(TwoQubitGate, IFallbackOperation):
     """Rotate-X gate"""
     lowername = "crx"
 
@@ -654,6 +632,9 @@ class CRXGate(TwoQubitGate):
     def dagger(self):
         return CRXGate(self.targets, -self.theta, **self.kwargs)
 
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
+
     def matrix(self):
         t = self.theta * 0.5
         a = math.cos(t)
@@ -663,7 +644,7 @@ class CRXGate(TwoQubitGate):
             dtype=complex)
 
 
-class CRYGate(TwoQubitGate):
+class CRYGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Y gate"""
     lowername = "cry"
 
@@ -679,6 +660,9 @@ class CRYGate(TwoQubitGate):
     def dagger(self):
         return CRYGate(self.targets, -self.theta, **self.kwargs)
 
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
+
     def matrix(self):
         t = self.theta * 0.5
         a = math.cos(t)
@@ -688,7 +672,7 @@ class CRYGate(TwoQubitGate):
             dtype=complex)
 
 
-class CRZGate(TwoQubitGate):
+class CRZGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate"""
     lowername = "crz"
 
@@ -701,6 +685,9 @@ class CRZGate(TwoQubitGate):
     def create(cls, targets, params) -> 'CRZGate':
         return cls(targets, params[0])
 
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
+
     def dagger(self):
         return CRZGate(self.targets, -self.theta, **self.kwargs)
 
@@ -711,7 +698,7 @@ class CRZGate(TwoQubitGate):
                         dtype=complex)
 
 
-class CSwapGate(Gate):
+class CSwapGate(Gate, IFallbackOperation):
     """Controlled SWAP gate"""
     lowername = "cswap"
 
@@ -738,7 +725,7 @@ class CSwapGate(Gate):
                         dtype=complex)
 
 
-class CUGate(TwoQubitGate):
+class CUGate(TwoQubitGate, IFallbackOperation):
     """Controlled-U gate."""
     lowername = "cu"
 
@@ -810,7 +797,7 @@ class CXGate(TwoQubitGate):
             dtype=complex)
 
 
-class CYGate(TwoQubitGate):
+class CYGate(TwoQubitGate, IFallbackOperation):
     """Controlled-Y gate"""
     lowername = "cy"
     cu_params = (math.pi, math.pi / 2, math.pi / 2, 0.0)
@@ -821,6 +808,9 @@ class CYGate(TwoQubitGate):
 
     def dagger(self):
         return self
+
+    def fallback(self, _):
+        return [CUGate.create(self.targets, self.cu_params)]
 
     def matrix(self):
         return np.array(
@@ -846,7 +836,7 @@ class CZGate(TwoQubitGate):
             dtype=complex)
 
 
-class RXXGate(TwoQubitGate):
+class RXXGate(TwoQubitGate, IFallbackOperation):
     """Rotate-XX gate"""
     lowername = "rxx"
 
@@ -879,7 +869,7 @@ class RXXGate(TwoQubitGate):
             dtype=complex)
 
 
-class RYYGate(TwoQubitGate):
+class RYYGate(TwoQubitGate, IFallbackOperation):
     """Rotate-YY gate"""
     lowername = "ryy"
 
@@ -912,7 +902,7 @@ class RYYGate(TwoQubitGate):
             dtype=complex)
 
 
-class RZZGate(TwoQubitGate):
+class RZZGate(TwoQubitGate, IFallbackOperation):
     """Rotate-ZZ gate"""
     lowername = "rzz"
 
@@ -941,7 +931,7 @@ class RZZGate(TwoQubitGate):
                         dtype=complex)
 
 
-class SwapGate(TwoQubitGate):
+class SwapGate(TwoQubitGate, IFallbackOperation):
     """Swap gate"""
     lowername = "swap"
 
@@ -964,7 +954,7 @@ class SwapGate(TwoQubitGate):
                          [0, 0, 0, 1]])
 
 
-class ZZGate(TwoQubitGate):
+class ZZGate(TwoQubitGate, IFallbackOperation):
     """ZZ gate
 
     This gate is a basis two-qubit gate for some kinds of trapped-ion based machines.

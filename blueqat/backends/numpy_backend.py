@@ -146,9 +146,11 @@ class NumPyBackend(Backend):
             action = self._get_action(gate)
             if action is not None:
                 ctx = action(gate, ctx)
-            else:
+            elif isinstance(gate, IFallbackOperation):
                 for g in gate.fallback(n_qubits):
                     run_single_gate(g)
+            else:
+                raise ValueError(f"Unknown operation {gate.lowername}.")
 
         for _ in range(shots):
             ctx.prepare(initial)
