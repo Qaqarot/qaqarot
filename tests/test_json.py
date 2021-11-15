@@ -35,39 +35,45 @@ def test_serialize():
     assert d == {
         'schema': {
             'name': 'blueqat-circuit',
-            'version': '1'
+            'version': '2'
         },
         'n_qubits': 3,
         'ops': [
             {
                 'name': 'phase',
                 'targets': [0],
-                'params': [0.2]
+                'params': [0.2],
+                'options': {}
             },
             {
                 'name': 'phase',
                 'targets': [2],
-                'params': [0.2]
+                'params': [0.2],
+                'options': {}
             },
             {
                 'name': 'h',
                 'targets': [0],
-                'params': []
+                'params': [],
+                'options': {}
             },
             {
                 'name': 'h',
                 'targets': [1],
-                'params': []
+                'params': [],
+                'options': {}
             },
             {
                 'name': 'h',
                 'targets': [2],
-                'params': []
+                'params': [],
+                'options': {}
             },
             {
                 'name': 'measure',
                 'targets': [1],
-                'params': []
+                'params': [],
+                'options': {}
             },
         ]
     }
@@ -89,6 +95,7 @@ def test_deserialize():
     d = json.loads(s)
     c1 = deserialize(d)
     c2 = flatten(Circuit().r(0.2)[0, 2].h[:].m[1])
+    assert repr(c1) == repr(c2)
 
 
 def test_deserialize_unflatten():
@@ -105,3 +112,62 @@ def test_deserialize_unflatten():
     c1 = deserialize(d)
     c2 = Circuit().r(0.2)[0, 2].h[0, 1, 2].m[1]
     assert repr(c1) == repr(c2)
+
+
+def test_serializeV2():
+    """Testing serialized result. This JSON may changed in the future."""
+    c = Circuit().m(key="foo")[0].h[:].m(key="foo", duplicated="replace")[1]
+    d = serialize(c)
+    assert d == {
+        'schema': {
+            'name': 'blueqat-circuit',
+            'version': '2'
+        },
+        'n_qubits': 2,
+        'ops': [
+            {
+                'name': 'measure',
+                'targets': [0],
+                'params': [],
+                'options': {'key': 'foo'}
+            },
+            {
+                'name': 'h',
+                'targets': [0],
+                'params': [],
+                'options': {}
+            },
+            {
+                'name': 'h',
+                'targets': [1],
+                'params': [],
+                'options': {}
+            },
+            {
+                'name': 'measure',
+                'targets': [1],
+                'params': [],
+                'options': {'key': 'foo', 'duplicated': 'replace'}
+            },
+        ]
+    }
+
+
+def test_deserializeV1():
+    """Testing deserialize result. This JSON may changed in the future."""
+    s = """{
+    "schema": {"name": "blueqat-circuit", "version": "1"},
+    "n_qubits": 3,
+    "ops": [
+      {"name": "phase", "targets": [0], "params": [0.2]},
+      {"name": "phase", "targets": [2], "params": [0.2]},
+      {"name": "h", "targets": [0], "params": []},
+      {"name": "h", "targets": [1], "params": []},
+      {"name": "h", "targets": [2], "params": []},
+      {"name": "measure", "targets": [1], "params": []}
+    ]}"""
+    d = json.loads(s)
+    c1 = deserialize(d)
+    c2 = flatten(Circuit().r(0.2)[0, 2].h[:].m[1])
+
+
