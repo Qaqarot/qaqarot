@@ -1188,8 +1188,14 @@ class Measurement(Operation):
         super().__init__(targets, ())
         if options is None:
             options = {}
-        self.key = str(options.get("key"))
-        self.duplicated = str(options.get("duplicated"))
+        key = options.get("key")
+        if key is not None:
+            key = str(key)
+        duplicated = options.get("duplicated")
+        if duplicated is not None:
+            duplicated = str(duplicated)
+        self.key = key
+        self.duplicated = duplicated
 
     @classmethod
     def create(cls,
