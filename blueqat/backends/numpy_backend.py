@@ -59,6 +59,7 @@ class _NumPyBackendContext:
             self.qubits.fill(0.0)
             self.qubits[0] = 1.0
         self.cregs = [0] * self.n_qubits
+        self.sample = {}
 
     def store_shot(self) -> None:
         """Store current cregs to shots_result"""
@@ -449,6 +450,7 @@ class _NumPyBackendOperations:
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
+        measured = []
         for target in gate.target_iter(n_qubits):
             p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0])**2
             rand = random.random()
@@ -456,10 +458,20 @@ class _NumPyBackendOperations:
                 qubits[(i & (1 << target)) != 0] = 0.0
                 qubits /= math.sqrt(p_zero)
                 ctx.cregs[target] = 0
+                measured.append(0)
             else:
                 qubits[(i & (1 << target)) == 0] = 0.0
                 qubits /= math.sqrt(1.0 - p_zero)
                 ctx.cregs[target] = 1
+                measured.append(1)
+        if gate.key is not None:
+            if gate.key in ctx.sample:
+                if gate.duplicated == "replace":
+                    ctx.sample[gate.key] = measured
+                elif gate.duplicated == "append":
+                    ctx.sample[gate.key] += measured
+            else:
+                ctx.sample[gate.key] = measured
         return ctx
 
     @staticmethod
@@ -505,6 +517,7 @@ class NumPyBackend(Backend):
         "shots": lambda ctx: ctx.shots_result,
         "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
         "_inner_ctx": lambda ctx: ctx,
+        "samples": lambda _: _, # dummy
     }
 
     def __init__(self) -> None:
@@ -586,6 +599,8 @@ class NumPyBackend(Backend):
         shots, returns = __parse_run_args(shots, returns)
         if kwargs:
             warnings.warn(f"Unknown run arguments: {kwargs}")
+        if returns == "samples":
+            return self.samples(gates, n_qubits, shots, initial)
 
         if initial is not None:
             initial = _check_and_transform_initial(initial, n_qubits)
@@ -647,6 +662,20 @@ class NumPyBackend(Backend):
         if ctx.cregs:
             ctx.store_shot()
         return ctx.qubits, ctx.shots_result.most_common()[0][0]
+
+    @staticmethod
+    def samples(gates: List[Operation],
+              n_qubits,
+              shots: int,
+              initial: Optional[np.ndarray] = None) -> List[Dict[str, List[int]]]:
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+        ctx = _NumPyBackendContext(n_qubits)
+        samples = []
+        for _ in range(shots):
+            ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+            samples.append(ctx.sample)
+        return samples
 
     def make_cache(self, gates: List[Operation], n_qubits: int) -> None:
         self.run(gates, n_qubits, save_cache=True)
