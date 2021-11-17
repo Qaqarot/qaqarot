@@ -470,6 +470,8 @@ class _NumPyBackendOperations:
                     ctx.sample[gate.key] = measured
                 elif gate.duplicated == "append":
                     ctx.sample[gate.key] += measured
+                else:
+                    raise ValueError("Measurement key is duplicated.")
             else:
                 ctx.sample[gate.key] = measured
         return ctx
