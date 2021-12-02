@@ -24,12 +24,11 @@ class Operation:
         """Upper name of the operation."""
         return self.lowername.upper()
 
-    def __init__(self, targets: Targets, params=(), **kwargs) -> None:
+    def __init__(self, targets: Targets, params=()) -> None:
         if self.lowername == '':
             raise ValueError(
                 f"{self.__class__.__name__}.lowername is not defined.")
         self.params = params
-        self.kwargs = kwargs
         self.targets = targets
 
     def target_iter(self, n_qubits: int) -> Iterator[int]:
@@ -37,15 +36,10 @@ class Operation:
         return slicing(self.targets, n_qubits)
 
     @classmethod
-    def create(cls: Type[_Op], targets: Targets, params: tuple) -> _Op:
+    def create(cls: Type[_Op], targets: Targets, params: tuple,
+               options: Optional[dict]) -> _Op:
         """Create an operation."""
         raise NotImplementedError(f"{cls.__name__}.create() is not defined.")
-
-    def dagger(self) -> 'Operation':
-        """Returns the Hermitian conjugate of `self`."""
-        raise NotImplementedError(
-            f"Hermitian conjugate of {self.__class__.__name__} operation is not provided."
-        )
 
     def _str_args(self) -> str:
         """Returns printable string of args."""
@@ -75,9 +69,12 @@ class Operation:
         return f'{self.lowername}{str_args}{str_targets}'
 
 
-class IFallbackOperation:
+class IFallbackOperation(Operation):
+    """The interface of `fallback`"""
     def fallback(self, n_qubits: int) -> List['Operation']:
-        raise NotImplementedError()
+        """Get alternative operations"""
+        raise NotImplementedError(
+            f"fallback of {self.lowername} is not defined.")
 
 
 class Gate(Operation):
@@ -147,8 +144,13 @@ class HGate(OneQubitGate):
     u_params = (-math.pi / 2.0, math.pi, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'HGate':
-        return cls(targets, *params)
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'HGate':
+        if params or options:
+            raise ValueError(f"{cls.__name__} doesn't take parameters")
+        return cls(targets)
 
     def dagger(self):
         return self
@@ -163,8 +165,13 @@ class IGate(OneQubitGate, IFallbackOperation):
     u_params = (0.0, 0.0, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'IGate':
-        return cls(targets, *params)
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'IGate':
+        if params or options:
+            raise ValueError(f"{cls.__name__} doesn't take parameters")
+        return cls(targets)
 
     def fallback(self, _):
         return []
@@ -185,16 +192,21 @@ class Mat1Gate(OneQubitGate):
     lowername = "mat1"
     u_params = None
 
-    def __init__(self, targets, mat: np.ndarray, **kwargs):
-        super().__init__(targets, (mat, ), **kwargs)
+    def __init__(self, targets, mat: np.ndarray):
+        super().__init__(targets, (mat, ))
         self.mat = mat
 
     @classmethod
-    def create(cls, targets, params) -> 'Mat1Gate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'Mat1Gate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return Mat1Gate(self.targets, self.mat.T.conjugate(), **self.kwargs)
+        return Mat1Gate(self.targets, self.mat.T.conjugate())
 
     def matrix(self):
         return self.mat
@@ -212,38 +224,52 @@ class PhaseGate(OneQubitGate):
     But matrix of phase gate is simpler than RZ gate or U1 gate.)"""
     lowername = "phase"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.u_params = (0.0, self.theta, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'PhaseGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'PhaseGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return PhaseGate(self.targets, -self.theta, **self.kwargs)
+        return PhaseGate(self.targets, -self.theta)
 
     def matrix(self):
         return np.array([[1, 0], [0, cmath.exp(1j * self.theta)]],
                         dtype=complex)
 
 
-class RXGate(OneQubitGate):
+class RXGate(OneQubitGate, IFallbackOperation):
     """Rotate-X gate"""
     lowername = "rx"
 
-    def __init__(self, targets, theta: float, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta: float):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'RXGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RXGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return RXGate(self.targets, -self.theta, **self.kwargs)
+        return RXGate(self.targets, -self.theta)
+
+    def fallback(self, _):
+        assert self.u_params is not None
+        return [UGate.create(self.targets, self.u_params)]
 
     def matrix(self):
         t = self.theta * 0.5
@@ -252,21 +278,30 @@ class RXGate(OneQubitGate):
         return np.array([[a, b], [b, a]], dtype=complex)
 
 
-class RYGate(OneQubitGate):
+class RYGate(OneQubitGate, IFallbackOperation):
     """Rotate-Y gate"""
     lowername = "ry"
 
-    def __init__(self, targets, theta: float, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta: float):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.u_params = (theta, 0.0, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'RYGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RYGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return RYGate(self.targets, -self.theta, **self.kwargs)
+        return RYGate(self.targets, -self.theta)
+
+    def fallback(self, _):
+        assert self.u_params is not None
+        return [UGate.create(self.targets, self.u_params)]
 
     def matrix(self):
         t = self.theta * 0.5
@@ -275,21 +310,30 @@ class RYGate(OneQubitGate):
         return np.array([[a, -b], [b, a]], dtype=complex)
 
 
-class RZGate(OneQubitGate):
+class RZGate(OneQubitGate, IFallbackOperation):
     """Rotate-Z gate"""
     lowername = "rz"
 
-    def __init__(self, targets, theta: float, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta: float):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.u_params = (0.0, 0.0, theta, -0.5 * theta)
 
     @classmethod
-    def create(cls, targets, params) -> 'RZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return RZGate(self.targets, -self.theta, **self.kwargs)
+        return RZGate(self.targets, -self.theta)
+
+    def fallback(self, _):
+        assert self.u_params is not None
+        return [UGate.create(self.targets, self.u_params)]
 
     def matrix(self):
         a = cmath.exp(0.5j * self.theta)
@@ -302,11 +346,16 @@ class SGate(OneQubitGate, IFallbackOperation):
     u_params = (0.0, 0.0, math.pi / 2, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'SGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'SGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
-        return SDagGate(self.targets, self.params, **self.kwargs)
+        return SDagGate(self.targets, self.params)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
@@ -322,11 +371,16 @@ class SDagGate(OneQubitGate, IFallbackOperation):
     u_params = (0.0, 0.0, -math.pi / 2, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'SDagGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'SDagGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
-        return SGate(self.targets, self.params, **self.kwargs)
+        return SGate(self.targets, self.params)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_target_iter(
@@ -336,7 +390,7 @@ class SDagGate(OneQubitGate, IFallbackOperation):
         return np.array([[1, 0], [0, -1j]])
 
 
-class SXGate(OneQubitGate):
+class SXGate(OneQubitGate, IFallbackOperation):
     """sqrt(X) gate
 
     This is equivalent as RX(π/2) * (1 + i) / √2."""
@@ -344,23 +398,45 @@ class SXGate(OneQubitGate):
     u_params = (math.pi / 2.0, -math.pi / 2.0, math.pi / 2.0, math.pi / 4.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'SXGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'SXGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
-        return SXDagGate(self.targets, self.params, **self.kwargs)
+        return SXDagGate(self.targets, self.params)
+
+    def fallback(self, _):
+        assert self.u_params is not None
+        return [UGate.create(self.targets, self.u_params)]
 
     def matrix(self):
         return np.array([[1 + 1j, 1 - 1j], [1 - 1j, 1 + 1j]])
 
 
-class SXDagGate(OneQubitGate):
+class SXDagGate(OneQubitGate, IFallbackOperation):
     """sqrt(X)† gate"""
     lowername = "sxdg"
     u_params = (-math.pi / 2.0, -math.pi / 2.0, math.pi / 2.0, -math.pi / 4.0)
 
+    @classmethod
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'SXDagGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
+        return cls(targets, params)
+
     def dagger(self):
-        return SXGate(self.targets, self.params, **self.kwargs)
+        return SXGate(self.targets, self.params)
+
+    def fallback(self, _):
+        assert self.u_params is not None
+        return [UGate.create(self.targets, self.u_params)]
 
     def matrix(self):
         return np.array([[1 - 1j, 1 + 1j], [1 + 1j, 1 - 1j]])
@@ -372,14 +448,19 @@ class TGate(OneQubitGate, IFallbackOperation):
     u_params = (0, 0, math.pi / 4.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'TGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'TGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
-        return TDagGate(self.targets, self.params, **self.kwargs)
+        return TDagGate(self.targets, self.params)
 
-    def fallback(self, n_qubits):
-        return [PhaseGate(self.targets, math.pi / 4, **self.kwargs)]
+    def fallback(self, _):
+        return [PhaseGate(self.targets, math.pi / 4)]
 
     def matrix(self):
         return np.array([[1, 0], [0, math.exp(math.pi * 0.25)]])
@@ -391,14 +472,19 @@ class TDagGate(OneQubitGate, IFallbackOperation):
     u_params = (0, 0, -math.pi / 4.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'TDagGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'TDagGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
-        return TGate(self.targets, self.params, **self.kwargs)
+        return TGate(self.targets, self.params)
 
-    def fallback(self, n_qubits):
-        return [PhaseGate(self.targets, -math.pi / 4, **self.kwargs)]
+    def fallback(self, _):
+        return [PhaseGate(self.targets, -math.pi / 4)]
 
     def matrix(self):
         return np.array([[1, 0], [0, math.exp(math.pi * -0.25)]])
@@ -413,7 +499,12 @@ class ToffoliGate(Gate, IFallbackOperation):
         return 3
 
     @classmethod
-    def create(cls, targets, params) -> 'ToffoliGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'ToffoliGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -451,9 +542,8 @@ class UGate(OneQubitGate):
                  theta: float,
                  phi: float,
                  lam: float,
-                 gamma: float = 0.0,
-                 **kwargs):
-        super().__init__(targets, (theta, phi, lam, gamma), **kwargs)
+                 gamma: float = 0.0):
+        super().__init__(targets, (theta, phi, lam, gamma))
         self.theta = theta
         self.phi = phi
         self.lam = lam
@@ -461,12 +551,17 @@ class UGate(OneQubitGate):
         self.u_params = (theta, phi, lam, gamma)
 
     @classmethod
-    def create(cls, targets, params) -> 'UGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'UGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, *params)
 
     def dagger(self):
         return UGate(self.targets, -self.theta, -self.lam, -self.phi,
-                     -self.gamma, **self.kwargs)
+                     -self.gamma)
 
     def matrix(self):
         t, p, l, g = self.params
@@ -486,7 +581,12 @@ class XGate(OneQubitGate):
     u_params = (math.pi, 0.0, math.pi, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'XGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'XGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -502,7 +602,12 @@ class YGate(OneQubitGate):
     u_params = (math.pi, math.pi / 2, math.pi / 2, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'YGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'YGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -518,7 +623,12 @@ class ZGate(OneQubitGate):
     u_params = (0.0, 0.0, math.pi, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'ZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'ZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -537,7 +647,12 @@ class CCZGate(Gate, IFallbackOperation):
         return 3
 
     @classmethod
-    def create(cls, targets, params) -> 'CCZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CCZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def fallback(self, n_qubits):
@@ -575,13 +690,19 @@ class CHGate(TwoQubitGate, IFallbackOperation):
     cu_params = (-math.pi / 2.0, math.pi, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CHGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CHGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
         return self
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def matrix(self):
@@ -595,20 +716,26 @@ class CPhaseGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate but phase is different."""
     lowername = "cphase"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.cu_params = (0.0, self.theta, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CPhaseGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CPhaseGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def dagger(self):
-        return CPhaseGate(self.targets, -self.theta, **self.kwargs)
+        return CPhaseGate(self.targets, -self.theta)
 
     def matrix(self):
         return np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
@@ -620,19 +747,25 @@ class CRXGate(TwoQubitGate, IFallbackOperation):
     """Rotate-X gate"""
     lowername = "crx"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CRXGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CRXGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return CRXGate(self.targets, -self.theta, **self.kwargs)
+        return CRXGate(self.targets, -self.theta)
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def matrix(self):
@@ -648,19 +781,25 @@ class CRYGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Y gate"""
     lowername = "cry"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.cu_params = (theta, 0.0, 0.0, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CRYGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CRYGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def dagger(self):
-        return CRYGate(self.targets, -self.theta, **self.kwargs)
+        return CRYGate(self.targets, -self.theta)
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def matrix(self):
@@ -676,20 +815,26 @@ class CRZGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate"""
     lowername = "crz"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
         self.cu_params = (0.0, 0.0, theta, -0.5 * theta)
 
     @classmethod
-    def create(cls, targets, params) -> 'CRZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CRZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params[0])
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def dagger(self):
-        return CRZGate(self.targets, -self.theta, **self.kwargs)
+        return CRZGate(self.targets, -self.theta)
 
     def matrix(self):
         a = cmath.exp(0.5j * self.theta)
@@ -707,7 +852,12 @@ class CSwapGate(Gate, IFallbackOperation):
         return 3
 
     @classmethod
-    def create(cls, targets, params) -> 'CSwapGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CSwapGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -734,21 +884,25 @@ class CUGate(TwoQubitGate, IFallbackOperation):
                  theta: float,
                  phi: float,
                  lam: float,
-                 gamma: float = 0.0,
-                 **kwargs):
-        super().__init__(targets, (theta, phi, lam, gamma), **kwargs)
+                 gamma: float = 0.0):
+        super().__init__(targets, (theta, phi, lam, gamma))
         self.theta = theta
         self.phi = phi
         self.lam = lam
         self.gamma = gamma
 
     @classmethod
-    def create(cls, targets, params) -> 'CUGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CUGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, *params)
 
     def dagger(self):
         return CUGate(self.targets, -self.theta, -self.lam, -self.phi,
-                      -self.gamma, **self.kwargs)
+                      -self.gamma)
 
     def fallback(self, n_qubits: int) -> List['Gate']:
         theta, phi, lam, gamma = self.params
@@ -785,7 +939,12 @@ class CXGate(TwoQubitGate):
     cu_params = (math.pi, 0.0, math.pi, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CXGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CXGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -803,13 +962,19 @@ class CYGate(TwoQubitGate, IFallbackOperation):
     cu_params = (math.pi, math.pi / 2, math.pi / 2, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CYGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CYGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
         return self
 
     def fallback(self, _):
+        assert self.cu_params is not None
         return [CUGate.create(self.targets, self.cu_params)]
 
     def matrix(self):
@@ -824,7 +989,12 @@ class CZGate(TwoQubitGate):
     cu_params = (0.0, 0.0, math.pi, 0.0)
 
     @classmethod
-    def create(cls, targets, params) -> 'CZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'CZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def dagger(self):
@@ -840,16 +1010,21 @@ class RXXGate(TwoQubitGate, IFallbackOperation):
     """Rotate-XX gate"""
     lowername = "rxx"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
 
     @classmethod
-    def create(cls, targets, params) -> 'RXXGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RXXGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, *params)
 
     def dagger(self):
-        return RXXGate(self.targets, -self.theta, **self.kwargs)
+        return RXXGate(self.targets, -self.theta)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -873,16 +1048,21 @@ class RYYGate(TwoQubitGate, IFallbackOperation):
     """Rotate-YY gate"""
     lowername = "ryy"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
 
     @classmethod
-    def create(cls, targets, params) -> 'RYYGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RYYGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, *params)
 
     def dagger(self):
-        return RYYGate(self.targets, -self.theta, **self.kwargs)
+        return RYYGate(self.targets, -self.theta)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -906,16 +1086,21 @@ class RZZGate(TwoQubitGate, IFallbackOperation):
     """Rotate-ZZ gate"""
     lowername = "rzz"
 
-    def __init__(self, targets, theta, **kwargs):
-        super().__init__(targets, (theta, ), **kwargs)
+    def __init__(self, targets, theta):
+        super().__init__(targets, (theta, ))
         self.theta = theta
 
     @classmethod
-    def create(cls, targets, params) -> 'RZZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'RZZGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, *params)
 
     def dagger(self):
-        return RZZGate(self.targets, -self.theta, **self.kwargs)
+        return RZZGate(self.targets, -self.theta)
 
     def fallback(self, n_qubits):
         return self._make_fallback_for_control_target_iter(
@@ -939,7 +1124,12 @@ class SwapGate(TwoQubitGate, IFallbackOperation):
         return self
 
     @classmethod
-    def create(cls, targets, params) -> 'SwapGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'SwapGate':
+        if options:
+            raise ValueError(f"{cls.__name__} doesn't take options")
         return cls(targets, params)
 
     def fallback(self, n_qubits):
@@ -962,11 +1152,16 @@ class ZZGate(TwoQubitGate, IFallbackOperation):
     """
     lowername = "zz"
 
-    def __init__(self, targets, **kwargs):
-        super().__init__(targets, (), **kwargs)
+    def __init__(self, targets):
+        super().__init__(targets, ())
 
     @classmethod
-    def create(cls, targets, params) -> 'ZZGate':
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'ZZGate':
+        if params or options:
+            raise ValueError(f"{cls.__name__} doesn't take params")
         return cls(targets)
 
     def dagger(self):
@@ -989,9 +1184,27 @@ class Measurement(Operation):
     """Measurement operation"""
     lowername = "measure"
 
+    def __init__(self, targets: Targets, options: Optional[dict]):
+        super().__init__(targets, ())
+        if options is None:
+            options = {}
+        key = options.get("key")
+        if key is not None:
+            key = str(key)
+        duplicated = options.get("duplicated")
+        if duplicated is not None:
+            duplicated = str(duplicated)
+        self.key = key
+        self.duplicated = duplicated
+
     @classmethod
-    def create(cls, targets, params) -> 'Measurement':
-        return cls(targets)
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'Measurement':
+        if params:
+            raise ValueError(f"{cls.__name__} doesn't take params")
+        return cls(targets, options)
 
     # Ad-hoc copy and paste programming.
     def target_iter(self, n_qubits):
@@ -1004,8 +1217,13 @@ class Reset(Operation):
     lowername = "reset"
 
     @classmethod
-    def create(cls, targets, params) -> 'Reset':
-        return cls(targets)
+    def create(cls,
+               targets: Targets,
+               params: tuple,
+               options: Optional[dict] = None) -> 'Reset':
+        if params or options:
+            raise ValueError(f"{cls.__name__} doesn't take params")
+        return cls(targets, params)
 
     # Ad-hoc copy and paste programming.
     def target_iter(self, n_qubits):
@@ -1057,7 +1275,8 @@ def slicing(args: Targets, length: int) -> Iterator[int]:
         yield from slicing_singlevalue(args, length)
 
 
-def qubit_pairs(args: Tuple[Targets, Targets], length: int) -> Iterator[Tuple[int, int]]:
+def qubit_pairs(args: Tuple[Targets, Targets],
+                length: int) -> Iterator[Tuple[int, int]]:
     """Internally used."""
     if not isinstance(args, tuple):
         raise ValueError("Control and target qubits pair(s) are required.")

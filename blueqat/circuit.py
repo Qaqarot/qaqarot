@@ -240,21 +240,22 @@ class Circuit:
 class _GateWrapper(CircuitOperation[Circuit]):
     def __init__(self, circuit: Circuit, op_type: Type['Operation']):
         self.circuit = circuit
-        self.target = None
         self.op_type = op_type
         self.params = ()
+        self.options = None
 
-    def __call__(self, *args) -> '_GateWrapper':
+    def __call__(self, *args, **kwargs) -> '_GateWrapper':
         self.params = args
+        if kwargs:
+            self.options = kwargs
         return self
 
-    def __getitem__(self, args) -> 'Circuit':
-        self.target = args
+    def __getitem__(self, targets) -> 'Circuit':
         self.circuit.ops.append(
-            self.op_type.create(self.target, self.params))
+            self.op_type.create(targets, self.params, self.options))
         # ad-hoc
         self.circuit.n_qubits = max(
-            gate.get_maximum_index(args) + 1, self.circuit.n_qubits)
+            gate.get_maximum_index(targets) + 1, self.circuit.n_qubits)
         return self.circuit
 
     def __str__(self) -> str:
@@ -262,7 +263,9 @@ class _GateWrapper(CircuitOperation[Circuit]):
             args_str = str(self.params)
         else:
             args_str = ""
-        return self.op_type.lowername + args_str + " " + str(self.target)
+        if self.options:
+            args_str += str(self.options)
+        return self.op_type.lowername + args_str
 
 
 class BlueqatGlobalSetting:

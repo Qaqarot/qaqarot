@@ -8,7 +8,7 @@ import numpy as np
 
 from blueqat import Circuit
 from blueqat.gate import OneQubitGate, Mat1Gate, HGate, UGate, PhaseGate, RXGate, RYGate, RZGate
-from blueqat.utils import circuit_to_unitary
+from blueqat.circuit_funcs import circuit_to_unitary
 from blueqat.backends.onequbitgate_decomposer import ryrz_decomposer, u_decomposer
 
 Decomposer = Callable[[OneQubitGate], List[OneQubitGate]]

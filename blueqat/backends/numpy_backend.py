@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import typing
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 import math
 import cmath
 import random
@@ -27,11 +28,17 @@ from .backendbase import Backend
 
 DEFAULT_DTYPE = complex
 
+OPS_DISABLE_CTX_CACHE = (Measurement, Reset)
+
+DEFAULT_SHOTS: int = 1024
+
 
 class _NumPyBackendContext:
     """This class is internally used in NumPyBackend"""
-    def __init__(self, n_qubits: int, cache: Optional[np.ndarray],
-                 cache_idx: int) -> None:
+    def __init__(self,
+                 n_qubits: int,
+                 cache: Optional[np.ndarray] = None,
+                 cache_idx: int = -1) -> None:
         self.n_qubits = n_qubits
         self.qubits = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
         self.qubits_buf = np.zeros(2**n_qubits, dtype=DEFAULT_DTYPE)
@@ -52,6 +59,7 @@ class _NumPyBackendContext:
             self.qubits.fill(0.0)
             self.qubits[0] = 1.0
         self.cregs = [0] * self.n_qubits
+        self.sample = {}
 
     def store_shot(self) -> None:
         """Store current cregs to shots_result"""
@@ -62,116 +70,7 @@ class _NumPyBackendContext:
         self.shots_result[key] = self.shots_result.get(key, 0) + 1
 
 
-class NumPyBackend(Backend):
-    """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
-    __return_type: Dict[str, Callable[[_NumPyBackendContext], Any]] = {
-        "statevector": lambda ctx: ctx.qubits,
-        "shots": lambda ctx: ctx.shots_result,
-        "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
-        "_inner_ctx": lambda ctx: ctx,
-    }
-
-    DEFAULT_SHOTS: int = 1024
-
-    def __init__(self) -> None:
-        self.cache = None
-        self.cache_idx = -1
-
-    def __clear_cache(self) -> None:
-        self.cache = None
-        self.cache_idx = -1
-
-    def __clear_cache_if_invalid(self, n_qubits: int, dtype: type) -> None:
-        if self.cache is None:
-            self.__clear_cache()
-            return
-        if len(self.cache) != 2**n_qubits:
-            self.__clear_cache()
-            return
-        if self.cache.dtype != dtype:
-            self.__clear_cache()
-            return
-
-    def run(
-            self,
-            gates: List[Operation],
-            n_qubits,
-            shots: Optional[int] = None,
-            initial: Optional[np.ndarray] = None,
-            returns: Optional[str] = None,
-            ignore_global: bool = False,
-            save_cache: bool = False,
-            **kwargs) -> Any:
-        def __parse_run_args(shots: Optional[int],
-                             returns: Optional[str]) -> Tuple[int, str]:
-            if returns is None:
-                if shots is None:
-                    returns = "statevector"
-                else:
-                    returns = "shots"
-            if returns not in self.__return_type.keys():
-                raise ValueError(f"Unknown returns type '{returns}'")
-            if shots is None:
-                if returns in ("statevector", "_inner_ctx"):
-                    shots = 1
-                else:
-                    shots = self.DEFAULT_SHOTS
-            if returns == "statevector" and shots > 1:
-                warnings.warn(
-                    "When `returns` = 'statevector', `shots` = 1 is enough.")
-            return shots, returns
-
-        shots, returns = __parse_run_args(shots, returns)
-        if kwargs:
-            warnings.warn(f"Unknown run arguments: {kwargs}")
-
-        if initial is not None:
-            if not isinstance(initial, np.ndarray):
-                raise ValueError(f"`initial` must be a np.ndarray, but {type(initial)}")
-            if initial.shape != (2**n_qubits,):
-                raise ValueError(f"`initial.shape` is not matched. Expected: {(2**n_qubits,)}, Actual: {initial.shape}")
-            if initial.dtype != DEFAULT_DTYPE:
-                initial = initial.astype(DEFAULT_DTYPE)
-            if save_cache:
-                warnings.warn("When initial is not None, saving cache is disabled.")
-                save_cache = False
-            self.__clear_cache()
-        else:
-            self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
-
-        ctx = _NumPyBackendContext(n_qubits, self.cache, self.cache_idx)
-
-        def run_single_gate(gate: Operation) -> None:
-            nonlocal ctx
-            action = self._get_action(gate)
-            if action is not None:
-                ctx = action(gate, ctx)
-            elif isinstance(gate, IFallbackOperation):
-                for g in gate.fallback(n_qubits):
-                    run_single_gate(g)
-            else:
-                raise ValueError(f"Unknown operation {gate.lowername}.")
-
-        for _ in range(shots):
-            ctx.prepare(initial)
-            for gate in gates[ctx.cache_idx + 1:]:
-                run_single_gate(gate)
-                if ctx.save_ctx_cache:
-                    ctx.cache = ctx.qubits.copy()
-                    ctx.cache_idx += 1
-                    if save_cache:
-                        self.cache = ctx.cache
-                        self.cache_idx = ctx.cache_idx
-            if ctx.cregs:
-                ctx.store_shot()
-
-        if ignore_global:
-            ignore_global_phase(ctx.qubits)
-        return self.__return_type[returns](ctx)
-
-    def make_cache(self, gates: List[Operation], n_qubits: int) -> None:
-        self.run(gates, n_qubits, save_cache=True)
-
+class _NumPyBackendOperations:
     @staticmethod
     def gate_x(gate: XGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of X gate."""
@@ -363,7 +262,7 @@ class NumPyBackend(Backend):
 
     @staticmethod
     def gate_cu(gate: CUGate,
-                 ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CU gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -473,7 +372,7 @@ class NumPyBackend(Backend):
     def gate_ccz(gate: CCZGate,
                  ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of CCZ gate."""
-        c1, c2, t = gate.targets
+        c1, c2, t = cast(Tuple[int, int, int], gate.targets)
         qubits = ctx.qubits
         i = ctx.indices
         indices = (i & (1 << c1)) != 0
@@ -486,15 +385,14 @@ class NumPyBackend(Backend):
     def gate_ccx(gate: ToffoliGate,
                  ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of Toffoli gate."""
-        _, _, t = gate.targets
-        ctx = NumPyBackend.gate_h(HGate(t), ctx)
-        ctx = NumPyBackend.gate_ccz(CCZGate(gate.targets), ctx)
-        ctx = NumPyBackend.gate_h(HGate(t), ctx)
+        _, _, t = cast(Tuple[int, int, int], gate.targets)
+        ctx = _NumPyBackendOperations.gate_h(HGate(t), ctx)
+        ctx = _NumPyBackendOperations.gate_ccz(CCZGate(gate.targets), ctx)
+        ctx = _NumPyBackendOperations.gate_h(HGate(t), ctx)
         return ctx
 
     @staticmethod
-    def gate_u(gate: UGate,
-                ctx: _NumPyBackendContext) -> _NumPyBackendContext:
+    def gate_u(gate: UGate, ctx: _NumPyBackendContext) -> _NumPyBackendContext:
         """Implementation of U gate."""
         qubits = ctx.qubits
         newq = ctx.qubits_buf
@@ -552,6 +450,7 @@ class NumPyBackend(Backend):
         qubits = ctx.qubits
         n_qubits = ctx.n_qubits
         i = ctx.indices
+        measured = []
         for target in gate.target_iter(n_qubits):
             p_zero = np.linalg.norm(qubits[(i & (1 << target)) == 0])**2
             rand = random.random()
@@ -559,11 +458,22 @@ class NumPyBackend(Backend):
                 qubits[(i & (1 << target)) != 0] = 0.0
                 qubits /= math.sqrt(p_zero)
                 ctx.cregs[target] = 0
+                measured.append(0)
             else:
                 qubits[(i & (1 << target)) == 0] = 0.0
                 qubits /= math.sqrt(1.0 - p_zero)
                 ctx.cregs[target] = 1
-        ctx.save_ctx_cache = False
+                measured.append(1)
+        if gate.key is not None:
+            if gate.key in ctx.sample:
+                if gate.duplicated == "replace":
+                    ctx.sample[gate.key] = measured
+                elif gate.duplicated == "append":
+                    ctx.sample[gate.key] += measured
+                else:
+                    raise ValueError("Measurement key is duplicated.")
+            else:
+                ctx.sample[gate.key] = measured
         return ctx
 
     @staticmethod
@@ -584,5 +494,192 @@ class NumPyBackend(Backend):
                 qubits[(i & (1 << target)) == 0] = qubits[t1]
                 qubits[t1] = 0.0
                 qubits /= math.sqrt(1.0 - p_zero)
-        ctx.save_ctx_cache = False
         return ctx
+
+
+def _check_and_transform_initial(initial: np.ndarray,
+                                 n_qubits: int) -> np.ndarray:
+    """Check the shape and transform the type of initial."""
+    if not isinstance(initial, np.ndarray):
+        raise ValueError(
+            f"`initial` must be a np.ndarray, but {type(initial)}")
+    if initial.shape != (2**n_qubits, ):
+        raise ValueError(
+            f"`initial.shape` is not matched. Expected: {(2**n_qubits,)}, Actual: {initial.shape}"
+        )
+    if initial.dtype != DEFAULT_DTYPE:
+        initial = initial.astype(DEFAULT_DTYPE)
+    return initial
+
+
+class NumPyBackend(Backend):
+    """Simulator backend which uses numpy. This backend is Blueqat's default backend."""
+    __return_type: Dict[str, Callable[[_NumPyBackendContext], Any]] = {
+        "statevector": lambda ctx: ctx.qubits,
+        "shots": lambda ctx: ctx.shots_result,
+        "statevector_and_shots": lambda ctx: (ctx.qubits, ctx.shots_result),
+        "_inner_ctx": lambda ctx: ctx,
+        "samples": lambda _: _, # dummy
+    }
+
+    def __init__(self) -> None:
+        self.cache = None
+        self.cache_idx = -1
+
+    def __clear_cache(self) -> None:
+        self.cache = None
+        self.cache_idx = -1
+
+    def __clear_cache_if_invalid(self, n_qubits: int, dtype: type) -> None:
+        if self.cache is None:
+            self.__clear_cache()
+            return
+        if len(self.cache) != 2**n_qubits:
+            self.__clear_cache()
+            return
+        if self.cache.dtype != dtype:
+            self.__clear_cache()
+            return
+
+    @staticmethod
+    def _run_inner(ctx: _NumPyBackendContext, gates: List[Operation],
+                   n_qubits: int,
+                   initial: Optional[np.ndarray]) -> _NumPyBackendContext:
+        def run_single_gate(ctx: _NumPyBackendContext,
+                            gate: Operation) -> _NumPyBackendContext:
+            try:
+                action = getattr(_NumPyBackendOperations,
+                                 'gate_' + gate.lowername)
+                ctx = action(gate, ctx)
+            except AttributeError:
+                if isinstance(gate, IFallbackOperation):
+                    for g in gate.fallback(n_qubits):
+                        ctx = run_single_gate(ctx, g)
+                else:
+                    raise ValueError(f"Unknown operation {gate.lowername}.")  # pylint: disable=raise-missing-from
+            return ctx
+
+        ctx.prepare(initial)
+        for i, gate in enumerate(gates[ctx.cache_idx + 1:]):
+            if isinstance(gate, OPS_DISABLE_CTX_CACHE):
+                if ctx.save_ctx_cache:
+                    ctx.cache = ctx.qubits.copy()
+                    ctx.cache_idx += i
+                    ctx.save_ctx_cache = False
+            ctx = run_single_gate(ctx, gate)
+        return ctx
+
+    def run(self,
+            gates: List[Operation],
+            n_qubits,
+            shots: Optional[int] = None,
+            initial: Optional[np.ndarray] = None,
+            returns: Optional[str] = None,
+            ignore_global: bool = False,
+            save_cache: bool = False,
+            **kwargs) -> Any:
+        def __parse_run_args(shots: Optional[int],
+                             returns: Optional[str]) -> Tuple[int, str]:
+            if returns is None:
+                if shots is None:
+                    returns = "statevector"
+                else:
+                    returns = "shots"
+            if returns not in self.__return_type.keys():
+                raise ValueError(f"Unknown returns type '{returns}'")
+            if shots is None:
+                if returns in ("statevector", "_inner_ctx"):
+                    shots = 1
+                else:
+                    shots = DEFAULT_SHOTS
+            if returns == "statevector" and shots > 1:
+                shots = 1
+                warnings.warn(
+                    "When `returns` = 'statevector', `shots` is ignored.")
+            return shots, returns
+
+        shots, returns = __parse_run_args(shots, returns)
+        if kwargs:
+            warnings.warn(f"Unknown run arguments: {kwargs}")
+        if returns == "samples":
+            # Remarks: This feature is experimental.
+            return self.samples(gates, n_qubits, shots, initial)
+
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+            if save_cache:
+                warnings.warn(
+                    "When initial is not None, saving cache is disabled.")
+                save_cache = False
+            self.__clear_cache()
+        else:
+            self.__clear_cache_if_invalid(n_qubits, DEFAULT_DTYPE)
+
+        ctx = _NumPyBackendContext(n_qubits, self.cache, self.cache_idx)
+
+        for _ in range(shots):
+            ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+            if ctx.cregs:
+                ctx.store_shot()
+            if save_cache:
+                self.cache = ctx.cache
+                self.cache_idx = ctx.cache_idx
+
+        if ignore_global:
+            ignore_global_phase(ctx.qubits)
+        return self.__return_type[returns](ctx)
+
+    @staticmethod
+    def statevector(gates: List[Operation],
+                    n_qubits,
+                    initial: Optional[np.ndarray] = None) -> np.ndarray:
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+        ctx = _NumPyBackendContext(n_qubits)
+        ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+        return ctx.qubits
+
+    @staticmethod
+    def shots(gates: List[Operation],
+              n_qubits,
+              shots: int,
+              initial: Optional[np.ndarray] = None) -> typing.Counter[str]:
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+        ctx = _NumPyBackendContext(n_qubits)
+        for _ in range(shots):
+            ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+            if ctx.cregs:
+                ctx.store_shot()
+        return ctx.shots_result
+
+    @staticmethod
+    def oneshot(
+            gates: List[Operation],
+            n_qubits,
+            initial: Optional[np.ndarray] = None) -> Tuple[np.ndarray, str]:
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+        ctx = _NumPyBackendContext(n_qubits)
+        ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+        if ctx.cregs:
+            ctx.store_shot()
+        return ctx.qubits, ctx.shots_result.most_common()[0][0]
+
+    @staticmethod
+    def samples(gates: List[Operation],
+              n_qubits,
+              shots: int,
+              initial: Optional[np.ndarray] = None) -> List[Dict[str, List[int]]]:
+        """This feature is experimental."""
+        if initial is not None:
+            initial = _check_and_transform_initial(initial, n_qubits)
+        ctx = _NumPyBackendContext(n_qubits)
+        samples = []
+        for _ in range(shots):
+            ctx = NumPyBackend._run_inner(ctx, gates, n_qubits, initial)
+            samples.append(ctx.sample)
+        return samples
+
+    def make_cache(self, gates: List[Operation], n_qubits: int) -> None:
+        self.run(gates, n_qubits, save_cache=True)

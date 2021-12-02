@@ -55,20 +55,27 @@ GATE_SET: Dict[str, Type[gate.Operation]] = {
     "reset": gate.Reset,
 }
 
+
 def get_op_type(name: str) -> Optional[Type[gate.Operation]]:
     """Get a class of operation from operation name."""
     return GATE_SET.get(name)
 
-def create(name: str, targets: Targets, params: tuple) -> gate.Operation:
+
+def create(name: str,
+           targets: Targets,
+           params: tuple,
+           options: Optional[dict] = None) -> gate.Operation:
     """Create an operation from name, targets and params."""
     op_type = get_op_type(name)
     if op_type is None:
         raise ValueError(f"Unknown operation `{name}'.")
-    return op_type.create(targets, params)
+    return op_type.create(targets, params, options)
+
 
 def register_operation(name: str, op_type: Type[gate.Operation]) -> None:
     """Register an operation. If operation is already exists, overwrite it."""
     GATE_SET[name] = op_type
+
 
 def unregister_operation(name: str) -> None:
     """Unregister an operation. If operation is not exists, do nothing."""
