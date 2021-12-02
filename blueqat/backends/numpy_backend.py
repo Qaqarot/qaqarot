@@ -602,6 +602,7 @@ class NumPyBackend(Backend):
         if kwargs:
             warnings.warn(f"Unknown run arguments: {kwargs}")
         if returns == "samples":
+            # Remarks: This feature is experimental.
             return self.samples(gates, n_qubits, shots, initial)
 
         if initial is not None:
@@ -670,6 +671,7 @@ class NumPyBackend(Backend):
               n_qubits,
               shots: int,
               initial: Optional[np.ndarray] = None) -> List[Dict[str, List[int]]]:
+        """This feature is experimental."""
         if initial is not None:
             initial = _check_and_transform_initial(initial, n_qubits)
         ctx = _NumPyBackendContext(n_qubits)
