@@ -180,7 +180,7 @@ class IGate(OneQubitGate, IFallbackOperation):
         return self
 
     def matrix(self):
-        return np.eye(2)
+        return np.eye(2, dtype=complex)
 
 
 class Mat1Gate(OneQubitGate):
@@ -463,7 +463,7 @@ class TGate(OneQubitGate, IFallbackOperation):
         return [PhaseGate(self.targets, math.pi / 4)]
 
     def matrix(self):
-        return np.array([[1, 0], [0, math.exp(math.pi * 0.25)]])
+        return np.array([[1, 0], [0, cmath.exp(math.pi * 0.25j)]])
 
 
 class TDagGate(OneQubitGate, IFallbackOperation):
@@ -487,7 +487,7 @@ class TDagGate(OneQubitGate, IFallbackOperation):
         return [PhaseGate(self.targets, -math.pi / 4)]
 
     def matrix(self):
-        return np.array([[1, 0], [0, math.exp(math.pi * -0.25)]])
+        return np.array([[1, 0], [0, cmath.exp(math.pi * -0.25j)]])
 
 
 class ToffoliGate(Gate, IFallbackOperation):
