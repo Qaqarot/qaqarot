@@ -1,6 +1,6 @@
 import setuptools
 
-with open("README.rst", "r", encoding="utf-8") as f:
+with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 with open("blueqat/_version.py", "r", encoding="utf-8") as f:
@@ -13,7 +13,7 @@ setuptools.setup(
     name = "blueqat",
     version=__version__,
     author="The Blueqat Developers",
-    author_email="kato@mdrft.com",
+    author_email="info@blueqat.com",
     description="Quantum gate simulator",
     long_description=long_description,
     long_description_content_type="text/x-rst",
