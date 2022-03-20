@@ -16,7 +16,7 @@ setuptools.setup(
     author_email="info@blueqat.com",
     description="Quantum gate simulator",
     long_description=long_description,
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown,
     url="https://github.com/Blueqat/Blueqat",
     license="Apache 2",
     packages=setuptools.find_packages(),
