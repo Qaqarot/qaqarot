@@ -203,6 +203,22 @@ minimizer = vqe.get_scipy_minimizer(method="COBYLA")
 result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step), minimizer=minimizer).run()
 ```
 
+### Circuit Drawing Backend
+```python
+from blueqat import vqe
+from blueqat.pauli import *
+from blueqat.pauli import qubo_bit as q
+
+#hamiltonian = q(0)-3*q(1)+2*q(0)*q(1)+3*q(2)*q(3)+q(4)*q(7)
+hamiltonian = Z[0]-3*Z[1]+2*Z[0]*Z[1]+3*Z[2]*Z[3]+Z[4]
+step = 8
+
+result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run()
+result.circuit.run(backend='draw')
+```
+
+![draw](https://raw.githubusercontent.com/Blueqat/Blueqat/master/draw.png)
+
 ### Cloud System Connection (API Key is required)
 ```python
 from bqcloud import register_api
