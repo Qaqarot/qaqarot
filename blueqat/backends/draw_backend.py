@@ -2,8 +2,9 @@ from .backendbase import Backend
 from ..circuit import Circuit
 from ..gate import *
 
-import networkx as nx
-import matplotlib.pyplot as plt
+# To avoid ImportError, don't import this here.
+# import networkx as nx
+# import matplotlib.pyplot as plt
 import numpy as np
 import math
 
@@ -11,6 +12,10 @@ class DrawCircuit(Backend):
     """Backend for draw output."""
     
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
+        # Lazy import to avoid unneeded ImportError.
+        import networkx as nx
+        import matplotlib.pyplot as plt
+
         qlist = {}
         flg = 0
         time = 0
