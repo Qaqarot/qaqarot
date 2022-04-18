@@ -13,8 +13,6 @@ class DrawCircuit(Backend):
     
     def _preprocess_run(self, gates, n_qubits, args, kwargs):
         # Lazy import to avoid unneeded ImportError.
-        import networkx as nx
-        import matplotlib.pyplot as plt
 
         qlist = {}
         flg = 0
@@ -30,6 +28,9 @@ class DrawCircuit(Backend):
         return gates, (qlist, n_qubits, [flg], [time], add_edge, remove_edge)
 
     def _postprocess_run(self, ctx):
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        
         #color_code
         color_gate = {}
         color_gate['X'] = color_gate['Y'] = color_gate['Z'] = '#0BB0E2'
