@@ -14,7 +14,7 @@ setuptools.setup(
     version=__version__,
     author="The Blueqat Developers",
     author_email="info@blueqat.com",
-    description="Quantum gate simulator",
+    description="Quantum Computer Library for Everyone",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Blueqat/Blueqat",
