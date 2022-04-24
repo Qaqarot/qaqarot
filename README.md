@@ -248,7 +248,7 @@ else:
 
 ### Circuit
 ```python
-import photonqat as pq
+from blueqat import photonqat as pq
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -285,7 +285,7 @@ F.run()
 
 ### Circuit
 ```python
-import photonqat as pq
+from blueqat import photonqat as pq
 import numpy as np
 import matplotlib.pyplot as plt
 
