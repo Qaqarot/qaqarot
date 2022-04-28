@@ -6,9 +6,6 @@ A Quantum Computing SDK
 ### Version
 [![Version](https://badge.fury.io/py/blueqat.svg)](https://badge.fury.io/py/blueqat)
 
-### Build info
-[![Build](https://circleci.com/gh/Blueqat/Blueqat.svg?style=svg)](https://circleci.com/gh/Blueqat/Blueqat)
-
 ### Tutorial
 https://github.com/Blueqat/Blueqat-tutorials
 
