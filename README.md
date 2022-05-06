@@ -9,6 +9,31 @@ A Quantum Computing SDK
 ### Tutorial
 https://github.com/Blueqat/Blueqat-tutorials
 
+### Notice
+The backend of blueqat will be changed to tensor network in the near future. Now try specifying the back end as "quimb".
+
+```python
+from blueqat import Circuit
+Circuit(50).h[:].run(backend="quimb")
+```
+
+Get the single amplitude
+```python
+Circuit(4).h[:].run(backend="quimb", amplitude="0101")
+```
+
+Get the sample
+```python
+Circuit(4).h[:].run(backend="quimb", shots=100)
+```
+
+Get the expectation value of hamiltonian
+```python
+from blueqat.pauli import Z
+hamiltonian = 1*Z[0]+1*Z[1]
+Circuit(4).x[:].run(backend="quimb", hamiltonian=hamiltonian)
+```
+
 ### Install
 ```
 git clone https://github.com/Blueqat/Blueqat
@@ -79,11 +104,6 @@ c.run(shots=100)
 ```python
 Circuit(2).m[:].run(shots=100, initial=np.array([0, 1, 1, 0])/np.sqrt(2))
 # => Counter({'10': 51, '01': 49})
-```
-
-### Sympy Unitary
-```python
-Circuit().h[0].cx[0, 1].run(backend="sympy_unitary")
 ```
 
 ### Blueqat to QASM

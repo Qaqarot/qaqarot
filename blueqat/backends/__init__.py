@@ -6,6 +6,7 @@ from .sympy_backend import SympyBackend
 from .onequbitgate_transpiler import OneQubitGateCompactionTranspiler
 from .twoqubitgate_transpiler import TwoQubitGateDecomposingTranspiler
 from .draw_backend import DrawCircuit
+from .quimb import Quimb
 
 BACKENDS = {
     "numpy": NumPyBackend,
@@ -16,5 +17,6 @@ BACKENDS = {
     "2q_decomposition": TwoQubitGateDecomposingTranspiler,
     "1q_compaction": OneQubitGateCompactionTranspiler,
     "draw": DrawCircuit,
+    "quimb": Quimb,
 }
 DEFAULT_BACKEND_NAME = "numpy"
