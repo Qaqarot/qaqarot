@@ -12,6 +12,12 @@ https://github.com/Blueqat/Blueqat-tutorials
 ### Notice
 The backend of blueqat will be changed to tensor network in the near future. Now try specifying the back end as "quimb".
 
+install required
+
+```
+pip install --no-deps -U git+https://github.com/jcmgray/quimb.git@develop autoray
+```
+
 ```python
 from blueqat import Circuit
 Circuit(50).h[:].run(backend="quimb")
