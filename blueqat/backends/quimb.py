@@ -12,6 +12,7 @@ class Quimb(Backend):
         
         circ = qtn.Circuit(n_qubits)
         regs = list(range(n_qubits))
+        
         if "shots" in kwargs:
             n_shots = kwargs["shots"]
         else:
@@ -111,6 +112,7 @@ class Quimb(Backend):
         else:
             for control, target in gate.control_target_iter(ctx[2]):
                 ctx[0].apply_gate(gate.lowername, gate.theta, ctx[1][control], ctx[1][target])
+        return ctx
 
     def _three_qubit_gate_noargs(self, gate, ctx):
         return ctx
