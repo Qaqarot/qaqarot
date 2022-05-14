@@ -30,6 +30,7 @@ def qaoa(hamiltonian, step, init = None, mixer = None):
     from .pauli import qubo_bit as q
     
     hamiltonian = hamiltonian.to_expr().simplify()
+
     N = hamiltonian.max_n()
     
     time_evolutions_cost = [
@@ -39,16 +40,15 @@ def qaoa(hamiltonian, step, init = None, mixer = None):
     time_evolutions_mixer = [
         term.get_time_evolution() for term in mixer
     ] if mixer else []
-    
+        
     def f(params):
-        params = params%(np.pi*2)
+        params = params
         betas =  params[:step]
         gammas =  params[step:]
-
         if init is None:
             c = Circuit(N).h[:]
         else:
-            c = init
+            c = init.copy()
     
         for beta, gamma in zip(betas, gammas):
             for evo in time_evolutions_cost:
