@@ -166,12 +166,10 @@ class DrawCircuit(Backend):
         ctx[3].append(time+1)
         return ctx
 
-    gate_x = _one_qubit_gate_noargs
-    gate_y = _one_qubit_gate_noargs
-    gate_z = _one_qubit_gate_noargs
+    gate_x = gate_y = gate_z = _one_qubit_gate_noargs
     gate_h = _one_qubit_gate_noargs
-    gate_t = _one_qubit_gate_noargs
-    gate_s = _one_qubit_gate_noargs
+    gate_t = gate_tdg = _one_qubit_gate_noargs
+    gate_s = gate_sdg = _one_qubit_gate_noargs
     
     def _one_qubit_gate_args_theta(self, gate, ctx):
         flg = ctx[2][-1]

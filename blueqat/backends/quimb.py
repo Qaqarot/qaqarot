@@ -30,13 +30,14 @@ class Quimb(Backend):
     def _postprocess_run(self, ctx):
         import quimb as qu
         import collections
+        import re
         
         if ctx[5]:
             hami = ctx[5].simplify()
             c = 0
 
             #because term not included into the array
-            if len(str(hami).split("+")) == 1:
+            if len(re.split('[+,-]', str(hami))) == 1:
                 kron_hami = qu.pauli(hami[0][0].op)
                 qu_list = [hami[0][0][0]]
                 for i in range(1, len(hami[0])):
