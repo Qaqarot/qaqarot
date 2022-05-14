@@ -24,6 +24,80 @@ import numpy as np
 if typing.TYPE_CHECKING:
     from . import Circuit
 
+def qaoa(hamiltonian, step, init = None, mixer = None):
+    import scipy.optimize as optimize
+    from . import Circuit
+    from .pauli import qubo_bit as q
+    
+    hamiltonian = hamiltonian.to_expr().simplify()
+    N = hamiltonian.max_n()
+    
+    time_evolutions_cost = [
+        term.get_time_evolution() for term in hamiltonian
+    ] 
+    
+    time_evolutions_mixer = [
+        term.get_time_evolution() for term in mixer
+    ] if mixer else []
+    
+    def f(params):
+        params = params%(np.pi*2)
+        betas =  params[:step]
+        gammas =  params[step:]
+
+        if init is None:
+            c = Circuit(N).h[:]
+        else:
+            c = init
+    
+        for beta, gamma in zip(betas, gammas):
+            for evo in time_evolutions_cost:
+                evo(c, gamma)
+            if mixer is None:
+                c.rx(beta)[:]
+            else:
+                for evo in time_evolutions_mixer:
+                    evo(c, beta)
+    
+        return c.run(backend="quimb", hamiltonian=hamiltonian)
+    
+    #number of params
+    initial_guess = np.array([
+        np.random.rand()*np.pi*2 for _ in range(step * 2)
+    ])
+    
+    result = optimize.minimize(f, initial_guess, method="Powell",
+                                                          options={
+                                                              "ftol": 5.0e-2,
+                                                              "xtol": 5.0e-2,
+                                                              "maxiter": 1000
+                                                          })
+    
+    if result.success:
+        fitted_params = result.x
+        betas = fitted_params[:step]
+        gammas = fitted_params[step:]
+
+        if init is None:
+            circ = Circuit(N).h[:]
+        else:
+            circ = init
+    
+        for beta, gamma in zip(betas, gammas):
+            for evo in time_evolutions_cost:
+                evo(circ, gamma)
+            if mixer is None:
+                circ.rx(beta)[:]
+            else:
+                for evo in time_evolutions_mixer:
+                    evo(circ, beta)
+        result = type('', (), {})
+        result.params = fitted_params
+        result.circuit = circ
+        
+        return result
+    else:
+        return ValueError(result.message)
 
 def to_inttuple(
     bitstr: Union[str, Counter, Dict[str, int]]
