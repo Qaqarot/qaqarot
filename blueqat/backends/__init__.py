@@ -19,4 +19,4 @@ BACKENDS = {
     "draw": DrawCircuit,
     "quimb": Quimb,
 }
-DEFAULT_BACKEND_NAME = "numpy"
+DEFAULT_BACKEND_NAME = "quimb"

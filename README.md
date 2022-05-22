@@ -10,35 +10,7 @@ A Quantum Computing SDK
 https://github.com/Blueqat/Blueqat-tutorials
 
 ### Notice
-The backend of blueqat will be changed to tensor network in the near future. Now try specifying the back end as "quimb".
-
-install required
-
-```
-pip install --no-deps -U git+https://github.com/jcmgray/quimb.git@develop autoray
-```
-
-```python
-from blueqat import Circuit
-Circuit(50).h[:].run(backend="quimb")
-```
-
-Get the single amplitude
-```python
-Circuit(4).h[:].run(backend="quimb", amplitude="0101")
-```
-
-Get the sample
-```python
-Circuit(4).h[:].run(backend="quimb", shots=100)
-```
-
-Get the expectation value of hamiltonian
-```python
-from blueqat.pauli import Z
-hamiltonian = 1*Z[0]+1*Z[1]
-Circuit(4).x[:].run(backend="quimb", hamiltonian=hamiltonian)
-```
+The back end has been changed to tensor network. The previous backend environment can still be used with .run(backend="numpy").
 
 ### Install
 ```
@@ -62,7 +34,7 @@ import math
 c = Circuit()
 
 #if you want to specified the number of qubit
-c = Circuit(3) #3qubits
+c = Circuit(50) #50qubits
 ```
 
 ### Method Chain
@@ -88,28 +60,29 @@ Circuit().x[1, 2] # 1qubit gate with comma
 Circuit().rz(math.pi / 4)[0]
 ```
 
-### Measurement
+### Run
 ```python
-Circuit().m[0]
-```
-
-### Run() to get state vector
-```python
-Circuit().h[0].cx[0,1].run()
-# => array([0.70710678+0.j, 0.+0.j, 0.+0.j, 0.70710678+0.j])
+from blueqat import Circuit
+Circuit(50).h[:].run()
 ```
 
 ### Run(shots=n)
 ```python
-c = Circuit().h[0].cx[0,1].m[:]
-c.run(shots=100)
-# => Counter({'00': 48, '11': 52})
+Circuit(100).x[:].run(shots=100)
+# => Counter({'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111': 100})
 ```
 
-### State Vector Initialization
+### Single Amplitude
 ```python
-Circuit(2).m[:].run(shots=100, initial=np.array([0, 1, 1, 0])/np.sqrt(2))
-# => Counter({'10': 51, '01': 49})
+Circuit(4).h[:].run(amplitude="0101")
+```
+
+### Expectation value of hamiltonian
+```python
+from blueqat.pauli import Z
+hamiltonian = 1*Z[0]+1*Z[1]
+Circuit(4).x[:].run(hamiltonian=hamiltonian)
+# => -2.0
 ```
 
 ### Blueqat to QASM
@@ -153,30 +126,6 @@ print(hamiltonian)
 # => -5.5*I + 1.0*Z[1] + 1.0*Z[2] + 1.0*Z[3] + 1.0*Z[4] + 0.5*Z[0]*Z[1] + 0.5*Z[0]*Z[2] + 0.5*Z[0]*Z[3] - 0.5*Z[0] + 0.5*Z[0]*Z[4]
 ```
 
-### VQE
-```python
-from blueqat import Circuit
-from blueqat.pauli import X, Y, Z, I
-from blueqat.vqe import AnsatzBase, Vqe
-
-class OneQubitAnsatz(AnsatzBase):
-    def __init__(self, hamiltonian):
-        super().__init__(hamiltonian.to_expr(), 2)
-        self.step = 1
-
-    def get_circuit(self, params):
-        a, b = params
-        return Circuit().rx(a)[0].rz(b)[0]
-
-# hamiltonian
-h = 1.23 * I - 4.56 * X(0) + 2.45 * Y(0) + 2.34 * Z(0)
-
-result = Vqe(OneQubitAnsatz(h)).run()
-print(runner.ansatz.get_energy_sparse(result.circuit))
-
-# => -4.450804074762511
-```
-
 ### Time Evolution
 ```python
 hamiltonian = [1.0*Z(0), 1.0*X[0]]
@@ -193,38 +142,20 @@ print(time_evolution)
 
 ### QAOA
 ```python
-from blueqat import vqe
-from blueqat.pauli import *
+from blueqat import Circuit
+from Blueqat.blueqat.utils import qaoa
 from blueqat.pauli import qubo_bit as q
-    
-hamiltonian = q(0)-3*q(1)+2*q(0)*q(1)
-#hamiltonian = -0.5*I - Z[0] + 1.0*Z[1] + 0.5*Z[0]*Z[1]
-step = 2
+from blueqat.pauli import X,Y,Z,I
 
-result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step)).run()
-print(result.most_common(4))
+hamiltonian = q(0)-q(1)
+step = 1
+
+result = qaoa(hamiltonian, step)
+result.circuit.run(shots=100)
     
-# => (((0, 1), 0.9874053861648978), ((1, 0), 0.00967786055983366), ((0, 0), 0.0014583766376339746), ((1, 1), 0.0014583766376339703))
+# => Counter({'01': 99, '11': 1})
 ```
 
-### QAOA Mixer
-```python
-hamiltonian = q(0)-3*q(1)+2*q(0)*q(1)
-step = 2
-init = Circuit().h[0].cx[0,1].x[1]
-mixer = (X[0]*X[1] + Y[0]*Y[1])*0.5
-
-result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step, init, mixer)).run()
-print(result.most_common(4))
-    
-# => (((0, 1), 0.9999886003516928), ((1, 0), 1.1399648305716677e-05), ((0, 0), 1.5176327961771419e-31), ((1, 1), 4.006785342235446e-32))
-```
-
-### Select Scipy Minimizer
-```python
-minimizer = vqe.get_scipy_minimizer(method="COBYLA")
-result = vqe.Vqe(vqe.QaoaAnsatz(hamiltonian, step), minimizer=minimizer).run()
-```
 
 ### Circuit Drawing Backend
 ```python
