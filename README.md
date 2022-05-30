@@ -143,7 +143,7 @@ print(time_evolution)
 ### QAOA
 ```python
 from blueqat import Circuit
-from Blueqat.blueqat.utils import qaoa
+from blueqat.utils import qaoa
 from blueqat.pauli import qubo_bit as q
 from blueqat.pauli import X,Y,Z,I
 
