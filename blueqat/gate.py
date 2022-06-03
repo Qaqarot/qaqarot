@@ -5,11 +5,12 @@ This module is internally used.
 
 import cmath
 import math
-from typing import cast, Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, cast, Callable, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 
 from .typing import Targets
+from .parameter import FParam, Parameter, ParamAssign
 
 _Op = TypeVar('_Op', bound='Operation')
 
@@ -19,6 +20,7 @@ class Operation:
 
     lowername: str = ''
     """Lower name of the operation."""
+
     @property
     def uppername(self) -> str:
         """Upper name of the operation."""
@@ -41,6 +43,16 @@ class Operation:
         """Create an operation."""
         raise NotImplementedError(f"{cls.__name__}.create() is not defined.")
 
+    def subs(self, params: ParamAssign) -> 'Operation':
+        options = None
+        if hasattr(self, 'options'):
+            options = cast(Any, self).options
+        return self.create(
+            self.targets,
+            tuple(
+                p.subs(params) if isinstance(p, Parameter) else p
+                for p in self.params), options)
+
     def _str_args(self) -> str:
         """Returns printable string of args."""
         if not self.params:
@@ -49,6 +61,7 @@ class Operation:
 
     def _str_targets(self) -> str:
         """Returns printable string of targets."""
+
         def _slice_to_str(obj):
             if isinstance(obj, slice):
                 start = '' if obj.start is None else str(obj.start.__index__())
@@ -71,6 +84,7 @@ class Operation:
 
 class IFallbackOperation(Operation):
     """The interface of `fallback`"""
+
     def fallback(self, n_qubits: int) -> List['Operation']:
         """Get alternative operations"""
         raise NotImplementedError(
@@ -79,6 +93,7 @@ class IFallbackOperation(Operation):
 
 class Gate(Operation):
     """Abstract quantum gate class."""
+
     @property
     def n_qargs(self) -> int:
         """Number of qubit arguments of this gate."""
@@ -103,6 +118,7 @@ class OneQubitGate(Gate):
 
     u_params: Optional[Tuple[float, float, float, float]]
     """Params for U gate."""
+
     @property
     def n_qargs(self) -> int:
         return 1
@@ -250,10 +266,13 @@ class RXGate(OneQubitGate, IFallbackOperation):
     """Rotate-X gate"""
     lowername = "rx"
 
-    def __init__(self, targets, theta: float):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+        if isinstance(theta, float):
+            self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+        else:
+            self.u_params = None
 
     @classmethod
     def create(cls,
@@ -282,10 +301,13 @@ class RYGate(OneQubitGate, IFallbackOperation):
     """Rotate-Y gate"""
     lowername = "ry"
 
-    def __init__(self, targets, theta: float):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.u_params = (theta, 0.0, 0.0, 0.0)
+        if isinstance(theta, float):
+            self.u_params = (theta, 0.0, 0.0, 0.0)
+        else:
+            self.u_params = None
 
     @classmethod
     def create(cls,
@@ -314,10 +336,13 @@ class RZGate(OneQubitGate, IFallbackOperation):
     """Rotate-Z gate"""
     lowername = "rz"
 
-    def __init__(self, targets, theta: float):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.u_params = (0.0, 0.0, theta, -0.5 * theta)
+        if isinstance(theta, float):
+            self.u_params = (0.0, 0.0, theta, -0.5 * theta)
+        else:
+            self.u_params = None
 
     @classmethod
     def create(cls,
@@ -539,10 +564,10 @@ class UGate(OneQubitGate):
 
     def __init__(self,
                  targets,
-                 theta: float,
-                 phi: float,
-                 lam: float,
-                 gamma: float = 0.0):
+                 theta: FParam,
+                 phi: FParam,
+                 lam: FParam,
+                 gamma: FParam = 0.0):
         super().__init__(targets, (theta, phi, lam, gamma))
         self.theta = theta
         self.phi = phi
@@ -716,10 +741,13 @@ class CPhaseGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate but phase is different."""
     lowername = "cphase"
 
-    def __init__(self, targets, theta):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.cu_params = (0.0, self.theta, 0.0, 0.0)
+        if isinstance(theta, float):
+            self.cu_params = (0.0, theta, 0.0, 0.0)
+        else:
+            self.cu_params = None
 
     @classmethod
     def create(cls,
@@ -747,10 +775,13 @@ class CRXGate(TwoQubitGate, IFallbackOperation):
     """Rotate-X gate"""
     lowername = "crx"
 
-    def __init__(self, targets, theta):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+        if isinstance(theta, float):
+            self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
+        else:
+            self.cu_params = None
 
     @classmethod
     def create(cls,
@@ -781,10 +812,13 @@ class CRYGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Y gate"""
     lowername = "cry"
 
-    def __init__(self, targets, theta):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.cu_params = (theta, 0.0, 0.0, 0.0)
+        if isinstance(theta, float):
+            self.cu_params = (theta, 0.0, 0.0, 0.0)
+        else:
+            self.cu_params = None
 
     @classmethod
     def create(cls,
@@ -815,10 +849,13 @@ class CRZGate(TwoQubitGate, IFallbackOperation):
     """Rotate-Z gate"""
     lowername = "crz"
 
-    def __init__(self, targets, theta):
+    def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        self.cu_params = (0.0, 0.0, theta, -0.5 * theta)
+        if isinstance(theta, float):
+            self.cu_params = (0.0, 0.0, theta, -0.5 * theta)
+        else:
+            self.cu_params = None
 
     @classmethod
     def create(cls,
@@ -881,10 +918,10 @@ class CUGate(TwoQubitGate, IFallbackOperation):
 
     def __init__(self,
                  targets,
-                 theta: float,
-                 phi: float,
-                 lam: float,
-                 gamma: float = 0.0):
+                 theta: FParam,
+                 phi: FParam,
+                 lam: FParam,
+                 gamma: FParam = 0.0):
         super().__init__(targets, (theta, phi, lam, gamma))
         self.theta = theta
         self.phi = phi
@@ -1233,6 +1270,7 @@ class Reset(Operation):
 
 class DeprecatedOperation:
     """Inform deprecated operation"""
+
     def __init__(self, name: str, alternative: str) -> None:
         self.name = name
         self.alt = alternative
@@ -1296,6 +1334,7 @@ def qubit_pairs(args: Tuple[Targets, Targets],
 
 def get_maximum_index(indices: Targets) -> int:
     """Internally used."""
+
     def _maximum_idx_single(idx: int):
         if isinstance(idx, slice):
             start = -1

@@ -7,12 +7,15 @@ if typing.TYPE_CHECKING:
     from blueqat import Circuit
 
 T = TypeVar('T')
+C = TypeVar('C')
 Targets = Union[int, slice, tuple]
 
-class CircuitOperation(Generic[T]):
+class GeneralCircuitOperation(Generic[C, T]):
     """Type definition of dynamic method."""
     def __call__(self, *args) -> T:
         ...
 
-    def __getitem__(self, targets: Targets) -> 'Circuit':
+    def __getitem__(self, targets: Targets) -> C:
         ...
+
+CircuitOperation = GeneralCircuitOperation['Circuit', T]
