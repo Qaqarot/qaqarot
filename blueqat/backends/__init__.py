@@ -18,5 +18,6 @@ BACKENDS = {
     "1q_compaction": OneQubitGateCompactionTranspiler,
     "draw": DrawCircuit,
     "quimb": Quimb,
+    "cuTN": cuTN,
 }
 DEFAULT_BACKEND_NAME = "quimb"
