@@ -7,6 +7,7 @@ from .onequbitgate_transpiler import OneQubitGateCompactionTranspiler
 from .twoqubitgate_transpiler import TwoQubitGateDecomposingTranspiler
 from .draw_backend import DrawCircuit
 from .quimb import Quimb
+from .cuquantum import cuTN
 
 BACKENDS = {
     "numpy": NumPyBackend,
