@@ -110,6 +110,9 @@ class Quimb(Backend):
                 ctx[0].apply_gate('RZZ', gate.theta, ctx[1][control], ctx[1][target])
                 ctx[0].apply_gate('RX', np.pi/4, ctx[1][control])
                 ctx[0].apply_gate('RX', np.pi/4, ctx[1][target])
+        elif gate.lowername == 'cphase':
+            for control, target in gate.control_target_iter(ctx[2]):
+                ctx[0].apply_gate('CU1', gate.theta, ctx[1][control], ctx[1][target])
         else:
             for control, target in gate.control_target_iter(ctx[2]):
                 ctx[0].apply_gate(gate.lowername, gate.theta, ctx[1][control], ctx[1][target])
@@ -124,6 +127,6 @@ class Quimb(Backend):
     gate_x = gate_y = gate_z = gate_h = gate_t = gate_s = _one_qubit_gate_noargs
     gate_rx = gate_ry = gate_rz = gate_phase = _one_qubit_gate_args_theta
     gate_cx = gate_cy = gate_cz = _two_qubit_gate_noargs
-    gate_rxx = gate_ryy = gate_rzz = _two_qubit_gate_args_theta
+    gate_rxx = gate_ryy = gate_rzz = gate_cphase = _two_qubit_gate_args_theta
     gate_ccx = gate_cswap = _three_qubit_gate_noargs
     gate_reset = _one_qubit_gate_noargs
