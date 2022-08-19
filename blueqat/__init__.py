@@ -13,11 +13,10 @@
 # limitations under the License.
 
 from .circuit import Circuit, BlueqatGlobalSetting
-from .parametrized_circuit import ParametrizedCircuit
 from .decorators import circuitmacro
 from . import pauli
 from . import utils
 from . import vqe
 from ._version import __version__
 
-__all__ = ["pauli", "utils", "vqe", "circuitmacro", "Circuit", "ParametrizedCircuit", "BlueqatGlobalSetting"]
+__all__ = ["pauli", "utils", "vqe", "circuitmacro", "Circuit", "BlueqatGlobalSetting"]
