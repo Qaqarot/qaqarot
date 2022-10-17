@@ -2,7 +2,9 @@ from enum import Enum
 from collections.abc import Sequence, Mapping
 from typing import List, NamedTuple, Union
 
-ParamAssign = Union[Mapping[str, float], Sequence[float]]
+# ParamAssign = Union[Mapping[str, float], Sequence[float]]
+# For python<=3.8
+ParamAssign = Union[Mapping, Sequence]
 
 class ParamOp(Enum):
     NEG = 1
