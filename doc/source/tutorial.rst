@@ -1,12 +1,7 @@
 Tutorial
 ========
 
-Engligh and Japanese tutorials are available.
-
-English
+Currently tutorials are available only in English.
 
 https://github.com/Blueqat/Blueqat-tutorials
 
-Japanese
-
-https://github.com/Blueqat/Blueqat-tutorials/tree/master/tutorial-ja
