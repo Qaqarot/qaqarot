@@ -27,3 +27,15 @@ JSON schema version 1 is available from blueqat version 0.4.6. ::
   lower-name-of-operation := the name of gates, operations. e.g. "x", "h", "cx", "measure", ...
   int:= integer number
   number:= number
+
+Examples
+--------
+
+.. code-block:: python
+  
+  from blueqat import Circuit
+  from blueqat.circuit_funcs.json_serializer import serialize, deserialize
+
+  c1 = Circuit().h[0].cx[0, 1].m[:]
+  json = serialize(c1)
+  c2 = deserialize(json)
