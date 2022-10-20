@@ -6,7 +6,7 @@
 Welcome to Blueqat's documentation!
 ===================================
 
-Blueqat is an open source Python framework for quantum gate simulator.
+Blueqat is an open-source Python framework for quantum gate simulation. 
 
 .. toctree::
    :maxdepth: 2
@@ -16,7 +16,6 @@ Blueqat is an open source Python framework for quantum gate simulator.
    intro
    getting_started
    json
-   ising
    tutorial
    api/modules
    github
