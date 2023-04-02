@@ -7,6 +7,8 @@ from .onequbitgate_transpiler import OneQubitGateCompactionTranspiler
 from .twoqubitgate_transpiler import TwoQubitGateDecomposingTranspiler
 from .draw_backend import DrawCircuit
 from .quimb import Quimb
+from .cusv import cuSV
+from .cutn import cuTN
 
 BACKENDS = {
     "numpy": NumPyBackend,
@@ -18,5 +20,7 @@ BACKENDS = {
     "1q_compaction": OneQubitGateCompactionTranspiler,
     "draw": DrawCircuit,
     "quimb": Quimb,
+    "cusv": cuSV,
+    "cutn": cuTN,
 }
 DEFAULT_BACKEND_NAME = "quimb"
