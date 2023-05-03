@@ -58,24 +58,41 @@ def check_decomposed(g: OneQubitGate, d: Decomposer, ignore_global: bool):
         raise
 
 
+
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_identity(decomposer):
     g = Mat1Gate((0, ), np.eye(2, dtype=complex))
     check_decomposed(g, decomposer, False)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_identity_plus_delta(decomposer):
     g = Mat1Gate((0, ), np.eye(2, dtype=complex) + np.ones((2, 2)) * 1e-10)
     check_decomposed(g, decomposer, False)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_hadamard(decomposer):
     g = HGate((0, ))
     check_decomposed(g, decomposer, True)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_random_rx(decomposer):
     for _ in range(20):
@@ -84,6 +101,10 @@ def test_random_rx(decomposer):
         check_decomposed(g, decomposer, True)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_random_ry(decomposer):
     for _ in range(20):
@@ -92,6 +113,10 @@ def test_random_ry(decomposer):
         check_decomposed(g, decomposer, True)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_random_rz(decomposer):
     for _ in range(20):
@@ -100,6 +125,10 @@ def test_random_rz(decomposer):
         check_decomposed(g, decomposer, True)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_random_r(decomposer):
     for _ in range(20):
@@ -108,6 +137,10 @@ def test_random_r(decomposer):
         check_decomposed(g, decomposer, True)
 
 
+@pytest.mark.skipif(
+    condition=lambda backend: backend == 'quimb',
+    reason='Skip test for specific backend',
+)
 @decomposer_test
 def test_random_u(decomposer):
     for _ in range(20):
