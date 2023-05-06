@@ -269,10 +269,10 @@ class RXGate(OneQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
-        else:
+        if isinstance(theta, Parameter):
             self.u_params = None
+        else:
+            self.u_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
 
     @classmethod
     def create(cls,
@@ -304,10 +304,10 @@ class RYGate(OneQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.u_params = (theta, 0.0, 0.0, 0.0)
-        else:
+        if isinstance(theta, Parameter):
             self.u_params = None
+        else:
+            self.u_params = (theta, 0.0, 0.0, 0.0)
 
     @classmethod
     def create(cls,
@@ -339,10 +339,10 @@ class RZGate(OneQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.u_params = (0.0, 0.0, theta, -0.5 * theta)
-        else:
+        if isinstance(theta, Parameter):
             self.u_params = None
+        else:
+            self.u_params = (0.0, 0.0, theta, -theta / 2)
 
     @classmethod
     def create(cls,
@@ -744,10 +744,10 @@ class CPhaseGate(TwoQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.cu_params = (0.0, theta, 0.0, 0.0)
-        else:
+        if isinstance(theta, Parameter):
             self.cu_params = None
+        else:
+            self.cu_params = (0.0, theta, 0.0, 0.0)
 
     @classmethod
     def create(cls,
@@ -778,10 +778,10 @@ class CRXGate(TwoQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
-        else:
+        if isinstance(theta, Parameter):
             self.cu_params = None
+        else:
+            self.cu_params = (theta, -math.pi / 2.0, math.pi / 2.0, 0.0)
 
     @classmethod
     def create(cls,
@@ -815,10 +815,10 @@ class CRYGate(TwoQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.cu_params = (theta, 0.0, 0.0, 0.0)
-        else:
+        if isinstance(theta, Parameter):
             self.cu_params = None
+        else:
+            self.cu_params = (theta, 0.0, 0.0, 0.0)
 
     @classmethod
     def create(cls,
@@ -852,10 +852,10 @@ class CRZGate(TwoQubitGate, IFallbackOperation):
     def __init__(self, targets, theta: FParam):
         super().__init__(targets, (theta, ))
         self.theta = theta
-        if isinstance(theta, float):
-            self.cu_params = (0.0, 0.0, theta, -0.5 * theta)
-        else:
+        if isinstance(theta, Parameter):
             self.cu_params = None
+        else:
+            self.cu_params = (0.0, 0.0, theta, -theta / 2)
 
     @classmethod
     def create(cls,
