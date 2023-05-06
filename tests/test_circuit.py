@@ -574,7 +574,7 @@ def test_caching_then_expand(backend):
           shots=shots)
     qubits = c.i[1].run(backend=backend,
                         shots=shots)
-    assert np.allclose(qubits, Circuit().h[0].i[1].run(shots=shots))
+    assert np.allclose(qubits, Circuit().h[0].i[1].run(backend=backend, shots=shots))
 
 
 def test_copy_empty(backend):
