@@ -1,6 +1,9 @@
 from enum import Enum
 from collections.abc import Sequence, Mapping
-from typing import List, NamedTuple, Union
+from typing import List, NamedTuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sympy import Basic as SympyBasic
 
 # ParamAssign = Union[Mapping[str, float], Sequence[float]]
 # For python<=3.8
@@ -29,4 +32,4 @@ class Parameter(NamedTuple):
     def __neg__(self) -> 'Parameter':
         return Parameter(self.name, self.idx, self.ops + [ParamOp.NEG])
 
-FParam = Union[float, Parameter]
+FParam = Union[float, Parameter, "SympyBasic"]
