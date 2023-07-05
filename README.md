@@ -1,3 +1,6 @@
+# qaqarot
+The blueqat project has been renamed the qaqarot project because of the branding strategy of blueqat inc.
+
 ![Logo](https://raw.githubusercontent.com/Blueqat/Blueqat/master/blueqat_logo_blue.png)
 
 # blueqat
